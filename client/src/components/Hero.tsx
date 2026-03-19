@@ -62,8 +62,13 @@ const Hero = () => {
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
         .hero-section {
-          position: relative; min-height: 100svh; background: #020810;
-          display: flex; align-items: center; overflow: hidden; padding-top:20px;
+          position: relative;
+          min-height: 100svh;
+          background: #020810;
+          display: flex;
+          align-items: center;
+          overflow: hidden;
+          padding-top: 20px;
         }
 
         /* Glows */
@@ -89,7 +94,9 @@ const Hero = () => {
         /* Grid */
         .hero-grid {
           position: absolute; inset: 0; z-index: 0; pointer-events: none;
-          background-image: linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+          background-image:
+            linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
           background-size: 64px 64px;
           mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
         }
@@ -97,12 +104,14 @@ const Hero = () => {
         /* Particles */
         .particle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
 
-        /* Layout */
+        /* ── Layout ── */
         .hero-inner {
-          position: relative; z-index: 0; width: 100%; max-width: 1280px;
+          position: relative; z-index: 10; width: 100%; max-width: 1280px;
           margin: 0 auto; padding: 0 2rem;
-          display: grid; grid-template-columns: 1fr 2fr;
-          gap: 4rem; align-items: center;
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 2rem;
+          align-items: center;
           min-height: calc(100svh - 80px);
         }
 
@@ -114,10 +123,10 @@ const Hero = () => {
           display: inline-flex; align-items: center; gap: 8px;
           font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500;
           letter-spacing: 0.22em; text-transform: uppercase;
-          color: rgba(34,211,238,0.7); opacity: 0; animation: fadeSlideUp 0.6s 0.1s forwards;
+          color: rgba(34,211,238,0.7); opacity: 0;
+          animation: fadeSlideUp 0.6s 0.1s forwards;
         }
         .eyebrow-dot {
-          
           width: 6px; height: 6px; background: #22d3ee; border-radius: 50%;
           box-shadow: 0 0 8px #22d3ee; animation: pulse 2s infinite;
         }
@@ -125,25 +134,16 @@ const Hero = () => {
 
         /* Title */
         .hero-title { display: flex; flex-direction: column; gap: 0; line-height: 1; }
-
         .title-line {
           font-family: 'Rajdhani', sans-serif; font-weight: 700;
           letter-spacing: 0.04em; text-transform: uppercase; opacity: 0;
         }
-
-        /* AJU ED */
         .line-1 {
-          display: block;
-          font-size: clamp(2.6rem, 6vw, 6rem);
+          display: block; font-size: clamp(2.6rem, 6vw, 6rem);
           background: linear-gradient(135deg, #e0f7ff 0%, #67e8f9 50%, #22d3ee 100%);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-
-        /* SOLUTIONS LLP row */
-        .line-2 {
-          display: flex; align-items: baseline; gap: 0.2em; margin-top: -0.05em;
-        }
-
+        .line-2 { display: flex; align-items: baseline; gap: 0.2em; margin-top: -0.05em; }
         .solutions-text {
           font-family: 'Rajdhani', sans-serif; font-weight: 700;
           font-size: clamp(2.6rem, 5vw, 5rem);
@@ -151,12 +151,10 @@ const Hero = () => {
           background: linear-gradient(135deg, #93c5fd 0%, #818cf8 60%, #c4b5fd 100%);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-
         .llp-text {
           font-family: 'Rajdhani', sans-serif; font-weight: 700;
           font-size: clamp(2.6rem, 5vw, 5rem);
-          margin-left:10px;
-          text-transform: uppercase;
+          margin-left: 10px; text-transform: uppercase;
           background: linear-gradient(135deg, #93c5fd 0%, #818cf8 60%, #c4b5fd 100%);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
           align-self: flex-end; padding-bottom: 0.2em;
@@ -191,7 +189,8 @@ const Hero = () => {
           font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
           color: #020810; background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
           border: none; border-radius: 100px; padding: 13px 28px; cursor: pointer;
-          overflow: hidden; box-shadow: 0 0 24px rgba(34,211,238,0.35); transition: box-shadow 0.3s, transform 0.2s;
+          overflow: hidden; box-shadow: 0 0 24px rgba(34,211,238,0.35);
+          transition: box-shadow 0.3s, transform 0.2s;
         }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(34,211,238,0.55), 0 8px 20px rgba(0,0,0,0.3); }
         .btn-outline {
@@ -199,52 +198,54 @@ const Hero = () => {
           font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
           color: #67e8f9; background: rgba(6,182,212,0.05);
           border: 1px solid rgba(34,211,238,0.3); border-radius: 100px;
-          padding: 13px 28px; cursor: pointer; backdrop-filter: blur(8px); overflow: hidden; transition: all 0.3s;
+          padding: 13px 28px; cursor: pointer; backdrop-filter: blur(8px);
+          overflow: hidden; transition: all 0.3s;
         }
         .btn-outline:hover { border-color: rgba(34,211,238,0.7); box-shadow: 0 0 20px rgba(34,211,238,0.2); transform: translateY(-2px); }
 
-        /* Right panel */
+        /* ── RIGHT PANEL: the key fix ── */
         .hero-right {
-          position: relative; height: 760px; border-radius: 24px; overflow: hidden; opacity: 0;
-          
-         
+          position: relative;
+          /* Use aspect-ratio so it scales with the column width */
+          width: 100%;
+          height: 760px;
+          border-radius: 24px;
+          opacity: 0;
+          /* NO overflow:hidden — that clips the spline canvas */
         }
 
-        .corner { position: absolute; width: 100px; height: 14px; z-index: 5; pointer-events: none; }
-        .corner-tl { top:10px; left:10px; border-top:1.5px solid #22d3ee; border-left:1.5px solid #22d3ee; }
-        .corner-tr { top:10px; right:10px; border-top:1.5px solid #22d3ee; border-right:1.5px solid #22d3ee; }
-        .corner-bl { bottom:10px; left:10px; border-bottom:1.5px solid #22d3ee; border-left:1.5px solid #22d3ee; }
-        .corner-br { bottom:10px; right:10px; border-bottom:1.5px solid #22d3ee; border-right:1.5px solid #22d3ee; }
-        .scan-line {
-          position: absolute; left:0; right:0; height:2px;
-          background: linear-gradient(90deg,transparent,rgba(34,211,238,0.4),transparent);
-          z-index:4; pointer-events:none; animation: scan 5s linear infinite;
+        /* Force every child Spline renders (canvas, div wrapper) to fill the box */
+        .hero-right > div,
+        .hero-right canvas {
+          position: absolute !important;
+          inset: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
         }
-        @keyframes scan { 0%{top:0%;opacity:0} 5%{opacity:1} 95%{opacity:1} 100%{top:100%;opacity:0} }
-
-        /* Divider */
-       
 
         /* Scroll */
         .scroll-ind {
-          position: absolute; bottom:28px; left:50%; transform:translateX(-50%);
-          display:flex; flex-direction:column; align-items:center; gap:8px;
-          z-index:10; opacity:0; animation: fadeSlideUp 0.8s 2.4s forwards;
+          position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+          display: flex; flex-direction: column; align-items: center; gap: 8px;
+          z-index: 10; opacity: 0; animation: fadeSlideUp 0.8s 2.4s forwards;
         }
-        .scroll-line { width:1px; height:36px; background:linear-gradient(180deg,rgba(34,211,238,0.7),transparent); animation:scrollPulse 2s ease-in-out infinite; }
-        .scroll-text { font-family:'DM Sans',sans-serif; font-size:0.58rem; letter-spacing:0.2em; text-transform:uppercase; color:rgba(34,211,238,0.45); }
+        .scroll-line {
+          width: 1px; height: 36px;
+          background: linear-gradient(180deg, rgba(34,211,238,0.7), transparent);
+          animation: scrollPulse 2s ease-in-out infinite;
+        }
+        .scroll-text {
+          font-family: 'DM Sans', sans-serif; font-size: 0.58rem;
+          letter-spacing: 0.2em; text-transform: uppercase; color: rgba(34,211,238,0.45);
+        }
         @keyframes scrollPulse { 0%,100%{opacity:0.5;transform:scaleY(1)} 50%{opacity:1;transform:scaleY(1.2)} }
         @keyframes fadeSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
         /* ════ RESPONSIVE ════ */
-
-        /* Tablet landscape ≤1100px */
         @media (max-width: 1100px) {
-          .hero-inner { gap: 2rem; padding: 0 1.5rem; }
-          .hero-right { height: 480px; }
+          .hero-inner { gap: 1.5rem; padding: 0 1.5rem; }
+          .hero-right { height: 580px; }
         }
-
-        /* Tablet portrait ≤900px — single column, spline below */
         @media (max-width: 900px) {
           .hero-section { padding-top: 72px; padding-bottom: 3rem; align-items: flex-start; }
           .hero-inner {
@@ -259,50 +260,50 @@ const Hero = () => {
           .tagline { max-width: 60ch; }
           .badges-row { justify-content: center; }
           .btns-row { justify-content: center; }
-          .hero-right { display: block; height: 400px; width: 100%; opacity: 1 !important; }
-          .center-divider { display: none; }
+          .hero-right { height: 420px; width: 100%; opacity: 1 !important; }
           .scroll-ind { display: none; }
         }
-
-        /* Mobile ≤640px */
         @media (max-width: 640px) {
           .hero-section { padding-top: 68px; }
           .hero-inner { padding: 1.5rem 1rem; gap: 2rem; }
           .line-1, .solutions-text { font-size: clamp(2rem, 10vw, 3rem); }
-          .llp-text { font-size: clamp(0.9rem, 4vw, 1.3rem); }
+          .llp-text { font-size: clamp(2rem, 10vw, 3rem); }
           .tagline { font-size: 0.88rem; }
           .eyebrow { font-size: 0.6rem; }
           .btn-primary, .btn-outline { padding: 11px 22px; font-size: 0.75rem; }
-          .hero-right { height: 320px; border-radius: 16px; }
+          .hero-right { height: 340px; border-radius: 16px; }
           .tech-badge { font-size: 0.62rem; padding: 4px 11px; }
         }
-
-        /* Small mobile ≤400px */
         @media (max-width: 400px) {
           .hero-inner { padding: 1rem 0.75rem; }
-          .line-1, .solutions-text { font-size: clamp(1.7rem, 11vw, 2.4rem); }
-          .llp-text { font-size: clamp(0.75rem, 4vw, 1rem); }
-          .hero-right { height: 260px; }
+          .line-1, .solutions-text, .llp-text { font-size: clamp(1.7rem, 11vw, 2.4rem); }
+          .hero-right { height: 280px; }
           .btns-row { flex-direction: column; align-items: center; }
           .btn-primary, .btn-outline { width: 100%; max-width: 280px; justify-content: center; }
         }
       `}</style>
 
+      {/* Background */}
       <div className="hero-bg-glow">
         <div className="glow-1" /><div className="glow-2" /><div className="glow-3" />
       </div>
       <div className="hero-grid" />
 
+      {/* Particles */}
       {[...Array(18)].map((_, i) => (
         <span key={i} className="particle" style={{
-          width: `${2 + (i % 3)}px`, height: `${2 + (i % 3)}px`,
-          top: `${10 + (i * 5.1) % 80}%`, left: `${5 + (i * 7.3) % 90}%`,
-          background: i % 3 === 0 ? "rgba(34,211,238,0.55)" : i % 3 === 1 ? "rgba(99,102,241,0.45)" : "rgba(167,139,250,0.4)",
+          width:  `${2 + (i % 3)}px`,
+          height: `${2 + (i % 3)}px`,
+          top:  `${10 + (i * 5.1) % 80}%`,
+          left: `${5  + (i * 7.3) % 90}%`,
+          background: i % 3 === 0
+            ? "rgba(34,211,238,0.55)"
+            : i % 3 === 1
+            ? "rgba(99,102,241,0.45)"
+            : "rgba(167,139,250,0.4)",
           boxShadow: `0 0 ${4 + (i % 4)}px currentColor`,
         }} />
       ))}
-
-      <div className="center-divider" />
 
       <div className="hero-inner">
         {/* LEFT */}
@@ -323,22 +324,26 @@ const Hero = () => {
             ))}
           </div>
           <div className="btns-row" ref={btnsRef}>
-            <button className="btn-primary" onClick={() => scrollTo("#services")}>Explore Innovations</button>
-            <button className="btn-outline" onClick={() => scrollTo("#contact")}>Get Started</button>
+            <button className="btn-primary" onClick={() => scrollTo("#services")}>
+              Explore Innovations
+            </button>
+            <button className="btn-outline" onClick={() => scrollTo("#contact")}>
+              Get Started
+            </button>
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT — Spline */}
         <div className="hero-right" ref={rightRef}>
-          
           <Spotlight className="-top-20 -left-20" fill="rgba(34,211,238,0.15)" />
           <SplineScene
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-            className="w-full h-full "
+            className="w-full h-full"
           />
         </div>
       </div>
 
+      {/* Scroll indicator */}
       
     </section>
   );
