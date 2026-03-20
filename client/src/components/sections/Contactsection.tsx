@@ -200,7 +200,7 @@ export const ContactSection = () => {
     setStatus("loading");
     setErrMsg("");
     try {
-      const res = await fetch("http://127.0.0.1:8000/contact", {
+      const res = await fetch("https://fastapi-backend-pj3e.onrender.com/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: form.name, email: form.email, message: form.message }),
