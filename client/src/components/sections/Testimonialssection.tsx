@@ -1,10 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { Star } from "lucide-react";
-import { useState } from "react";
 
-// ── Google-style avatar ───────────────────────────────────────────────────────
+// ── Shared easing / viewport ──────────────────────────────────────────────────
+const EASE = [0.22, 1, 0.36, 1] as const;
+const VP   = { once: true, amount: 0.15 };
+
+const fadeUp = (delay = 0, distance = 24) => ({
+  hidden:  { opacity: 0, y: distance, filter: "blur(5px)" },
+  visible: {
+    opacity: 1, y: 0, filter: "blur(0px)",
+    transition: { duration: 0.75, delay, ease: EASE },
+  },
+});
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
   "#1a73e8", "#ea4335", "#34a853", "#fbbc04",
   "#9c27b0", "#00acc1", "#e67c73", "#0f9d58",
@@ -49,7 +61,7 @@ const TESTIMONIALS = [
   },
 ];
 
-// ── Card — pause scroll on hover only ────────────────────────────────────────
+// ── Card ──────────────────────────────────────────────────────────────────────
 const TestimonialCard = ({
   author,
   text,
@@ -61,22 +73,44 @@ const TestimonialCard = ({
   setPaused: (v: boolean) => void;
 }) => (
   <div
-    className="flex flex-col rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-white/[0.02] p-5 shrink-0 select-none"
-    style={{ width: 320 }}
-    onMouseEnter={() => setPaused(true)}
-    onMouseLeave={() => setPaused(false)}
+    className="flex flex-col rounded-2xl border border-white/[0.07] p-5 shrink-0 select-none"
+    style={{
+      width: 320,
+      background: "linear-gradient(145deg, rgba(255,255,255,0.04), rgba(0,0,0,0))",
+      backdropFilter: "blur(10px)",
+      transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+    }}
+    onMouseEnter={(e) => {
+      setPaused(true);
+      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.15)";
+      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 32px rgba(0,0,0,0.4)";
+    }}
+    onMouseLeave={(e) => {
+      setPaused(false);
+      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)";
+      (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+    }}
   >
+    {/* Stars */}
     <div className="flex text-yellow-400 mb-3 gap-0.5">
-      {[...Array(5)].map((_, i) => <Star key={i} size={13} className="fill-current" />)}
+      {[...Array(5)].map((_, i) => (
+        <Star key={i} size={13} className="fill-current" />
+      ))}
     </div>
+
+    {/* Quote */}
     <p className="text-sm text-gray-400 italic leading-relaxed flex-1 mb-4 line-clamp-3">
       "{text}"
     </p>
-    <div className="flex items-center gap-3 mt-auto">
-      <GoogleAvatar name={author} size={38} />
+
+    {/* Author */}
+    <div className="flex items-center gap-3 mt-auto pt-3 border-t border-white/[0.05]">
+      <GoogleAvatar name={author} size={36} />
       <div>
-        <span className="text-sm font-semibold text-white block leading-none mb-0.5">{author}</span>
-        <span className="text-xs text-gray-600">Google Review</span>
+        <span className="text-sm font-semibold text-white block leading-none mb-0.5">
+          {author}
+        </span>
+        <span className="text-xs text-gray-600 font-mono tracking-wide">Google Review</span>
       </div>
     </div>
   </div>
@@ -85,6 +119,7 @@ const TestimonialCard = ({
 // ── Section ───────────────────────────────────────────────────────────────────
 export const TestimonialsSection = () => {
   const [paused, setPaused] = useState(false);
+  // 4× duplication for seamless loop
   const items = [...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS];
 
   return (
@@ -96,23 +131,67 @@ export const TestimonialsSection = () => {
       <style>{`
         @keyframes marquee-slow {
           from { transform: translateX(0); }
-          to   { transform: translateX(calc(-100% / 4 - 1rem)); }
+          to   { transform: translateX(calc(-100% / 4 - 0.25rem)); }
         }
-        .marquee-track { animation: marquee-slow 10s linear infinite; }
+        .marquee-track {
+          animation: marquee-slow 32s linear infinite;
+          /* smooth start — ease-in for first 2s via will-change promotion */
+          will-change: transform;
+        }
         .marquee-track.paused { animation-play-state: paused; }
       `}</style>
 
+      {/* Ambient glow */}
+      <div
+        aria-hidden
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[220px] pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at top, rgba(251,191,36,0.06) 0%, transparent 70%)",
+          filter: "blur(40px)",
+        }}
+      />
+
       {/* Header */}
-      <div className="max-w-7xl mx-auto px-6 text-center mb-16">
-        <h2 className="text-yellow-500 font-mono tracking-widest uppercase mb-4 text-sm">Feedback</h2>
-        <h3 className="text-4xl md:text-5xl font-bold mb-4">Client Testimonials</h3>
-        <p className="text-gray-400 text-lg max-w-xl mx-auto">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 text-center mb-16">
+        <motion.p
+          variants={fadeUp(0, 12)}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VP}
+          className="font-mono tracking-widest uppercase text-sm mb-4"
+          style={{ color: "rgba(234,179,8,0.8)" }}
+        >
+          Feedback
+        </motion.p>
+        <motion.h3
+          variants={fadeUp(0.1, 24)}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VP}
+          className="text-4xl md:text-5xl font-bold mb-4"
+        >
+          Client Testimonials
+        </motion.h3>
+        <motion.p
+          variants={fadeUp(0.2, 16)}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VP}
+          className="text-gray-400 text-lg max-w-xl mx-auto"
+        >
           Hear from students and partners who've experienced AJU ED Solutions firsthand.
-        </p>
+        </motion.p>
       </div>
 
-      {/* Marquee — overflow visible so expanded card isn't clipped */}
-      <div className="relative w-full" style={{ overflowX: "clip", overflowY: "visible" }}>
+      {/* Marquee */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={VP}
+        transition={{ duration: 0.8, delay: 0.3, ease: EASE }}
+        className="relative w-full"
+        style={{ overflowX: "clip", overflowY: "visible" }}
+      >
         <div
           className={`marquee-track flex w-max${paused ? " paused" : ""}`}
           style={{ gap: "1rem", paddingBottom: "2rem" }}
@@ -129,21 +208,29 @@ export const TestimonialsSection = () => {
         </div>
 
         {/* Fade edges */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black to-transparent sm:w-36" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black to-transparent sm:w-36" />
-      </div>
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-20 sm:w-40"
+          style={{ background: "linear-gradient(to right, #000, transparent)" }} />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-20 sm:w-40"
+          style={{ background: "linear-gradient(to left, #000, transparent)" }} />
+      </motion.div>
 
       {/* CTA */}
-      <div className="text-center mt-8">
+      <motion.div
+        variants={fadeUp(0.4, 16)}
+        initial="hidden"
+        whileInView="visible"
+        viewport={VP}
+        className="text-center mt-10"
+      >
         <a
           href="https://rb.gy/36cf7e"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-sm text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/40 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/15 text-sm text-gray-400 hover:bg-white/8 hover:text-white hover:border-white/35 transition-all duration-300"
         >
           See More Google Reviews →
         </a>
-      </div>
+      </motion.div>
     </section>
   );
 };

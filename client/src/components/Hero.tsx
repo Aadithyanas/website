@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { gsap } from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { SplineScene } from "../components/ui/splite";
@@ -8,6 +8,7 @@ import { Spotlight } from "../components/ui/spotlight";
 
 gsap.registerPlugin(ScrollToPlugin);
 
+// ─── Animated Title ───────────────────────────────────────────────────────────
 const AnimatedTitle = () => (
   <div className="hero-title-wrap">
     <h1 className="hero-title">
@@ -21,37 +22,86 @@ const AnimatedTitle = () => (
 );
 
 const TechBadge = ({ label, delay }: { label: string; delay: number }) => (
-  <span className="tech-badge" style={{ animationDelay: `${delay}s` }}>{label}</span>
+  <span className="tech-badge" style={{ animationDelay: `${delay}s` }}>
+    {label}
+  </span>
 );
 
+// ─── Hero ─────────────────────────────────────────────────────────────────────
 const Hero = () => {
-  const leftRef    = useRef<HTMLDivElement>(null);
-  const rightRef   = useRef<HTMLDivElement>(null);
   const taglineRef = useRef<HTMLParagraphElement>(null);
   const badgesRef  = useRef<HTMLDivElement>(null);
   const btnsRef    = useRef<HTMLDivElement>(null);
+  const rightRef   = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
+  // Track whether Spline has finished loading
+  const [splineReady, setSplineReady] = useState(false);
+  // Prevent the intro timeline from firing twice
+  const animatedRef = useRef(false);
+
+  // Called when SplineScene signals it is ready
+  const handleSplineLoad = useCallback(() => {
+    setSplineReady(true);
+  }, []);
+
+  // ── Left-panel entrance (runs immediately — no dependency on Spline) ──────
   useEffect(() => {
+    // Set all animated elements to invisible BEFORE first paint
+    // so there is never a flash of visible-then-hidden content
+    gsap.set([".title-line", taglineRef.current, badgesRef.current, btnsRef.current], {
+      opacity: 0,
+    });
+
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-    tl.fromTo(".title-line",
+    tl.fromTo(
+      ".title-line",
       { opacity: 0, x: -60, skewX: 8 },
       { opacity: 1, x: 0, skewX: 0, duration: 0.9, stagger: 0.18, delay: 0.3 }
     )
-    .fromTo(taglineRef.current, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7 }, "-=0.4")
-    .fromTo(badgesRef.current,  { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5 }, "-=0.3")
-    .fromTo(btnsRef.current,    { opacity: 0, scale: 0.88 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(1.7)" }, "-=0.25");
+      .fromTo(taglineRef.current, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7 }, "-=0.4")
+      .fromTo(badgesRef.current,  { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5 }, "-=0.3")
+      .fromTo(
+        btnsRef.current,
+        { opacity: 0, scale: 0.88 },
+        { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(1.7)" },
+        "-=0.25"
+      );
 
-    gsap.fromTo(rightRef.current,
-      { opacity: 0, x: 80 },
-      { opacity: 1, x: 0, duration: 1.1, ease: "power3.out", delay: 0.6 }
-    );
-
-    gsap.to(".particle", {
-      y: "random(-20, 20)", x: "random(-10, 10)",
-      duration: "random(3, 6)", repeat: -1, yoyo: true,
-      ease: "sine.inOut", stagger: { each: 0.4, from: "random" },
+    // Particles — deferred to next frame so they don't cause layout thrash
+    requestAnimationFrame(() => {
+      gsap.to(".particle", {
+        y: "random(-20, 20)",
+        x: "random(-10, 10)",
+        duration: "random(3, 6)",
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        stagger: { each: 0.4, from: "random" },
+      });
     });
   }, []);
+
+  // ── Right-panel entrance — waits for Spline, then fades + dissolves overlay ─
+  useEffect(() => {
+    if (!splineReady || animatedRef.current) return;
+    animatedRef.current = true;
+
+    const tl = gsap.timeline();
+
+    // 1. Fade the loading overlay out
+    if (overlayRef.current) {
+      tl.to(overlayRef.current, { opacity: 0, duration: 0.45, ease: "power2.out" });
+    }
+
+    // 2. Slide + fade the Spline panel in
+    tl.fromTo(
+      rightRef.current,
+      { opacity: 0, x: 80 },
+      { opacity: 1, x: 0, duration: 0.9, ease: "power3.out" },
+      "<0.05" // starts just after overlay begins fading
+    );
+  }, [splineReady]);
 
   const scrollTo = (id: string) =>
     gsap.to(window, { duration: 1, scrollTo: id, ease: "power3.inOut" });
@@ -61,6 +111,9 @@ const Hero = () => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
+        /* ── Reset / base ── */
+        *, *::before, *::after { box-sizing: border-box; }
+
         .hero-section {
           position: relative;
           min-height: 100svh;
@@ -69,19 +122,26 @@ const Hero = () => {
           align-items: center;
           overflow: hidden;
           padding-top: 20px;
+          /* Prevent any subpixel flicker during GSAP transforms */
+          transform: translateZ(0);
+          will-change: auto;
         }
 
-        /* Glows */
+        /* ── Glows ── */
         .hero-bg-glow { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
         .glow-1 {
           position: absolute; top: -20%; left: -10%; width: 55%; height: 70%;
           background: radial-gradient(ellipse at center, rgba(6,182,212,0.12) 0%, rgba(6,182,212,0.04) 50%, transparent 70%);
-          filter: blur(40px); animation: driftA 10s ease-in-out infinite alternate;
+          filter: blur(40px);
+          animation: driftA 10s ease-in-out infinite alternate;
+          will-change: transform;
         }
         .glow-2 {
           position: absolute; bottom: -10%; right: -5%; width: 50%; height: 60%;
           background: radial-gradient(ellipse at center, rgba(99,102,241,0.1) 0%, transparent 65%);
-          filter: blur(50px); animation: driftB 13s ease-in-out infinite alternate;
+          filter: blur(50px);
+          animation: driftB 13s ease-in-out infinite alternate;
+          will-change: transform;
         }
         .glow-3 {
           position: absolute; top: 40%; left: 40%; width: 30%; height: 40%;
@@ -91,7 +151,7 @@ const Hero = () => {
         @keyframes driftA { from{transform:translate(0,0) scale(1)} to{transform:translate(4%,6%) scale(1.08)} }
         @keyframes driftB { from{transform:translate(0,0) scale(1)} to{transform:translate(-5%,-4%) scale(1.1)} }
 
-        /* Grid */
+        /* ── Grid ── */
         .hero-grid {
           position: absolute; inset: 0; z-index: 0; pointer-events: none;
           background-image:
@@ -101,8 +161,11 @@ const Hero = () => {
           mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
         }
 
-        /* Particles */
-        .particle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+        /* ── Particles ── */
+        .particle {
+          position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
+          will-change: transform;
+        }
 
         /* ── Layout ── */
         .hero-inner {
@@ -115,7 +178,7 @@ const Hero = () => {
           min-height: calc(100svh - 80px);
         }
 
-        /* Left */
+        /* ── Left ── */
         .hero-left { display: flex; flex-direction: column; gap: 1.6rem; }
 
         /* Eyebrow */
@@ -136,7 +199,8 @@ const Hero = () => {
         .hero-title { display: flex; flex-direction: column; gap: 0; line-height: 1; }
         .title-line {
           font-family: 'Rajdhani', sans-serif; font-weight: 700;
-          letter-spacing: 0.04em; text-transform: uppercase; opacity: 0;
+          letter-spacing: 0.04em; text-transform: uppercase;
+          /* opacity set to 0 via GSAP before first paint — no CSS opacity here */
         }
         .line-1 {
           display: block; font-size: clamp(2.6rem, 6vw, 6rem);
@@ -164,12 +228,13 @@ const Hero = () => {
         .tagline {
           font-family: 'DM Sans', sans-serif; font-size: clamp(0.9rem, 1.8vw, 1.15rem);
           font-weight: 300; line-height: 1.75; color: rgba(180,210,230,0.75);
-          max-width: 44ch; opacity: 0;
+          max-width: 44ch;
+          /* opacity controlled by GSAP */
         }
         .tagline strong { font-weight: 500; color: #67e8f9; }
 
         /* Badges */
-        .badges-row { display: flex; flex-wrap: wrap; gap: 8px; opacity: 0; }
+        .badges-row { display: flex; flex-wrap: wrap; gap: 8px; }
         .tech-badge {
           font-family: 'DM Sans', sans-serif; font-size: 0.68rem; font-weight: 500;
           letter-spacing: 0.1em; text-transform: uppercase;
@@ -179,11 +244,14 @@ const Hero = () => {
           animation: badgeFloat 4s ease-in-out infinite alternate;
           transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
         }
-        .tech-badge:hover { background: rgba(6,182,212,0.18); border-color: rgba(34,211,238,0.6); box-shadow: 0 0 14px rgba(34,211,238,0.2); }
+        .tech-badge:hover {
+          background: rgba(6,182,212,0.18); border-color: rgba(34,211,238,0.6);
+          box-shadow: 0 0 14px rgba(34,211,238,0.2);
+        }
         @keyframes badgeFloat { from{transform:translateY(0)} to{transform:translateY(-4px)} }
 
         /* Buttons */
-        .btns-row { display: flex; flex-wrap: wrap; gap: 16px; opacity: 0; }
+        .btns-row { display: flex; flex-wrap: wrap; gap: 16px; }
         .btn-primary {
           position: relative; font-family: 'Syne', sans-serif; font-size: 0.82rem;
           font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
@@ -203,18 +271,21 @@ const Hero = () => {
         }
         .btn-outline:hover { border-color: rgba(34,211,238,0.7); box-shadow: 0 0 20px rgba(34,211,238,0.2); transform: translateY(-2px); }
 
-        /* ── RIGHT PANEL: the key fix ── */
+        /* ── RIGHT PANEL ── */
         .hero-right {
           position: relative;
-          /* Use aspect-ratio so it scales with the column width */
           width: 100%;
           height: 760px;
           border-radius: 24px;
+          /* opacity starts at 0 — GSAP will animate it in after Spline loads */
           opacity: 0;
-          /* NO overflow:hidden — that clips the spline canvas */
+          /* Promote to own compositor layer: eliminates flicker on GPU */
+          transform: translateZ(0);
+          will-change: opacity, transform;
+          /* Do NOT use overflow:hidden — it clips the Spline canvas */
         }
 
-        /* Force every child Spline renders (canvas, div wrapper) to fill the box */
+        /* Ensure every child Spline renders fills the box */
         .hero-right > div,
         .hero-right canvas {
           position: absolute !important;
@@ -223,7 +294,29 @@ const Hero = () => {
           height: 100% !important;
         }
 
-        /* Scroll */
+        /* ── Spline loading skeleton ── */
+        .spline-loader-overlay {
+          position: absolute;
+          inset: 0;
+          z-index: 20;
+          border-radius: 24px;
+          background: #020810;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          /* starts visible, GSAP fades it out when Spline is ready */
+        }
+        .spline-loader-pulse {
+          width: 48px; height: 48px;
+          border-radius: 50%;
+          border: 2px solid rgba(34,211,238,0.15);
+          border-top-color: rgba(34,211,238,0.7);
+          animation: spinPulse 1s linear infinite;
+        }
+        @keyframes spinPulse { to { transform: rotate(360deg); } }
+
+        /* ── Scroll indicator ── */
         .scroll-ind {
           position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
           display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -241,7 +334,7 @@ const Hero = () => {
         @keyframes scrollPulse { 0%,100%{opacity:0.5;transform:scaleY(1)} 50%{opacity:1;transform:scaleY(1.2)} }
         @keyframes fadeSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
-        /* ════ RESPONSIVE ════ */
+        /* ══ RESPONSIVE ══ */
         @media (max-width: 1100px) {
           .hero-inner { gap: 1.5rem; padding: 0 1.5rem; }
           .hero-right { height: 580px; }
@@ -260,7 +353,8 @@ const Hero = () => {
           .tagline { max-width: 60ch; }
           .badges-row { justify-content: center; }
           .btns-row { justify-content: center; }
-          .hero-right { height: 420px; width: 100%; opacity: 1 !important; }
+          /* On mobile Spline can be visible immediately — no slide-in needed */
+          .hero-right { height: 420px; width: 100%; }
           .scroll-ind { display: none; }
         }
         @media (max-width: 640px) {
@@ -277,37 +371,42 @@ const Hero = () => {
         @media (max-width: 400px) {
           .hero-inner { padding: 1rem 0.75rem; }
           .line-1, .solutions-text, .llp-text { font-size: clamp(1.7rem, 11vw, 2.4rem); }
-          .hero-right { height: 280px; }
+          .hero-right { height: 300px; }
           .btns-row { flex-direction: column; align-items: center; }
           .btn-primary, .btn-outline { width: 100%; max-width: 280px; justify-content: center; }
         }
       `}</style>
 
-      {/* Background */}
+      {/* ── Background ── */}
       <div className="hero-bg-glow">
-        <div className="glow-1" /><div className="glow-2" /><div className="glow-3" />
+        <div className="glow-1" />
+        <div className="glow-2" />
+        <div className="glow-3" />
       </div>
       <div className="hero-grid" />
 
-      {/* Particles */}
+      {/* ── Particles ── */}
       {[...Array(18)].map((_, i) => (
-        <span key={i} className="particle" style={{
-          width:  `${2 + (i % 3)}px`,
-          height: `${2 + (i % 3)}px`,
-          top:  `${10 + (i * 5.1) % 80}%`,
-          left: `${5  + (i * 7.3) % 90}%`,
-          background: i % 3 === 0
-            ? "rgba(34,211,238,0.55)"
-            : i % 3 === 1
-            ? "rgba(99,102,241,0.45)"
-            : "rgba(167,139,250,0.4)",
-          boxShadow: `0 0 ${4 + (i % 4)}px currentColor`,
-        }} />
+        <span
+          key={i}
+          className="particle"
+          style={{
+            width:  `${2 + (i % 3)}px`,
+            height: `${2 + (i % 3)}px`,
+            top:  `${10 + (i * 5.1) % 80}%`,
+            left: `${5  + (i * 7.3) % 90}%`,
+            background:
+              i % 3 === 0 ? "rgba(34,211,238,0.55)"
+              : i % 3 === 1 ? "rgba(99,102,241,0.45)"
+              : "rgba(167,139,250,0.4)",
+            boxShadow: `0 0 ${4 + (i % 4)}px currentColor`,
+          }}
+        />
       ))}
 
       <div className="hero-inner">
-        {/* LEFT */}
-        <div className="hero-left" ref={leftRef}>
+        {/* ── LEFT ── */}
+        <div className="hero-left">
           <span className="eyebrow">
             <span className="eyebrow-dot" />
             Welcome To
@@ -333,18 +432,21 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* RIGHT — Spline */}
+        {/* ── RIGHT — Spline ── */}
         <div className="hero-right" ref={rightRef}>
+          {/* Loading overlay — visible until Spline fires onLoad */}
+          <div className="spline-loader-overlay" ref={overlayRef}>
+            <div className="spline-loader-pulse" />
+          </div>
+
           <Spotlight className="-top-20 -left-20" fill="rgba(34,211,238,0.15)" />
           <SplineScene
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
             className="w-full h-full"
+            onLoad={handleSplineLoad}   // ← wire this up in your SplineScene component
           />
         </div>
       </div>
-
-      {/* Scroll indicator */}
-      
     </section>
   );
 };
