@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
@@ -246,6 +247,44 @@ const Nav = () => {
                 <span className="relative z-10">Contact Us</span>
               </motion.button>
             </li>
+
+            {/* ERP Button */}
+            <li className="ml-2">
+              <Link
+                href="/erp"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "7px 16px",
+                  borderRadius: "9999px",
+                  background: "linear-gradient(135deg, rgba(124,58,237,0.25), rgba(167,139,250,0.15))",
+                  border: "1px solid rgba(167,139,250,0.4)",
+                  color: "#a78bfa",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  textDecoration: "none",
+                  fontFamily: "'DM Sans', sans-serif",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLAnchorElement;
+                  el.style.boxShadow = "0 0 20px rgba(167,139,250,0.35)";
+                  el.style.borderColor = "rgba(167,139,250,0.7)";
+                  el.style.color = "#fff";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLAnchorElement;
+                  el.style.boxShadow = "none";
+                  el.style.borderColor = "rgba(167,139,250,0.4)";
+                  el.style.color = "#a78bfa";
+                }}
+              >
+                <span>⚡</span> ERP
+              </Link>
+            </li>
           </ul>
 
           {/* ── Hamburger ── */}
@@ -356,6 +395,36 @@ const Nav = () => {
                   >
                     Contact Us
                   </button>
+                </motion.li>
+
+                {/* Mobile ERP link */}
+                <motion.li
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: (NAV_LINKS.length + 1) * 0.05, ease: EASE }}
+                  className="mt-2"
+                >
+                  <Link
+                    href="/erp"
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      display: "block",
+                      textAlign: "center",
+                      padding: "12px",
+                      borderRadius: "12px",
+                      background: "linear-gradient(135deg, rgba(124,58,237,0.2), rgba(167,139,250,0.12))",
+                      border: "1px solid rgba(167,139,250,0.35)",
+                      color: "#a78bfa",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      textDecoration: "none",
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    ⚡ Company ERP
+                  </Link>
                 </motion.li>
               </ul>
             </motion.div>
