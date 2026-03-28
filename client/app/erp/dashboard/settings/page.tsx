@@ -66,7 +66,13 @@ export default function ERPSettingsPage() {
 
   if (loading) return <div style={{ color: "#888", padding: "40px" }}>Loading settings...</div>;
 
-  const Section = ({ title, items, type, valKey, placeholder }: any) => (
+  const Section = ({ title, items, type, valKey, placeholder }: { 
+    title: string, 
+    items: string[], 
+    type: 'positions' | 'teams' | 'sprints', 
+    valKey: 'pos' | 'team' | 'sprint', 
+    placeholder: string 
+  }) => (
     <div className="erp-card" style={{ marginBottom: "24px" }}>
       <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: 700, color: "#fff" }}>{title}</h3>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px" }}>
