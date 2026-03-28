@@ -126,7 +126,7 @@ export default function ERPSidebar({ notifCount = 0 }: ERPSidebarProps) {
               fontWeight: 900, fontSize: "18px", color: "#000", flexShrink: 0,
             }}
           >
-            {user?.avatar ? <img src={user.avatar} style={{ width: "100%", height: "100%", borderRadius: "10px", objectFit: "cover" }} /> : "E"}
+            {user?.avatar ? <img src={user.avatar} alt={user?.name || "User Avatar"} style={{ width: "100%", height: "100%", borderRadius: "10px", objectFit: "cover" }} /> : "E"}
           </div>
           {!collapsed && (
             <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>

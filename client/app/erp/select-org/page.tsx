@@ -77,7 +77,7 @@ function SelectOrgPage() {
               width: "80px", height: "80px", borderRadius: "20px", background: "linear-gradient(45deg, #111, #222)", 
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", fontWeight: 800, color: "#fff", border: "1px solid #333"
             }}>
-              {acc.avatar ? <img src={acc.avatar} style={{ width: "100%", height: "100%", borderRadius: "20px", objectFit: "cover" }} /> : initials(acc.org_name)}
+              {acc.avatar ? <img src={acc.avatar} alt={acc.org_name} style={{ width: "100%", height: "100%", borderRadius: "20px", objectFit: "cover" }} /> : initials(acc.org_name)}
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ color: "#fff", fontWeight: 600, fontSize: "14px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "120px" }}>{acc.org_name}</div>

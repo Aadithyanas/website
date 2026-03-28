@@ -379,7 +379,7 @@ export default function ERPTasksPage() {
                                 <p style={{ fontSize: "11px", fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "0.05em" }}>ACTIVITY & COMMENTS ({task.comments.length})</p>
                                 <div style={{ display: "flex", gap: "8px" }}>
                                   {task.images.map((img, idx) => (
-                                    <img key={idx} src={getUrl(img)} style={{ width: "32px", height: "32px", borderRadius: "4px", border: "1px solid #222" }} />
+                                    <img key={idx} src={getUrl(img)} alt={`Task Image ${idx}`} style={{ width: "32px", height: "32px", borderRadius: "4px", border: "1px solid #222" }} />
                                   ))}
                                   <label style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0a0a", border: "1px dashed #222", borderRadius: "4px", cursor: "pointer", fontSize: "16px", color: "#333" }}>
                                     +
@@ -399,7 +399,7 @@ export default function ERPTasksPage() {
                                       </div>
                                       <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#aaa" }}>{c.content}</p>
                                       {c.image && (
-                                        <img src={getUrl(c.image)} style={{ marginTop: "10px", maxWidth: "200px", maxHeight: "150px", objectFit: "cover", borderRadius: "8px", border: "1px solid #222" }} />
+                                        <img src={getUrl(c.image)} alt="Comment Attachment" style={{ marginTop: "10px", maxWidth: "200px", maxHeight: "150px", objectFit: "cover", borderRadius: "8px", border: "1px solid #222" }} />
                                       )}
                                     </div>
                                   </div>
@@ -409,7 +409,7 @@ export default function ERPTasksPage() {
                             <div style={{ background: "#000", border: "1px solid #222", borderRadius: "12px", padding: "12px" }}>
                                 {commentImage[task.id] && (
                                   <div style={{ marginBottom: "12px", position: "relative", display: "inline-block" }}>
-                                    <img src={getUrl(commentImage[task.id])} style={{ width: "120px", height: "80px", objectFit: "cover", borderRadius: "8px", border: "1px solid #333" }} />
+                                    <img src={getUrl(commentImage[task.id])} alt="Comment Preview" style={{ width: "120px", height: "80px", objectFit: "cover", borderRadius: "8px", border: "1px solid #333" }} />
                                     <button onClick={() => setCommentImage({ ...commentImage, [task.id]: "" })} style={{ position: "absolute", top: "-8px", right: "-8px", background: "#ef4444", color: "#fff", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                                   </div>
                                 )}

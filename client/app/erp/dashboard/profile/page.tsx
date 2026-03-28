@@ -38,7 +38,7 @@ export default function ERPProfilePage() {
       <div className="erp-card">
         <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "32px", borderBottom: "1px solid #111", paddingBottom: "24px" }}>
           <div className="erp-avatar" style={{ width: "80px", height: "80px", fontSize: "24px" }}>
-            {user?.avatar ? <img src={user.avatar} style={{ borderRadius: "50%" }} /> : user?.name?.[0]?.toUpperCase()}
+            {user?.avatar ? <img src={user.avatar} alt={user?.name || "User Avatar"} style={{ borderRadius: "50%" }} /> : user?.name?.[0]?.toUpperCase()}
           </div>
           <div>
             <h2 style={{ margin: 0, color: "#fff", fontSize: "18px" }}>{user?.name}</h2>

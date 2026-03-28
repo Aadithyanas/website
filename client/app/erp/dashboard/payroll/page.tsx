@@ -255,7 +255,7 @@ export default function ERPPayrollPage() {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   {m.avatar ? (
-                    <img src={m.avatar} style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                    <img src={m.avatar} alt={m.member_name} style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                   ) : (
                     <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#111", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, border: "1px solid #222" }}>
                       {m.member_name[0]}
