@@ -3,7 +3,13 @@ import React, { useEffect, useState } from "react";
 import { useERPAuth, apiClient } from "@/src/components/erp/ERPAuthContext";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday, parseISO } from "date-fns";
 
-interface Leave { id: string; date: string; description: string; status: "pending" | "approved" | "rejected"; member_name: string; member_id: string; }
+interface Leave { id: string; date: string; description: string; leave_type: "casual" | "medical"; status: "pending" | "approved" | "rejected"; member_name: string; member_id: string; }
+interface SalaryReport { 
+  base_salary: number; daily_rate: number; total_approved_leaves: number; 
+  casual_leaves: number; medical_leaves: number; unpaid_leaves: number; 
+  deductions: number; net_salary: number;
+  leave_policy: { casual_limit: number; medical_limit: number; period_months: number; };
+}
 
 const STATUS_COLORS: Record<string, string> = { pending: "#f59e0b", approved: "#34d399", rejected: "#ef4444" };
 
@@ -16,11 +22,22 @@ export default function ERPAttendancePage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [desc, setDesc] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [leaveType, setLeaveType] = useState<"casual" | "medical">("casual");
+  const [salaryReport, setSalaryReport] = useState<SalaryReport | null>(null);
   const [msg, setMsg] = useState("");
 
   const h = { Authorization: `Bearer ${token}` };
 
   useEffect(() => { fetchData(); }, [token]);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      console.log("Real-time Leave Update Detected");
+      fetchData();
+    };
+    window.addEventListener("erp:leave_update" as any, handleUpdate);
+    return () => window.removeEventListener("erp:leave_update" as any, handleUpdate);
+  }, [token]);
 
   const fetchData = async () => {
     try {
@@ -30,6 +47,12 @@ export default function ERPAttendancePage() {
       ]);
       setLeaves(lr.data);
       setPending(pr.data);
+      
+      // Fetch Salary Report for self
+      const month = currentMonth.getMonth() + 1;
+      const year = currentMonth.getFullYear();
+      const sr = await apiClient.get(`/api/erp/salary/report/${user?.id}?month=${month}&year=${year}`, { headers: h });
+      setSalaryReport(sr.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -40,7 +63,11 @@ export default function ERPAttendancePage() {
     setSubmitting(true);
     setMsg("");
     try {
-      await apiClient.post("/api/erp/attendance/request", { date: selectedDate, description: desc }, { headers: h });
+      await apiClient.post("/api/erp/attendance/request", { 
+        date: selectedDate, 
+        description: desc, 
+        leave_type: leaveType 
+      }, { headers: h });
       setMsg("✅ Leave request submitted!");
       setDesc("");
       setSelectedDate(null);
@@ -66,19 +93,29 @@ export default function ERPAttendancePage() {
   const leaveMap: Record<string, Leave> = {};
   leaves.forEach(l => { leaveMap[l.date] = l; });
 
-  const prevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
-  const nextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1));
+  const prevMonth = () => {
+    const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1);
+    setCurrentMonth(d);
+  };
+  const nextMonth = () => {
+    const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
+    setCurrentMonth(d);
+  };
 
-  if (loading) return <div style={{ color: "#888" }}>Loading attendance...</div>;
+  useEffect(() => { if (token) fetchData(); }, [currentMonth]);
+
+  if (loading) return <div style={{ color: "#888", padding: "40px" }}>Loading attendance...</div>;
 
   return (
     <div>
       <div style={{ marginBottom: "28px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: 700, margin: "0 0 4px", color: "#fff" }}>Attendance</h1>
-        <p style={{ color: "#666", margin: 0, fontSize: "14px" }}>Click a date to request leave</p>
+        <h1 style={{ fontSize: "24px", fontWeight: 800, margin: "0 0 4px", color: "#fff", letterSpacing: "-0.02em" }}>Attendance</h1>
+        <p style={{ color: "#888", margin: 0, fontSize: "14px" }}>Manage leave requests and track presence.</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isAdmin ? "1fr 1fr" : "1fr", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 380px", gap: "24px" }} className="attendance-grid-container">
+        {/* Left Column: Calendar + Admin Actions */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
         {/* Calendar */}
         <div className="erp-card">
           {/* Month nav */}
@@ -96,7 +133,7 @@ export default function ERPAttendancePage() {
           </div>
 
           {/* Days grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "8px" }}>
             {Array.from({ length: startWeekday }).map((_, i) => <div key={`empty-${i}`} />)}
             {days.map(day => {
               const dateStr = format(day, "yyyy-MM-dd");
@@ -109,20 +146,20 @@ export default function ERPAttendancePage() {
                   key={dateStr}
                   onClick={() => setSelectedDate(isSelected ? null : dateStr)}
                   style={{
-                    aspectRatio: "1",
-                    borderRadius: "8px",
+                    aspectRatio: "1.2",
+                    borderRadius: "12px",
                     background: leave
-                      ? STATUS_COLORS[leave.status] + "30"
-                      : isSelected ? "rgba(167,139,250,0.25)" : today ? "rgba(167,139,250,0.1)" : "transparent",
-                    border: leave ? `1px solid ${STATUS_COLORS[leave.status]}50` : isSelected ? "1px solid #a78bfa" : today ? "1px solid rgba(167,139,250,0.3)" : "1px solid transparent",
-                    color: leave ? STATUS_COLORS[leave.status] : isSelected ? "#a78bfa" : today ? "#a78bfa" : "#ccc",
+                      ? STATUS_COLORS[leave.status] + "20"
+                      : isSelected ? "rgba(167,139,250,0.2)" : today ? "rgba(167,139,250,0.1)" : "rgba(255,255,255,0.03)",
+                    border: leave ? `1px solid ${STATUS_COLORS[leave.status]}40` : isSelected ? "1px solid #a78bfa" : today ? "1px solid rgba(167,139,250,0.3)" : "1px solid rgba(255,255,255,0.05)",
+                    color: leave ? STATUS_COLORS[leave.status] : isSelected ? "#a78bfa" : today ? "#a78bfa" : "#888",
                     cursor: "pointer",
-                    fontSize: "13px",
-                    fontWeight: today || leave ? 700 : 400,
+                    fontSize: "14px",
+                    fontWeight: today || leave ? 800 : 500,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    transition: "all 0.15s",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                   title={leave ? `${leave.status}: ${leave.description}` : ""}
                 >
@@ -133,10 +170,11 @@ export default function ERPAttendancePage() {
           </div>
 
           {/* Legend */}
-          <div style={{ display: "flex", gap: "12px", marginTop: "16px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "12px", marginTop: "16px", flexWrap: "wrap", borderTop: "1px solid #111", paddingTop: "12px" }}>
             {Object.entries(STATUS_COLORS).map(([s, c]) => (
-              <span key={s} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "#888" }}>
-                <span style={{ width: "10px", height: "10px", borderRadius: "3px", background: c, display: "inline-block" }} />{s}
+              <span key={s} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "#666" }}>
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: c, display: "inline-block" }} />
+                {s.charAt(0).toUpperCase() + s.slice(1)}
               </span>
             ))}
           </div>
@@ -163,6 +201,22 @@ export default function ERPAttendancePage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmitLeave} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setLeaveType("casual")}
+                      style={{ flex: 1, padding: "8px", borderRadius: "6px", background: leaveType === "casual" ? "#7c3aed" : "#1a1a1a", border: "1px solid #222", color: "#fff", cursor: "pointer", fontSize: "12px", fontWeight: 700 }}
+                    >
+                      Casual
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setLeaveType("medical")}
+                      style={{ flex: 1, padding: "8px", borderRadius: "6px", background: leaveType === "medical" ? "#7c3aed" : "#1a1a1a", border: "1px solid #222", color: "#fff", cursor: "pointer", fontSize: "12px", fontWeight: 700 }}
+                    >
+                      Medical
+                    </button>
+                  </div>
                   <textarea
                     className="erp-input"
                     value={desc}
@@ -181,9 +235,78 @@ export default function ERPAttendancePage() {
           )}
         </div>
 
-        {/* Admin: Pending requests */}
+        {/* Right Column: Salary Report */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          <div className="erp-card" style={{ background: "linear-gradient(135deg, #0a0a0a 0%, #050505 100%)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#fff" }}>Monthly Salary Report</h3>
+              <span style={{ fontSize: "11px", fontWeight: 800, color: "#7c3aed", background: "rgba(124,58,237,0.1)", padding: "4px 8px", borderRadius: "4px" }}>
+                {format(currentMonth, "MMM yyyy").toUpperCase()}
+              </span>
+            </div>
+
+            {salaryReport ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div style={{ background: "#111", padding: "16px", borderRadius: "12px", border: "1px solid #222" }}>
+                    <p style={{ margin: "0 0 4px", fontSize: "11px", color: "#666", fontWeight: 700 }}>BASE SALARY</p>
+                    <p style={{ margin: 0, fontSize: "20px", fontWeight: 800, color: "#fff" }}>${salaryReport.base_salary.toLocaleString()}</p>
+                  </div>
+                  <div style={{ background: "#111", padding: "16px", borderRadius: "12px", border: "1px solid #222" }}>
+                    <p style={{ margin: "0 0 4px", fontSize: "11px", color: "#ef4444", fontWeight: 700 }}>DEDUCTIONS</p>
+                    <p style={{ margin: 0, fontSize: "20px", fontWeight: 800, color: "#ef4444" }}>-${salaryReport.deductions.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div style={{ background: "linear-gradient(135deg, #7c3aed, #4c1d95)", padding: "20px", borderRadius: "12px", boxShadow: "0 8px 16px rgba(124,58,237,0.2)" }}>
+                  <p style={{ margin: "0 0 4px", fontSize: "11px", color: "rgba(255,255,255,0.7)", fontWeight: 700 }}>NET SALARY (ESTIMATED)</p>
+                  <p style={{ margin: 0, fontSize: "28px", fontWeight: 900, color: "#fff" }}>${salaryReport.net_salary.toLocaleString()}</p>
+                </div>
+
+                <div style={{ paddingTop: "16px", borderTop: "1px solid #222" }}>
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 800, color: "#444" }}>LEAVE UTILIZATION</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "13px", color: "#aaa" }}>Casual Leaves</span>
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: salaryReport.casual_leaves > salaryReport.leave_policy.casual_limit ? "#ef4444" : "#fff" }}>
+                        {salaryReport.casual_leaves} / {salaryReport.leave_policy.casual_limit}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "13px", color: "#aaa" }}>Medical Leaves</span>
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: salaryReport.medical_leaves > salaryReport.leave_policy.medical_limit ? "#ef4444" : "#fff" }}>
+                        {salaryReport.medical_leaves} / {salaryReport.leave_policy.medical_limit}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #222", paddingTop: "8px", marginTop: "4px" }}>
+                      <span style={{ fontSize: "13px", color: "#aaa" }}>Unpaid/Exceeded Days</span>
+                      <span style={{ fontSize: "13px", fontWeight: 800, color: "#ef4444" }}>{salaryReport.unpaid_leaves}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <p style={{ margin: 0, fontSize: "11px", color: "#444", fontStyle: "italic", textAlign: "center" }}>
+                  * Daily rate for deductions: ${salaryReport.daily_rate}
+                </p>
+              </div>
+            ) : (
+              <p style={{ color: "#444", fontSize: "13px" }}>Loading salary details...</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @media (max-width: 1024px) {
+          .attendance-grid-container {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+
+        {/* Admin Section: Under Calendar in Col 1 */}
         {isAdmin && (
-          <div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "24px" }}>
             <div className="erp-card">
               <h3 style={{ margin: "0 0 16px", fontSize: "15px", fontWeight: 600, color: "#fff" }}>
                 Pending Requests ({pending.length})
@@ -207,12 +330,12 @@ export default function ERPAttendancePage() {
                     </div>
                     <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
                       <button className="erp-btn" onClick={() => handleRespond(leave.id, "approved")}
-                        style={{ padding: "6px 12px", background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.3)", color: "#34d399", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>
-                        ✓ Approve
+                        style={{ padding: "6px 12px", background: "#065f46", border: "1px solid #059669", color: "#fff", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 700 }}>
+                        Approve
                       </button>
                       <button className="erp-btn" onClick={() => handleRespond(leave.id, "rejected")}
-                        style={{ padding: "6px 12px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>
-                        ✗ Reject
+                        style={{ padding: "6px 12px", background: "#991b1b", border: "1px solid #dc2626", color: "#fff", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 700 }}>
+                        Reject
                       </button>
                     </div>
                   </div>
@@ -221,7 +344,7 @@ export default function ERPAttendancePage() {
             </div>
 
             {/* All leave history */}
-            <div className="erp-card" style={{ marginTop: "16px" }}>
+            <div className="erp-card">
               <h3 style={{ margin: "0 0 14px", fontSize: "15px", fontWeight: 600, color: "#fff" }}>All Leave Records</h3>
               {leaves.length === 0 && <p style={{ color: "#555", fontSize: "14px" }}>No records.</p>}
               {leaves.map(l => (

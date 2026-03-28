@@ -44,9 +44,9 @@ def create_invite_token(email: str) -> str:
     return token
 
 
-def create_invite_jwt(email: str) -> str:
+def create_invite_jwt(email: str, org_id: str) -> str:
     """Create a signed JWT invite token that expires in 48 hours."""
-    data = {"sub": email, "type": "invite"}
+    data = {"sub": email, "org_id": org_id, "type": "invite"}
     expire = datetime.utcnow() + timedelta(hours=48)
     data.update({"exp": expire})
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)

@@ -1,0 +1,110 @@
+"use client";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useERPAuth } from "./ERPAuthContext";
+
+interface WSMessage {
+  type: string;
+  data?: any;
+  action?: string;
+  task_id?: string;
+}
+
+interface ERPWebSocketContextType {
+  isConnected: boolean;
+  lastMessage: WSMessage | null;
+  sendMessage: (msg: WSMessage) => void;
+}
+
+const ERPWebSocketContext = createContext<ERPWebSocketContextType | null>(null);
+
+export function ERPWebSocketProvider({ children }: { children: React.ReactNode }) {
+  const { token, user } = useERPAuth();
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
+  const ws = useRef<WebSocket | null>(null);
+
+  const sendMessage = (msg: WSMessage) => {
+    if (ws.current && isConnected) {
+      ws.current.send(JSON.stringify(msg));
+    } else {
+      console.warn("WebSocket not connected, cannot send message");
+    }
+  };
+
+  useEffect(() => {
+    if (!token || !user) {
+      if (ws.current) {
+        ws.current.close();
+        ws.current = null;
+      }
+      setIsConnected(false);
+      return;
+    }
+
+    const host = window.location.host;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    
+    // Improved URL detection: If we're on localhost:3000, we probably need :8000
+    // If we're on a production domain, we use the same host (same-origin WS)
+    let wsUrl = "";
+    if (host.includes("localhost")) {
+      wsUrl = `${protocol}//${host.split(":")[0]}:8000/ws/erp/${token}`;
+    } else {
+      // For production, assume the same host but with ws/wss protocol
+      wsUrl = `${protocol}//${host}/ws/erp/${token}`;
+    }
+    
+    console.log("Connecting to WebSocket:", wsUrl);
+    const socket = new WebSocket(wsUrl);
+    ws.current = socket;
+
+    socket.onopen = () => {
+      console.log("✅ WebSocket Connected");
+      setIsConnected(true);
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const msg: WSMessage = JSON.parse(event.data);
+        console.log("📩 WS Message:", msg);
+        setLastMessage(msg);
+        
+        // Dispatch global events for specific pages to listen
+        if (msg.type === "task_event") {
+          window.dispatchEvent(new CustomEvent("erp:task_update", { detail: msg }));
+        } else if (msg.type === "leave_event") {
+          window.dispatchEvent(new CustomEvent("erp:leave_update", { detail: msg }));
+        } else if (msg.type === "notification_new") {
+           window.dispatchEvent(new CustomEvent("erp:notification_new", { detail: msg }));
+        }
+      } catch (e) {
+        console.error("Format error in WS message:", e);
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("❌ WebSocket Disconnected");
+      setIsConnected(false);
+      ws.current = null;
+    };
+
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+        ws.current = null;
+      }
+    };
+  }, [token, user]);
+
+  return (
+    <ERPWebSocketContext.Provider value={{ isConnected, lastMessage, sendMessage }}>
+      {children}
+    </ERPWebSocketContext.Provider>
+  );
+}
+
+export function useERPWS() {
+  const ctx = useContext(ERPWebSocketContext);
+  if (!ctx) throw new Error("useERPWS must be used within ERPWebSocketProvider");
+  return ctx;
+}

@@ -20,15 +20,27 @@ function RegisterForm() {
   const [error, setError] = useState("");
   const [tokenEmail, setTokenEmail] = useState("");
 
+  const [isJoinMode, setIsJoinMode] = useState(false);
+
   useEffect(() => {
     if (!token) {
       setError("Invalid invite link. Please contact your admin.");
       return;
     }
-    // Decode the JWT to show email
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
-      setTokenEmail(payload.sub || "");
+      const email = payload.sub || "";
+      setTokenEmail(email);
+      // Check if user already exists
+      axios.post(`${API}/api/erp/auth/login`, { email, password: "dummy_checking_existence_only" })
+        .catch(err => {
+          if (err?.response?.data?.detail === "Invalid email or password") {
+            // This means email exists but password wrong (good, we are in Join mode)
+            setIsJoinMode(true);
+          } else if (err?.response?.status === 401) {
+             setIsJoinMode(true);
+          }
+        });
     } catch {
       setError("Invalid or expired invite token.");
     }
@@ -49,6 +61,10 @@ function RegisterForm() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleJoin = () => {
+    window.location.href = `${API}/api/erp/auth/google?invite_token=${token}`;
   };
 
   return (
@@ -72,10 +88,14 @@ function RegisterForm() {
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "24px", fontWeight: 800, color: "#fff", margin: "0 auto 16px",
           }}>E</div>
-          <h1 style={{ fontSize: "24px", fontWeight: 700, margin: "0 0 6px", color: "#fff" }}>Create Account</h1>
-          {tokenEmail && (
-            <p style={{ color: "#a78bfa", fontSize: "14px", margin: 0 }}>Invited as: {tokenEmail}</p>
-          )}
+        <h1 style={{ fontSize: "24px", fontWeight: 700, margin: "0 0 6px", color: "#fff" }}>
+          {isJoinMode ? "Join Organization" : "Create Account"}
+        </h1>
+        {tokenEmail && (
+          <p style={{ color: "#a78bfa", fontSize: "14px", margin: 0, marginBottom: "20px" }}>
+            {isJoinMode ? "You already have an ERP account." : "Invited as:"} {tokenEmail}
+          </p>
+        )}
         </div>
 
         {error && (
@@ -87,24 +107,53 @@ function RegisterForm() {
         )}
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div>
-            <label className="erp-label">Your Name (optional)</label>
-            <input className="erp-input" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" />
+          <button
+            type="button"
+            onClick={handleGoogleJoin}
+            style={{
+              width: "100%", padding: "13px", borderRadius: "10px", background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: "14px", fontWeight: 600,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", transition: "all 0.2s",
+              marginBottom: "8px"
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+              <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+              <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+              <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a11.986 11.986 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+            </svg>
+            Join with Google
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "8px 0" }}>
+            <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.08)" }} />
+            <span style={{ color: "#555", fontSize: "12px" }}>OR SET PASSWORD</span>
+            <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.08)" }} />
           </div>
+
+          {!isJoinMode && (
+            <div>
+              <label className="erp-label">Your Name (optional)</label>
+              <input className="erp-input" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" />
+            </div>
+          )}
           <div>
-            <label className="erp-label">Password</label>
-            <input className="erp-input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" required />
+            <label className="erp-label">{isJoinMode ? "Verify Password" : "Password"}</label>
+            <input className="erp-input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={isJoinMode ? "Enter your existing password" : "Min 6 characters"} required />
           </div>
-          <div>
-            <label className="erp-label">Confirm Password</label>
-            <input className="erp-input" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat password" required />
-          </div>
+          {!isJoinMode && (
+            <div>
+              <label className="erp-label">Confirm Password</label>
+              <input className="erp-input" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat password" required />
+            </div>
+          )}
           <button
             type="submit" className="erp-btn erp-btn-primary"
             disabled={loading || !!error && !tokenEmail}
             style={{ width: "100%", justifyContent: "center", padding: "13px", fontSize: "15px", marginTop: "4px", opacity: loading ? 0.7 : 1 }}
           >
-            {loading ? "Creating account..." : "Create Account & Login"}
+            {loading ? (isJoinMode ? "Joining..." : "Creating...") : (isJoinMode ? "Join & Enter Workspace" : "Create Account & Login")}
           </button>
         </form>
       </div>

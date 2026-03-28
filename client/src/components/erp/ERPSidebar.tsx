@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useERPAuth } from "./ERPAuthContext";
+import { useERPAuth, apiClient } from "./ERPAuthContext";
 
 interface NavItem {
   label: string;
@@ -38,11 +38,33 @@ const LogoutIcon = () => (
   </svg>
 );
 
+const UserIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>
+);
+
+const CogIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.543-.426-1.543-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+const BanknotesIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/erp/dashboard", icon: <HomeIcon /> },
   { label: "Members", href: "/erp/dashboard/members", icon: <UsersIcon />, adminOnly: true },
   { label: "Tasks", href: "/erp/dashboard/tasks", icon: <TaskIcon /> },
   { label: "Attendance", href: "/erp/dashboard/attendance", icon: <CalendarIcon /> },
+  { label: "Org Settings", href: "/erp/dashboard/settings", icon: <CogIcon />, adminOnly: true },
+  { label: "Payroll", href: "/erp/dashboard/payroll", icon: <BanknotesIcon />, adminOnly: true },
+  { label: "My Profile", href: "/erp/dashboard/profile", icon: <UserIcon /> },
 ];
 
 interface ERPSidebarProps {
@@ -50,9 +72,19 @@ interface ERPSidebarProps {
 }
 
 export default function ERPSidebar({ notifCount = 0 }: ERPSidebarProps) {
-  const { user, isAdmin, logout } = useERPAuth();
+  const { user, token, isAdmin, logout, switchOrganization } = useERPAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [showOrgPicker, setShowOrgPicker] = useState(false);
+  const [accounts, setAccounts] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (token) {
+      apiClient.get("/api/erp/auth/accounts", { headers: { Authorization: `Bearer ${token}` } })
+        .then((res: any) => setAccounts(res.data))
+        .catch((e: any) => console.error("Failed to fetch accounts", e));
+    }
+  }, [token]);
 
   const filteredItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
@@ -66,69 +98,101 @@ export default function ERPSidebar({ notifCount = 0 }: ERPSidebarProps) {
       style={{
         width: collapsed ? "72px" : "240px",
         transition: "width 0.3s ease",
-        background: "linear-gradient(180deg, #0f0f1a 0%, #0a0a12 100%)",
-        borderRight: "1px solid rgba(167,139,250,0.15)",
+        background: "#000000",
+        borderRight: "1px solid #222",
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
+        height: "100vh",
         position: "sticky",
         top: 0,
         flexShrink: 0,
         overflow: "hidden",
       }}
     >
-      {/* Logo */}
+      {/* Logo & Org Picker */}
       <div
         style={{
           padding: "20px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
           borderBottom: "1px solid rgba(167,139,250,0.1)",
+          position: "relative"
         }}
       >
-        <div
-          style={{
-            width: "36px",
-            height: "36px",
-            borderRadius: "10px",
-            background: "linear-gradient(135deg, #7c3aed, #a78bfa)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 700,
-            fontSize: "14px",
-            color: "#fff",
-            flexShrink: 0,
-          }}
-        >
-          E
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }} onClick={() => !collapsed && setShowOrgPicker(!showOrgPicker)}>
+          <div
+            style={{
+              width: "36px", height: "36px", borderRadius: "10px", background: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 900, fontSize: "18px", color: "#000", flexShrink: 0,
+            }}
+          >
+            {user?.avatar ? <img src={user.avatar} style={{ width: "100%", height: "100%", borderRadius: "10px", objectFit: "cover" }} /> : "E"}
+          </div>
+          {!collapsed && (
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ fontWeight: 800, fontSize: "14px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {user?.org_name || "Team ERP"}
+                </span>
+                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ transform: showOrgPicker ? "rotate(180deg)" : "none", transition: "0.2s", color: "#666" }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+              <span style={{ fontSize: "10px", color: "#666", textTransform: "uppercase", fontWeight: 700 }}>WORKSPACE</span>
+            </div>
+          )}
         </div>
-        {!collapsed && (
-          <span style={{ fontWeight: 700, fontSize: "16px", color: "#fff", whiteSpace: "nowrap" }}>
-            Team ERP
-          </span>
+
+        {/* Org Picker Dropdown */}
+        {!collapsed && showOrgPicker && (
+          <div style={{
+            position: "absolute", top: "70px", left: "12px", right: "12px",
+            background: "#0a0a0a", border: "1px solid #222", borderRadius: "12px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.5)", zIndex: 100, overflow: "hidden"
+          }}>
+            <div style={{ padding: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
+              {accounts.map(acc => (
+                <button
+                  key={acc.org_id}
+                  onClick={() => { switchOrganization(acc.org_id); setShowOrgPicker(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "10px", padding: "8px", borderRadius: "6px",
+                    background: acc.org_id === user?.org_id ? "#111" : "transparent",
+                    border: "none", color: acc.org_id === user?.org_id ? "#fff" : "#999",
+                    cursor: "pointer", textAlign: "left", width: "100%", transition: "0.2s"
+                  }}
+                >
+                   <div style={{ width: "24px", height: "24px", borderRadius: "6px", background: "#333", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                     {acc.org_name[0].toUpperCase()}
+                   </div>
+                   <span style={{ fontSize: "13px", fontWeight: 600 }}>{acc.org_name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
+
+        {/* Global Expand/Collapse Button - More prominent */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           style={{
-            marginLeft: "auto",
-            background: "none",
-            border: "none",
-            color: "#888",
-            cursor: "pointer",
-            padding: "4px",
-            flexShrink: 0,
+            position: "absolute", right: "-12px", top: "28px", width: "26px", height: "26px",
+            background: "#fff", border: "1px solid #ddd", borderRadius: "50%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#000", cursor: "pointer", zIndex: 101, boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            transition: "all 0.2s"
           }}
+          onMouseOver={e => e.currentTarget.style.transform = "scale(1.1)"}
+          onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d={collapsed ? "M9 5l7 7-7 7" : "M15 5l-7 7 7 7"} />
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d={collapsed ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} />
           </svg>
         </button>
       </div>
 
       {/* Nav Items */}
-      <nav style={{ flex: 1, padding: "12px 8px" }}>
+      <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto", scrollbarWidth: "none" }}>
         {filteredItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
@@ -140,16 +204,17 @@ export default function ERPSidebar({ notifCount = 0 }: ERPSidebarProps) {
                 alignItems: "center",
                 gap: "12px",
                 padding: "10px 12px",
-                borderRadius: "10px",
                 marginBottom: "4px",
-                color: isActive ? "#a78bfa" : "#888",
-                background: isActive ? "rgba(167,139,250,0.12)" : "transparent",
+                color: isActive ? "#fff" : "#666",
+                background: isActive ? "#111" : "transparent",
                 textDecoration: "none",
                 transition: "all 0.2s",
-                fontWeight: isActive ? 600 : 400,
+                fontWeight: isActive ? 700 : 500,
                 fontSize: "14px",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
+                borderLeft: isActive ? "3px solid #fff" : "3px solid transparent",
+                borderRadius: isActive ? "0 4px 4px 0" : "4px",
               }}
             >
               <span style={{ flexShrink: 0 }}>{item.icon}</span>
@@ -203,13 +268,14 @@ export default function ERPSidebar({ notifCount = 0 }: ERPSidebarProps) {
                 width: "32px",
                 height: "32px",
                 borderRadius: "9999px",
-                background: "linear-gradient(135deg, #7c3aed, #a78bfa)",
+                background: "#111",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: "13px",
                 fontWeight: 700,
                 color: "#fff",
+                border: "1px solid #333",
                 flexShrink: 0,
               }}
             >
@@ -218,10 +284,10 @@ export default function ERPSidebar({ notifCount = 0 }: ERPSidebarProps) {
           )}
           {!collapsed && (
             <div style={{ overflow: "hidden" }}>
-              <p style={{ fontSize: "13px", fontWeight: 600, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <p style={{ fontSize: "13px", fontWeight: 700, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {user?.name}
               </p>
-              <p style={{ fontSize: "11px", color: "#a78bfa", margin: 0 }}>{user?.role}</p>
+              <p style={{ fontSize: "11px", color: "#888", margin: 0 }}>{user?.role}</p>
             </div>
           )}
         </div>

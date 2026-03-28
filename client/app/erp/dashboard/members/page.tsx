@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 
 interface Member {
   id: string; name: string; email: string; phone?: string;
-  position?: string; role: string; avatar?: string; registered: boolean;
+  position?: string; role: string; teams: string[]; team_role?: string; sprint?: string;
+  avatar?: string; registered: boolean; base_salary: number;
 }
+
+// Removed hardcoded TEAMS
 
 export default function ERPMembersPage() {
   const { isAdmin, token } = useERPAuth();
@@ -14,14 +17,28 @@ export default function ERPMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", position: "" });
+  const [editMember, setEditMember] = useState<Member | null>(null);
+  
+  const [form, setForm] = useState({ 
+    name: "", email: "", phone: "", position: "", teams: [] as string[], 
+    team_role: "", sprint: "", role: "member", base_salary: 0 
+  });
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState("");
+  const [availableSettings, setAvailableSettings] = useState({ positions: [] as string[], teams: [] as string[], sprints: [] as string[] });
 
   useEffect(() => {
     if (!isAdmin) { router.replace("/erp/dashboard"); return; }
     fetchMembers();
+    fetchSettings();
   }, [isAdmin, token]);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await apiClient.get("/api/erp/settings", { headers: { Authorization: `Bearer ${token}` } });
+      setAvailableSettings(res.data);
+    } catch (e) { console.error("Failed to fetch settings", e); }
+  };
 
   const fetchMembers = async () => {
     try {
@@ -36,63 +53,120 @@ export default function ERPMembersPage() {
     setSubmitting(true);
     setMsg("");
     try {
-      await apiClient.post("/api/erp/members/invite", form, { headers: { Authorization: `Bearer ${token}` } });
-      setMsg(`✅ Invite sent to ${form.email}`);
-      setForm({ name: "", email: "", phone: "", position: "" });
+      if (editMember) {
+        await apiClient.put(`/api/erp/members/${editMember.id}`, form, { headers: { Authorization: `Bearer ${token}` } });
+        setMsg(`✅ Member updated successfully`);
+      } else {
+        await apiClient.post("/api/erp/members/invite", form, { headers: { Authorization: `Bearer ${token}` } });
+        setMsg(`✅ Invite sent to ${form.email}`);
+      }
       fetchMembers();
-      setTimeout(() => setShowModal(false), 1500);
+      setTimeout(() => { 
+        setShowModal(false); 
+        setEditMember(null); 
+        setForm({ name: "", email: "", phone: "", position: "", teams: [], team_role: "", sprint: "", role: "member", base_salary: 0 }); 
+        setMsg(""); 
+      }, 1500);
     } catch (err: any) {
-      setMsg(`❌ ${err?.response?.data?.detail || "Failed to send invite"}`);
+      const errorMsg = err?.response?.data?.detail;
+      setMsg(`❌ ${typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg) || "Failed to process"}`);
     } finally { setSubmitting(false); }
+  };
+
+  const handleDelete = async (member: Member) => {
+    if (!confirm(`Are you sure you want to remove ${member.name}?`)) return;
+    try {
+      await apiClient.delete(`/api/erp/members/${member.id}`, { headers: { Authorization: `Bearer ${token}` } });
+      fetchMembers();
+    } catch (e) { console.error(e); alert("Failed to delete member"); }
+  };
+
+  const openEdit = (m: Member) => {
+    setEditMember(m);
+    setForm({ 
+      name: m.name, 
+      email: m.email, 
+      phone: m.phone || "", 
+      position: m.position || "", 
+      teams: m.teams || [], 
+      team_role: m.team_role || "", 
+      sprint: m.sprint || "", 
+      role: m.role || "member",
+      base_salary: m.base_salary || 0
+    });
+    setShowModal(true);
+  };
+
+  const toggleTeam = (team: string) => {
+    setForm(prev => ({
+      ...prev,
+      teams: prev.teams.includes(team) ? prev.teams.filter(t => t !== team) : [...prev.teams, team]
+    }));
   };
 
   const initials = (name: string) => name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
 
-  if (loading) return <div style={{ color: "#888" }}>Loading members...</div>;
+  if (loading) return <div style={{ color: "#888", padding: "40px" }}>Loading members...</div>;
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "28px" }}>
         <div>
-          <h1 style={{ fontSize: "24px", fontWeight: 700, margin: "0 0 4px", color: "#fff" }}>Team Members</h1>
-          <p style={{ color: "#666", margin: 0, fontSize: "14px" }}>{members.length} members total</p>
+          <h1 style={{ fontSize: "24px", fontWeight: 800, margin: "0 0 4px", color: "#fff", letterSpacing: "-0.02em" }}>Team Members</h1>
+          <p style={{ color: "#888", margin: 0, fontSize: "14px" }}>{members.length} members total in your organization.</p>
         </div>
-        <button className="erp-btn erp-btn-primary" onClick={() => setShowModal(true)}>
+        <button className="erp-btn erp-btn-primary" onClick={() => { setEditMember(null); setForm({ name: "", email: "", phone: "", position: "", teams: [], team_role: "", sprint: "", role: "member", base_salary: 0 }); setShowModal(true); setMsg(""); }}>
           + Invite Member
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px" }}>
         {members.map(m => (
-          <div key={m.id} className="erp-card" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div key={m.id} className="erp-card" style={{ display: "flex", flexDirection: "column", gap: "16px", position: "relative" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               {m.avatar ? (
-                <img src={m.avatar} alt={m.name} style={{ width: "48px", height: "48px", borderRadius: "9999px" }} />
+                <img src={m.avatar} alt={m.name} style={{ width: "48px", height: "48px", borderRadius: "9999px", border: "1px solid #333" }} />
               ) : (
-                <div className="erp-avatar">{initials(m.name)}</div>
+                <div className="erp-avatar" style={{ width: "48px", height: "48px" }}>{initials(m.name)}</div>
               )}
-              <div style={{ flex: 1, overflow: "hidden" }}>
-                <p style={{ margin: 0, fontWeight: 600, fontSize: "15px", color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</p>
-                <p style={{ margin: 0, fontSize: "12px", color: "#888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.email}</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: "15px", color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</p>
+                <p style={{ margin: 0, fontSize: "12px", color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.email}</p>
               </div>
               <span className={`erp-badge erp-badge-${m.role}`}>{m.role}</span>
+              {!m.registered && (
+                <span className="erp-badge" style={{ background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)", color: "#eab308", fontSize: "10px" }}>Pending</span>
+              )}
             </div>
-            {m.position && <p style={{ margin: 0, fontSize: "13px", color: "#a78bfa", padding: "6px 10px", background: "rgba(167,139,250,0.08)", borderRadius: "8px" }}>{m.position}</p>}
-            {m.phone && <p style={{ margin: 0, fontSize: "12px", color: "#666" }}>📞 {m.phone}</p>}
-            {!m.registered && (
-              <span style={{ fontSize: "12px", color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: "6px", padding: "4px 8px", textAlign: "center" }}>
-                ⏳ Invite Pending
-              </span>
-            )}
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              {m.teams?.map(t => (
+                <span key={t} className="erp-badge erp-badge-ongoing" style={{ fontSize: "10px", background: "#001a33", borderColor: "#003366" }}>{t}</span>
+              ))}
+              {m.team_role && <span className="erp-badge erp-badge-previewing" style={{ fontSize: "10px" }}>{m.team_role}</span>}
+              {m.sprint && <span className="erp-badge erp-badge-pending" style={{ fontSize: "10px" }}>{m.sprint}</span>}
+            </div>
+
+            {m.position && <p style={{ margin: 0, fontSize: "13px", color: "#a78bfa", padding: "8px 12px", background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: "8px" }}>{m.position}</p>}
+            
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#0a0a0a", borderRadius: "8px", border: "1px solid #111" }}>
+              <span style={{ fontSize: "11px", color: "#666", fontWeight: 700 }}>BASE SALARY</span>
+              <span style={{ fontSize: "14px", fontWeight: 800, color: "#34d399" }}>${m.base_salary?.toLocaleString() || "0"}</span>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", borderTop: "1px solid #111", paddingTop: "12px", marginTop: "4px" }}>
+              <button onClick={() => openEdit(m)} style={{ background: "#222", border: "1px solid #333", color: "#fff", padding: "4px 10px", borderRadius: "4px", fontSize: "12px", cursor: "pointer" }}>Edit</button>
+              <button onClick={() => handleDelete(m)} style={{ background: "#1a0000", border: "1px solid #4d0000", color: "#ff4d4d", padding: "4px 10px", borderRadius: "4px", fontSize: "12px", cursor: "pointer" }}>Remove</button>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Invite Modal */}
+      {/* Invite/Edit Modal */}
       {showModal && (
         <div className="erp-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="erp-modal" onClick={e => e.stopPropagation()}>
-            <h2 style={{ margin: "0 0 20px", fontSize: "20px", fontWeight: 700, color: "#fff" }}>Invite New Member</h2>
+          <div className="erp-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: "500px" }}>
+            <h2 style={{ margin: "0 0 24px", fontSize: "20px", fontWeight: 800, color: "#fff" }}>{editMember ? "Edit Member" : "Invite Member"}</h2>
             {msg && (
               <div style={{
                 padding: "10px 14px", borderRadius: "8px", marginBottom: "16px", fontSize: "14px",
@@ -101,27 +175,100 @@ export default function ERPMembersPage() {
                 color: msg.startsWith("✅") ? "#34d399" : "#f87171",
               }}>{msg}</div>
             )}
-            <form onSubmit={handleInvite} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <form onSubmit={handleInvite} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div>
                 <label className="erp-label">Full Name *</label>
                 <input className="erp-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="John Doe" required />
               </div>
               <div>
                 <label className="erp-label">Email *</label>
-                <input className="erp-input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="john@example.com" required />
+                <input className="erp-input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="john@example.com" required disabled={!!editMember} />
               </div>
               <div>
-                <label className="erp-label">Phone</label>
-                <input className="erp-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+91 98765 43210" />
+                <label className="erp-label">Position *</label>
+                <select className="erp-input erp-select" value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} required>
+                  <option value="">Select Position</option>
+                  {availableSettings.positions.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
               </div>
+
               <div>
-                <label className="erp-label">Position</label>
-                <input className="erp-input" value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} placeholder="e.g. Frontend Developer" />
+                <label className="erp-label">Working Teams (Select Multiple) *</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "8px" }}>
+                  {availableSettings.teams.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => toggleTeam(t)}
+                      style={{
+                        padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer",
+                        background: form.teams.includes(t) ? "#fff" : "#111",
+                        color: form.teams.includes(t) ? "#000" : "#888",
+                        border: `1px solid ${form.teams.includes(t) ? "#fff" : "#333"}`,
+                        transition: "0.2s"
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label className="erp-label">Role</label>
+                  <select className="erp-input erp-select" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                    <option value="member">Member</option>
+                    <option value="manager">Manager</option>
+                    <option value="hr">HR</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="erp-label">Team Role</label>
+                <select className="erp-input erp-select" value={form.team_role} onChange={e => setForm({ ...form, team_role: e.target.value })}>
+                  <option value="">No specific role</option>
+                  <option value="Team Leader">Team Leader</option>
+                  <option value="Member">Member</option>
+                  <option value="Assistant">Assistant</option>
+                </select>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label className="erp-label">Phone Number</label>
+                  <input className="erp-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="e.g. +12345678" />
+                </div>
+                <div>
+                  <label className="erp-label">Assigned Sprint</label>
+                  <select className="erp-input erp-select" value={form.sprint} onChange={e => setForm({ ...form, sprint: e.target.value })}>
+                    <option value="">No sprint</option>
+                    {availableSettings.sprints.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="erp-label">Base Salary (Monthly)</label>
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#666", fontSize: "14px" }}>$</span>
+                  <input 
+                    type="number" 
+                    className="erp-input" 
+                    style={{ paddingLeft: "28px" }}
+                    value={form.base_salary} 
+                    onChange={e => setForm({ ...form, base_salary: parseInt(e.target.value) || 0 })} 
+                    placeholder="e.g. 5000" 
+                  />
+                </div>
+              </div>
+
               <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
                 <button type="button" className="erp-btn erp-btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Cancel</button>
                 <button type="submit" className="erp-btn erp-btn-primary" style={{ flex: 1 }} disabled={submitting}>
-                  {submitting ? "Sending..." : "Send Invite 📧"}
+                  {submitting ? "Processing..." : (editMember ? "Update Member" : "Send Invite")}
                 </button>
               </div>
             </form>

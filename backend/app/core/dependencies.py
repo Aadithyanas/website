@@ -17,19 +17,24 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Invalid or expired token",
         )
     email = payload.get("sub")
+    org_id = payload.get("org_id")
     if not email:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
 
-    user = await users_collection.find_one({"email": email})
+    query = {"email": email}
+    if org_id:
+        query["org_id"] = str(org_id)
+
+    user = await users_collection.find_one(query)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
 
 
 async def require_admin(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") != "admin":
+    if current_user.get("role") not in ["admin", "hr", "manager"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail="Administrative access required",
         )
     return current_user
