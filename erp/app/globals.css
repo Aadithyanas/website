@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+/* ══════════════════════════════════════════════════════════════════
+   DESIGN TOKENS  —  Flat + Material Base  |  Light Neumorphism Accent
+   ══════════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Backgrounds (Material elevation layers) ── */
+  --bg-deep:     #000000;
+  --bg-base:     #000000;
+  --bg-surface:  #050505;
+  --bg-card:     #0a0a0a;
+  --bg-elevated: #111111;
+
+  /* ── Primary — Indigo / Violet ── */
+  --primary:       #6366f1;
+  --primary-light: #818cf8;
+  --primary-dim:   rgba(99,102,241,0.15);
+  --primary-glow:  rgba(99,102,241,0.28);
+  --primary-border:rgba(99,102,241,0.35);
+
+  /* ── Accent — Emerald ── */
+  --accent:       #06d6a0;
+  --accent-dim:   rgba(6,214,160,0.12);
+  --accent-border:rgba(6,214,160,0.3);
+
+  /* ── Tertiary — Rose / Pink ── */
+  --rose:       #f472b6;
+  --rose-dim:   rgba(244,114,182,0.12);
+  --rose-border:rgba(244,114,182,0.3);
+
+  /* ── Text ── */
+  --text-head:  #eef2ff;
+  --text-body:  rgba(176,190,220,0.88);
+  --text-muted: rgba(110,130,168,0.75);
+
+  /* ── Borders ── */
+  --border-base: rgba(255,255,255,0.07);
+  --border-mid:  rgba(255,255,255,0.12);
+  --border-high: rgba(255,255,255,0.20);
+
+  /* ── Neumorphic shadows (10-20% usage on cards/buttons) ── */
+  --neu-out: 5px 5px 18px rgba(0,0,0,0.50), -3px -3px 10px rgba(255,255,255,0.04);
+  --neu-in:  inset 3px 3px 10px rgba(0,0,0,0.45), inset -2px -2px 8px rgba(255,255,255,0.03);
+  --neu-card: 6px 6px 20px rgba(0,0,0,0.55), -3px -3px 12px rgba(255,255,255,0.04);
+
+  /* ── Material elevation shadows ── */
+  --shadow-dp2:  0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5);
+  --shadow-dp4:  0 2px 6px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.5);
+  --shadow-dp8:  0 4px 16px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4);
+  --shadow-dp16: 0 8px 32px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.45);
+
+  /* Foreground */
+  --background: var(--bg-base);
+  --foreground: var(--text-head);
+}
+
+/* ── Smooth scroll ── */
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,102,241,0.35) rgba(14,18,33,0.5);
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(14,18,33,0.6); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6366f1, #818cf8);
+  border-radius: 4px;
+}
+
+/* ── Box sizing & base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: var(--bg-base);
+  color: var(--text-head);
+  font-family: 'Inter', 'DM Sans', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── Page-enter fade (initial load) ── */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+main { animation: page-enter 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Smooth section transitions ── */
+section { transition: background 0.4s ease; }
+
+/* ── Spotlight keyframe (kept from original) ── */
+@keyframes spotlight {
+  0%   { opacity: 0; transform: translate(-72%, -62%) scale(0.5); }
+  100% { opacity: 1; transform: translate(-50%, -40%) scale(1); }
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --animate-spotlight: spotlight 2s ease .75s 1 forwards;
+}
+
+/* ── Shimmer animation (reused by Navbar CTA) ── */
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ── Utility: neumorphic card accent ── */
+.neu-card {
+  box-shadow: var(--neu-card);
+}
+.neu-inset {
+  box-shadow: var(--neu-in);
+}
+
+/* ── Selection color ── */
+::selection {
+  background: rgba(99,102,241,0.35);
+  color: #eef2ff;
+}
+
+/* ── Focus ring ── */
+:focus-visible {
+  outline: 2px solid rgba(99,102,241,0.7);
+  outline-offset: 2px;
+}
