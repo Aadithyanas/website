@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useERPAuth, apiClient, API } from "@/src/components/erp/ERPAuthContext";
+import { Calendar as CalendarIcon, List as ListIcon, Plus, X, Upload, MessageSquare, Paperclip, MoreVertical, Image as ImageIcon } from "lucide-react";
 
 interface Comment { id: string; author_name: string; author_avatar?: string; content: string; image?: string; created_at: string; }
 interface Member { id: string; name: string; email: string; teams: string[]; team_role?: string; avatar?: string; role: string; }
@@ -80,7 +81,7 @@ export default function ERPTasksPage() {
     };
     window.addEventListener("erp:task_update" as any, handleUpdate);
     return () => window.removeEventListener("erp:task_update" as any, handleUpdate);
-  }, [token]); // Re-bind when token changes to avoid stale header
+  }, [token]);
 
   const fetchSettings = async () => {
     try {
@@ -215,19 +216,23 @@ export default function ERPTasksPage() {
     const monthName = currentDate.toLocaleString("default", { month: "long" });
 
     const calendarCells = [];
-    // Padding for first day
-    for (let i = 0; i < firstDay; i++) calendarCells.push(<div key={`pad-${i}`} style={{ border: "1px solid #111", minHeight: "100px", padding: "8px" }} />);
+    for (let i = 0; i < firstDay; i++) calendarCells.push(<div key={`pad-${i}`} className="border border-[#111] min-h-[100px] p-2 bg-[#000]" />);
     
     for (let d = 1; d <= days; d++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       const dayTasks = tasks.filter(t => t.due_date === dateStr);
       
       calendarCells.push(
-        <div key={d} style={{ border: "1px solid #111", minHeight: "100px", padding: "8px", background: "#030303" }}>
-          <div style={{ fontSize: "11px", color: "#444", fontWeight: 700, marginBottom: "8px" }}>{d}</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        <div key={d} className="border border-[#111] min-h-[100px] p-2 bg-[#050505]">
+          <div className="text-[11px] text-[#555] font-bold mb-2">{d}</div>
+          <div className="flex flex-col gap-1">
             {dayTasks.map(t => (
-              <div key={t.id} onClick={() => setExpandedTask(t.id)} style={{ fontSize: "9px", padding: "2px 4px", background: "#0a0a0a", borderLeft: `2px solid ${STATUS_COLORS[t.status]}`, borderRadius: "2px", color: "#ccc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer" }}>
+              <div 
+                key={t.id} 
+                onClick={() => setExpandedTask(t.id)} 
+                className="text-[9px] px-1.5 py-0.5 bg-[#111] border-l-2 rounded-sm text-gray-300 truncate cursor-pointer hover:bg-[#222]"
+                style={{ borderLeftColor: STATUS_COLORS[t.status] }}
+              >
                 {t.title}
               </div>
             ))}
@@ -237,18 +242,18 @@ export default function ERPTasksPage() {
     }
 
     return (
-      <div style={{ background: "#000", border: "1px solid #111", borderRadius: "8px", overflow: "hidden" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", borderBottom: "1px solid #111" }}>
-          <h3 style={{ margin: 0, fontSize: "16px", color: "#fff" }}>{monthName} {year}</h3>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button className="erp-btn-ghost" onClick={() => setCurrentDate(new Date(year, month - 1, 1))}>&larr;</button>
-            <button className="erp-btn-ghost" onClick={() => setCurrentDate(new Date())}>Today</button>
-            <button className="erp-btn-ghost" onClick={() => setCurrentDate(new Date(year, month + 1, 1))}>&rarr;</button>
+      <div className="bg-[#000] border border-[#111] rounded-xl overflow-hidden shadow-2xl">
+        <div className="flex justify-between items-center p-4 border-b border-[#111] bg-[#030303]">
+          <h3 className="m-0 text-base text-white font-bold">{monthName} {year}</h3>
+          <div className="flex gap-2">
+            <button className="erp-btn-ghost text-xs px-3 py-1.5 rounded-lg" onClick={() => setCurrentDate(new Date(year, month - 1, 1))}>&larr;</button>
+            <button className="erp-btn-ghost text-xs px-3 py-1.5 rounded-lg" onClick={() => setCurrentDate(new Date())}>Today</button>
+            <button className="erp-btn-ghost text-xs px-3 py-1.5 rounded-lg" onClick={() => setCurrentDate(new Date(year, month + 1, 1))}>&rarr;</button>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", background: "#111", gap: "0px" }}>
+        <div className="grid grid-cols-7 bg-[#111] gap-px">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
-            <div key={day} style={{ padding: "8px", textAlign: "center", fontSize: "10px", fontWeight: 800, color: "#444", textTransform: "uppercase", background: "#000", borderBottom: "1px solid #111" }}>{day}</div>
+            <div key={day} className="p-2 text-center text-[10px] font-extrabold text-[#555] uppercase bg-[#000] border-b border-[#111]">{day}</div>
           ))}
           {calendarCells}
         </div>
@@ -256,297 +261,410 @@ export default function ERPTasksPage() {
     );
   };
 
-  if (loading) return <div style={{ padding: "40px", color: "#666", fontSize: "14px" }}>Loading workspace...</div>;
+  if (loading) return <div className="p-10 text-[#666] text-sm font-semibold">Loading workspace...</div>;
 
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", borderBottom: "1px solid #111", paddingBottom: "16px" }}>
+    <div className="w-full">
+      {/* Header section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 border-b border-[#1a1a1a] pb-4">
         <div>
-          <h1 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 4px", color: "#fff" }}>Team Space / Project</h1>
-          <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "#666" }}>
-            <span 
-              style={{ borderBottom: viewMode === "list" ? "2px solid #7c3aed" : "none", color: viewMode === "list" ? "#fff" : "#666", paddingBottom: "8px", cursor: "pointer" }} 
+          <h1 className="text-xl md:text-2xl font-bold m-0 mb-2 text-white">Project Tasks</h1>
+          <div className="flex gap-4 text-xs font-semibold text-[#666]">
+            <button 
+              className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "list" ? "border-indigo-500 text-white" : "border-transparent hover:text-gray-300"}`} 
               onClick={() => setViewMode("list")}
             >
-              List View
-            </span>
-            <span 
-              style={{ borderBottom: viewMode === "calendar" ? "2px solid #7c3aed" : "none", color: viewMode === "calendar" ? "#fff" : "#666", paddingBottom: "8px", cursor: "pointer" }} 
+              <ListIcon size={14} /> List View
+            </button>
+            <button 
+              className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "calendar" ? "border-indigo-500 text-white" : "border-transparent hover:text-gray-300"}`} 
               onClick={() => setViewMode("calendar")}
             >
-              Calendar
-            </span>
+              <CalendarIcon size={14} /> Calendar
+            </button>
           </div>
         </div>
-        <button className="erp-btn erp-btn-primary" style={{ padding: "8px 16px", fontSize: "13px" }} onClick={() => setShowAdd(true)}>+ Add Task</button>
+        <button 
+          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-[0_4px_14px_rgba(99,102,241,0.2)]" 
+          onClick={() => setShowAdd(true)}
+        >
+          <Plus size={16} /> Add Task
+        </button>
       </div>
 
       {viewMode === "list" ? (
-        STATUSES.map(statusKey => (
-          <div key={statusKey} style={{ marginBottom: "24px" }}>
-            {/* ... same status list logic ... */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", cursor: "pointer" }}>
-              <div style={{ width: "16px", height: "16px", borderRadius: "4px", background: STATUS_COLORS[statusKey], position: "relative" }}>
-                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "6px", height: "6px", borderRadius: "50%", background: "#fff" }} />
-              </div>
-              <span style={{ fontSize: "11px", fontWeight: 800, color: STATUS_COLORS[statusKey], letterSpacing: "0.05em" }}>{STATUS_LABELS[statusKey]}</span>
-              <span style={{ fontSize: "11px", color: "#444", fontWeight: 600 }}>{statusGroups[statusKey].length}</span>
-            </div>
+        <div className="flex flex-col gap-8">
+          {STATUSES.map(statusKey => {
+            const taskCount = statusGroups[statusKey].length;
+            
+            // Only show groups that have tasks OR are "todo" or "inprogress"
+            const showGroup = taskCount > 0 || statusKey === "todo" || statusKey === "inprogress";
+            
+            if (!showGroup) return null;
 
-            <div style={{ background: "#000", border: "1px solid #111", borderRadius: "8px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 100px 100px 150px 40px", padding: "8px 16px", borderBottom: "1px solid #111", fontSize: "10px", color: "#444", fontWeight: 700, textTransform: "uppercase" }}>
-                <span>Name</span>
-                <span>Assignee</span>
-                <span>Due Date</span>
-                <span>Priority</span>
-                <span>Status</span>
-                <span></span>
-              </div>
+            return (
+              <div key={statusKey} className="flex flex-col gap-3">
+                {/* Status Header */}
+                <div className="flex items-center gap-2 px-1 select-none">
+                  <div className="relative w-4 h-4 rounded" style={{ backgroundColor: STATUS_COLORS[statusKey] }}>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white shadow-sm" />
+                  </div>
+                  <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: STATUS_COLORS[statusKey] }}>
+                    {STATUS_LABELS[statusKey]}
+                  </span>
+                  <span className="text-[11px] text-gray-500 font-bold bg-[#111] px-1.5 rounded-full">
+                    {taskCount}
+                  </span>
+                </div>
 
-              {statusGroups[statusKey].length === 0 && (
-                <div style={{ padding: "16px", fontSize: "12px", color: "#333", fontStyle: "italic" }}>No tasks in this status.</div>
-              )}
-
-              {statusGroups[statusKey].map(task => (
-                <div key={task.id} style={{ borderBottom: "1px solid #111" }}>
-                  <div 
-                    className="task-row" 
-                    style={{ display: "grid", gridTemplateColumns: "1fr 120px 100px 100px 150px 40px", padding: "10px 16px", alignItems: "center", cursor: "pointer" }}
-                    onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ border: `1px solid ${STATUS_COLORS[statusKey]}`, width: "14px", height: "14px", borderRadius: "50%" }} />
-                      <span style={{ fontSize: "13px", color: "#ccc" }}>{task.title}</span>
-                    </div>
-
-                    <div onClick={e => e.stopPropagation()}>
-                      <select className="erp-select-ghost" style={{ fontSize: "11px" }} value="" onChange={e => handleReassign(task.id, e.target.value)}>
-                        <option value="">{task.assigned_to_name}</option>
-                        {members.map(m => m.id !== task.assigned_to && <option key={m.id} value={m.id}>{m.name}</option>)}
-                      </select>
-                    </div>
-
-                    <div style={{ fontSize: "11px", color: "#444" }}>
-                      {task.due_date ? new Date(task.due_date).toLocaleDateString() : "--"}
-                    </div>
-
-                    <div onClick={e => e.stopPropagation()}>
-                      <select 
-                        className="erp-select-ghost" 
-                        style={{ fontSize: "11px", color: PRIORITY_COLORS[task.priority] || "#666", fontWeight: 700 }}
-                        value={task.priority}
-                        onChange={e => handlePriorityChange(task.id, e.target.value)}
-                      >
-                        {PRIORITIES.map(p => <option key={p} value={p}>{p.toUpperCase()}</option>)}
-                      </select>
-                    </div>
-
-                    <div onClick={e => e.stopPropagation()}>
-                      <div style={{ position: "relative" }}>
-                        <select 
-                          className="status-dropdown"
-                          style={{ 
-                            background: "#000", color: "#fff", border: `1px solid ${STATUS_COLORS[task.status]}`, borderRadius: "4px", padding: "4px 8px 4px 24px", fontSize: "10px", fontWeight: 800, width: "100%",
-                            appearance: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px"
-                          }}
-                          value={task.status}
-                          onChange={e => handleStatusChange(task.id, e.target.value)}
-                        >
-                          {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-                        </select>
-                        <div style={{ position: "absolute", left: "8px", top: "50%", transform: "translateY(-50%)", width: "10px", height: "10px", borderRadius: "50%", background: STATUS_COLORS[task.status], pointerEvents: "none" }}>
-                           <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "4px", height: "4px", borderRadius: "50%", background: "#fff" }} />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ textAlign: "right", display: "flex", gap: "8px" }}>
-                      {isLeader && (
-                        <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }} style={{ color: "#333", background: "none", border: "none", cursor: "pointer", fontSize: "12px" }}>✕</button>
-                      )}
-                    </div>
+                {/* Task Container */}
+                <div className="bg-[#050505] border border-[#1a1a1a] rounded-xl overflow-hidden shadow-xl">
+                  {/* Desktop Columns Header */}
+                  <div className="hidden lg:grid grid-cols-[minmax(0,2fr)_minmax(120px,1fr)_120px_120px_160px_40px] px-4 py-3 bg-[#0a0a0a] border-b border-[#1a1a1a] text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                    <span>Task Name</span>
+                    <span>Assignee</span>
+                    <span>Due Date</span>
+                    <span>Priority</span>
+                    <span>Status</span>
+                    <span></span>
                   </div>
 
-                  {expandedTask === task.id && (
-                    <div style={{ background: "#050505", padding: "24px 40px", borderTop: "1px solid #111" }}>
-                        <p style={{ fontSize: "13px", color: "#888", marginBottom: "20px", background: "#0a0a0a", padding: "12px", borderRadius: "8px", border: "1px solid #111" }}>
-                          {task.description || "No description provided."}
-                        </p>
-
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "40px" }}>
-                          <div>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                                <p style={{ fontSize: "11px", fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "0.05em" }}>ACTIVITY & COMMENTS ({task.comments.length})</p>
-                                <div style={{ display: "flex", gap: "8px" }}>
-                                  {task.images.map((img, idx) => (
-                                    <img key={idx} src={getUrl(img)} alt={`Task Image ${idx}`} style={{ width: "32px", height: "32px", borderRadius: "4px", border: "1px solid #222" }} />
-                                  ))}
-                                  <label style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0a0a", border: "1px dashed #222", borderRadius: "4px", cursor: "pointer", fontSize: "16px", color: "#333" }}>
-                                    +
-                                    <input type="file" hidden onChange={e => handleFileUpload(task.id, e)} />
-                                  </label>
-                                </div>
+                  {taskCount === 0 ? (
+                    <div className="p-5 text-xs text-gray-500 font-medium italic text-center bg-[#000]">
+                      No tasks in this status. Add a task to get started.
+                    </div>
+                  ) : (
+                    <div className="flex flex-col divide-y divide-[#1a1a1a]">
+                      {statusGroups[statusKey].map(task => (
+                        <div key={task.id} className="flex flex-col bg-[#000]">
+                          
+                          {/* Task Row */}
+                          <div 
+                            className="flex flex-col lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(120px,1fr)_120px_120px_160px_40px] px-4 py-3 gap-3 lg:gap-0 lg:items-center cursor-pointer hover:bg-[#0a0a0a] transition-colors"
+                            onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)}
+                          >
+                            {/* Title Section */}
+                            <div className="flex items-start lg:items-center gap-3 pr-4">
+                              <div className="mt-1 lg:mt-0 w-3.5 h-3.5 rounded-full border-[1.5px] flex-shrink-0" style={{ borderColor: STATUS_COLORS[statusKey] }} />
+                              <span className="text-sm font-semibold text-gray-200 line-clamp-2 lg:line-clamp-1">
+                                {task.title}
+                              </span>
                             </div>
 
-                            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "24px" }}>
-                                {task.comments.map(c => (
-                                  <div key={c.id} style={{ display: "flex", gap: "12px" }}>
-                                    <div className="erp-avatar" style={{ width: "28px", height: "28px", fontSize: "10px" }}>{initials(c.author_name)}</div>
-                                    <div style={{ flex: 1 }}>
-                                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                        <span style={{ fontSize: "12px", fontWeight: 700, color: "#fff" }}>{c.author_name}</span>
-                                        <span style={{ fontSize: "10px", color: "#333" }}>{new Date(c.created_at).toLocaleString()}</span>
-                                      </div>
-                                      <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#aaa" }}>{c.content}</p>
-                                      {c.image && (
-                                        <img src={getUrl(c.image)} alt="Comment Attachment" style={{ marginTop: "10px", maxWidth: "200px", maxHeight: "150px", objectFit: "cover", borderRadius: "8px", border: "1px solid #222" }} />
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                            </div>
-
-                            <div style={{ background: "#000", border: "1px solid #222", borderRadius: "12px", padding: "12px" }}>
-                                {commentImage[task.id] && (
-                                  <div style={{ marginBottom: "12px", position: "relative", display: "inline-block" }}>
-                                    <img src={getUrl(commentImage[task.id])} alt="Comment Preview" style={{ width: "120px", height: "80px", objectFit: "cover", borderRadius: "8px", border: "1px solid #333" }} />
-                                    <button onClick={() => setCommentImage({ ...commentImage, [task.id]: "" })} style={{ position: "absolute", top: "-8px", right: "-8px", background: "#ef4444", color: "#fff", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-                                  </div>
-                                )}
-                                <textarea 
-                                  style={{ background: "none", border: "none", color: "#fff", width: "100%", outline: "none", fontSize: "13px", minHeight: "60px", resize: "none" }}
-                                  placeholder="Write a comment..."
-                                  value={commentText[task.id] || ""}
-                                  onChange={e => setCommentText({ ...commentText, [task.id]: e.target.value })}
-                                />
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px", borderTop: "1px solid #111", paddingTop: "8px", position: "relative" }}>
-                                  <div style={{ display: "flex", gap: "12px", color: "#444" }}>
-                                    <label style={{ fontSize: "16px", cursor: "pointer" }}>
-                                      📎
-                                      <input type="file" hidden onChange={e => handleFileUpload(task.id, e, true)} />
-                                    </label>
-                                    <div style={{ position: "relative" }}>
-                                      <span style={{ fontSize: "16px", cursor: "pointer", color: showMentions[task.id] ? "#7c3aed" : "#444" }} onClick={() => setShowMentions({ ...showMentions, [task.id]: !showMentions[task.id] })}>@</span>
-                                      {showMentions[task.id] && (
-                                        <div style={{ position: "absolute", bottom: "100%", left: 0, background: "#0a0a0a", border: "1px solid #222", borderRadius: "8px", padding: "8px", width: "200px", maxHeight: "200px", overflowY: "auto", zIndex: 100, boxShadow: "0 -4px 12px rgba(0,0,0,0.5)" }}>
-                                          <p style={{ fontSize: "10px", fontWeight: 800, color: "#444", marginBottom: "8px", textTransform: "uppercase" }}>Mention Member</p>
-                                          {members.map(m => (
-                                            <div 
-                                              key={m.id} 
-                                              onClick={() => insertMention(task.id, m.name)}
-                                              style={{ padding: "6px 8px", fontSize: "12px", color: "#ccc", cursor: "pointer", borderRadius: "4px" }}
-                                              onMouseOver={e => (e.currentTarget.style.background = "#111")}
-                                              onMouseOut={e => (e.currentTarget.style.background = "none")}
-                                            >
-                                              {m.name}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <span style={{ fontSize: "16px", cursor: "pointer" }}>😊</span>
-                                    <span style={{ fontSize: "16px", cursor: "pointer" }}>🎥</span>
-                                    <span style={{ fontSize: "16px", cursor: "pointer" }}>🎙️</span>
-                                  </div>
-                                  <button 
-                                    onClick={() => handleAddComment(task.id)}
-                                    style={{ background: "#7c3aed", color: "#fff", border: "none", padding: "6px 16px", borderRadius: "6px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                            {/* Details Grid for Mobile / Row for Desktop */}
+                            <div className="grid grid-cols-2 gap-3 lg:contents pl-6 lg:pl-0">
+                              
+                              {/* Assignee */}
+                              <div className="flex flex-col lg:block gap-1.5 truncate" onClick={e => e.stopPropagation()}>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase lg:hidden">Assignee</span>
+                                <div className="relative">
+                                  <select 
+                                    className="bg-[#111] border-[#222] lg:bg-transparent lg:border-transparent lg:hover:border-[#333] lg:hover:bg-[#111] border text-xs font-semibold text-gray-300 rounded-lg py-1.5 pl-2.5 pr-7 focus:outline-none transition-colors w-full cursor-pointer appearance-none truncate"
+                                    value={task.assigned_to} 
+                                    onChange={e => handleReassign(task.id, e.target.value)}
                                   >
-                                    {uploading === `comment-${task.id}` ? "Uploading..." : "Post Comment"}
-                                  </button>
+                                    {members.map(m => <option key={m.id} value={m.id} className="bg-black text-white">{m.name}</option>)}
+                                  </select>
+                                  <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                  </div>
                                 </div>
+                              </div>
+
+                              {/* Due Date */}
+                              <div className="flex flex-col lg:block gap-1.5 truncate">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase lg:hidden">Due Date</span>
+                                <span className="text-xs font-medium text-gray-400 py-1.5 inline-block px-1">
+                                  {task.due_date ? new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : "--"}
+                                </span>
+                              </div>
+
+                              {/* Priority */}
+                              <div className="flex flex-col lg:block gap-1.5 truncate" onClick={e => e.stopPropagation()}>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase lg:hidden">Priority</span>
+                                <div className="relative">
+                                  <select 
+                                    className="bg-[#111] border-[#222] lg:bg-transparent lg:border-transparent lg:hover:border-[#333] lg:hover:bg-[#111] border text-xs font-bold rounded-lg py-1.5 pl-2.5 pr-7 focus:outline-none transition-colors w-full cursor-pointer appearance-none"
+                                    style={{ color: PRIORITY_COLORS[task.priority] || "#666" }}
+                                    value={task.priority}
+                                    onChange={e => handlePriorityChange(task.id, e.target.value)}
+                                  >
+                                    {PRIORITIES.map(p => <option key={p} value={p} className="bg-black text-white">{p.toUpperCase()}</option>)}
+                                  </select>
+                                  <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: PRIORITY_COLORS[task.priority] || "#666" }}>
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Status Dropdown */}
+                              <div className="col-span-2 lg:col-span-1 mt-1 lg:mt-0" onClick={e => e.stopPropagation()}>
+                                <div className="relative w-full max-w-[150px]">
+                                  <select 
+                                    className="w-full bg-[#111] text-white border text-[10px] font-black uppercase tracking-wider rounded-lg py-2 lg:py-1.5 pl-8 pr-7 focus:outline-none appearance-none cursor-pointer transition-colors hover:bg-[#1a1a1a]"
+                                    style={{ borderColor: STATUS_COLORS[task.status] }}
+                                    value={task.status}
+                                    onChange={e => handleStatusChange(task.id, e.target.value)}
+                                  >
+                                    {STATUSES.map(s => <option key={s} value={s} className="bg-black text-white">{STATUS_LABELS[s]}</option>)}
+                                  </select>
+                                  <div className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full pointer-events-none" style={{ backgroundColor: STATUS_COLORS[task.status] }}>
+                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white" />
+                                  </div>
+                                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: STATUS_COLORS[task.status] }}>
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Actions */}
+                            <div className="absolute lg:relative top-3 right-3 lg:top-0 lg:right-0 text-right">
+                              {isLeader && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }} 
+                                  className="p-1.5 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+                                  title="Delete Task"
+                                >
+                                  <X size={14} />
+                                </button>
+                              )}
                             </div>
                           </div>
+
+                          {/* Expanded Detail Panel */}
+                          {expandedTask === task.id && (
+                            <div className="bg-[#050505] p-4 lg:p-6 border-t border-[#1a1a1a] flex flex-col gap-6 shadow-inner">
+                              
+                              {/* Description */}
+                              <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
+                                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                  <ListIcon size={12} /> Description
+                                </h4>
+                                <p className="text-sm text-gray-300 leading-relaxed m-0 whitespace-pre-wrap">
+                                  {task.description || <span className="text-gray-600 italic">No description provided for this task.</span>}
+                                </p>
+                              </div>
+
+                              {/* Activity & Comments */}
+                              <div>
+                                <div className="flex justify-between items-center mb-4">
+                                  <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest m-0 flex items-center gap-2">
+                                    <MessageSquare size={12} /> Activity & Comments ({task.comments.length})
+                                  </h4>
+                                  
+                                  {/* Task Attachments Header */}
+                                  <div className="flex gap-2 items-center">
+                                    {task.images.slice(0, 3).map((img, idx) => (
+                                      <img key={idx} src={getUrl(img)} alt="Task attachment" className="w-8 h-8 rounded-lg object-cover border border-[#222]" />
+                                    ))}
+                                    {task.images.length > 3 && <div className="w-8 h-8 rounded-lg bg-[#111] border border-[#222] flex items-center justify-center text-[10px] text-gray-400 font-bold">+{task.images.length - 3}</div>}
+                                    <label className="w-8 h-8 flex items-center justify-center bg-[#111] hover:bg-[#222] border border-[#333] rounded-lg cursor-pointer text-gray-400 transition-colors tooltip tooltip-left" data-tip="Add Attachment">
+                                      <Plus size={14} />
+                                      <input type="file" hidden onChange={e => handleFileUpload(task.id, e)} />
+                                    </label>
+                                  </div>
+                                </div>
+
+                                {/* Comments List */}
+                                <div className="flex flex-col gap-4 mb-5">
+                                    {task.comments.map(c => (
+                                      <div key={c.id} className="flex gap-3 bg-[#0a0a0a] p-3 rounded-xl border border-[#1a1a1a]">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-[10px] font-bold shrink-0">
+                                          {initials(c.author_name)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-baseline gap-2 mb-1">
+                                            <span className="text-xs font-bold text-gray-200">{c.author_name}</span>
+                                            <span className="text-[10px] text-gray-600">{new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                          </div>
+                                          <p className="text-sm text-gray-400 m-0 break-words leading-relaxed whitespace-pre-wrap">{c.content}</p>
+                                          {c.image && (
+                                            <img src={getUrl(c.image)} alt="Comment Attachment" className="mt-3 max-w-full sm:max-w-xs h-32 object-cover rounded-lg border border-[#222]" />
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                </div>
+
+                                {/* Comment Input */}
+                                <div className="bg-[#0a0a0a] border border-[#222] focus-within:border-indigo-500/50 rounded-xl p-3 transition-colors relative">
+                                  {commentImage[task.id] && (
+                                    <div className="relative inline-block mb-3">
+                                      <img src={getUrl(commentImage[task.id])} alt="Preview" className="w-24 h-16 object-cover rounded-md border border-[#333]" />
+                                      <button 
+                                        onClick={() => setCommentImage({ ...commentImage, [task.id]: "" })} 
+                                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow-md"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  )}
+                                  
+                                  <textarea 
+                                    className="w-full bg-transparent border-none text-sm text-white placeholder-gray-600 outline-none resize-none min-h-[60px]"
+                                    placeholder="Write a comment... Use @ to mention"
+                                    value={commentText[task.id] || ""}
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setCommentText({ ...commentText, [task.id]: val });
+                                      if (val.endsWith("@")) setShowMentions({ ...showMentions, [task.id]: true });
+                                      else if (showMentions[task.id] && !val.includes("@")) setShowMentions({ ...showMentions, [task.id]: false });
+                                    }}
+                                  />
+                                  
+                                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#1a1a1a]">
+                                    <div className="flex gap-2">
+                                      <label className="p-1.5 text-gray-500 hover:text-white hover:bg-[#222] rounded-lg cursor-pointer transition-colors">
+                                        <Paperclip size={16} />
+                                        <input type="file" hidden onChange={e => handleFileUpload(task.id, e, true)} />
+                                      </label>
+                                      
+                                      <div className="relative">
+                                        <button 
+                                          className={`p-1.5 rounded-lg transition-colors text-sm font-black ${showMentions[task.id] ? "text-indigo-400 bg-indigo-500/10" : "text-gray-500 hover:text-white hover:bg-[#222]"}`}
+                                          onClick={() => setShowMentions({ ...showMentions, [task.id]: !showMentions[task.id] })}
+                                        >
+                                          @
+                                        </button>
+                                        
+                                        {/* Mentions Dropdown */}
+                                        {showMentions[task.id] && (
+                                          <div className="absolute bottom-full left-0 mb-2 w-48 bg-[#111] border border-[#333] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-50 overflow-hidden fade-in animate-in slide-in-from-bottom-2">
+                                            <div className="p-2 bg-[#0a0a0a] border-b border-[#222] text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mention Someone</div>
+                                            <div className="max-h-40 overflow-y-auto p-1 text-sm">
+                                              {members.map(m => (
+                                                <div 
+                                                  key={m.id} 
+                                                  onClick={() => insertMention(task.id, m.name)}
+                                                  className="p-2 hover:bg-[#222] text-gray-300 hover:text-white rounded-lg cursor-pointer transition-colors"
+                                                >
+                                                  {m.name}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <button 
+                                      onClick={() => handleAddComment(task.id)}
+                                      disabled={uploading === `comment-${task.id}` || (!commentText[task.id]?.trim() && !commentImage[task.id])}
+                                      className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                                    >
+                                      {uploading === `comment-${task.id}` ? "Uploading..." : "Post"}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+
+                            </div>
+                          )}
                         </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-        ))
+              </div>
+            );
+          })}
+        </div>
       ) : (
         renderCalendar()
       )}
 
       {/* New Task Modal */}
       {showAdd && (
-        <div className="erp-modal-overlay" onClick={() => setShowAdd(false)}>
-          <div className="erp-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: "600px" }}>
-            <h2 style={{ margin: "0 0 24px", color: "#fff", fontSize: "22px" }}>Create New Task</h2>
-            <form onSubmit={handleAddTask} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div>
-                <label className="erp-label">Task Name</label>
-                <input className="erp-input" value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} placeholder="What needs to be done?" required />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowAdd(false)}>
+          <div className="bg-[#0a0a0a] border border-[#222] rounded-2xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-[#222] flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white m-0">Create Task</h2>
+              <button className="text-gray-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#222] transition-colors" onClick={() => setShowAdd(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddTask} className="p-6 flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Task Name <span className="text-red-500">*</span></label>
+                <input 
+                  className="w-full bg-[#111] border border-[#333] focus:border-indigo-500 focus:bg-[#161616] text-white rounded-xl px-4 py-2.5 outline-none transition-colors text-sm placeholder-gray-600" 
+                  value={newTask.title} 
+                  onChange={e => setNewTask({ ...newTask, title: e.target.value })} 
+                  placeholder="What needs to be done?" 
+                  required 
+                />
               </div>
               
-              <div>
-                <label className="erp-label">Description</label>
-                <textarea className="erp-input" value={newTask.description} onChange={e => setNewTask({ ...newTask, description: e.target.value })} placeholder="Add more details..." rows={4} />
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Description</label>
+                <textarea 
+                  className="w-full bg-[#111] border border-[#333] focus:border-indigo-500 focus:bg-[#161616] text-white rounded-xl px-4 py-2.5 outline-none transition-colors text-sm placeholder-gray-600 resize-none min-h-[100px]" 
+                  value={newTask.description} 
+                  onChange={e => setNewTask({ ...newTask, description: e.target.value })} 
+                  placeholder="Add more details, links, or context..." 
+                />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                <div>
-                  <label className="erp-label">Sprint</label>
-                  <select className="erp-input" value={newTask.sprint} onChange={e => setNewTask({ ...newTask, sprint: e.target.value })}>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Sprint</label>
+                  <select 
+                    className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-4 py-2.5 outline-none transition-colors text-sm appearance-none cursor-pointer" 
+                    value={newTask.sprint} 
+                    onChange={e => setNewTask({ ...newTask, sprint: e.target.value })}
+                  >
                     {availableSettings.sprints.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="erp-label">Priority</label>
-                  <select className="erp-input" value={newTask.priority} onChange={e => setNewTask({ ...newTask, priority: e.target.value })}>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Priority</label>
+                  <select 
+                    className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-4 py-2.5 outline-none transition-colors text-sm font-semibold appearance-none cursor-pointer" 
+                    style={{ color: PRIORITY_COLORS[newTask.priority] || "#fff" }}
+                    value={newTask.priority} 
+                    onChange={e => setNewTask({ ...newTask, priority: e.target.value })}
+                  >
                     {PRIORITIES.map(p => <option key={p} value={p}>{p.toUpperCase()}</option>)}
                   </select>
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                <div>
-                  <label className="erp-label">Assign To</label>
-                  <select className="erp-input" value={newTask.assigned_to} onChange={e => setNewTask({ ...newTask, assigned_to: e.target.value })} required>
-                    <option value="">Select Assignee</option>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Assignee <span className="text-red-500">*</span></label>
+                  <select 
+                    className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-4 py-2.5 outline-none transition-colors text-sm appearance-none cursor-pointer" 
+                    value={newTask.assigned_to} 
+                    onChange={e => setNewTask({ ...newTask, assigned_to: e.target.value })} 
+                    required
+                  >
+                    <option value="" disabled>Select Assignee</option>
                     {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="erp-label">Due Date</label>
-                  <input type="date" className="erp-input" value={newTask.due_date} onChange={e => setNewTask({ ...newTask, due_date: e.target.value })} />
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Due Date</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-[#111] border border-[#333] text-gray-300 rounded-xl px-4 py-2.5 outline-none transition-colors text-sm cursor-pointer" 
+                    style={{ colorScheme: "dark" }}
+                    value={newTask.due_date} 
+                    onChange={e => setNewTask({ ...newTask, due_date: e.target.value })} 
+                  />
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
-                <button type="button" className="erp-btn erp-btn-ghost" style={{ flex: 1 }} onClick={() => setShowAdd(false)}>Cancel</button>
-                <button type="submit" className="erp-btn erp-btn-primary" style={{ flex: 1 }} disabled={adding}>Create Task</button>
+              <div className="flex gap-3 mt-4 pt-4 border-t border-[#222]">
+                <button type="button" className="flex-1 px-4 py-2.5 rounded-xl border border-[#333] text-white hover:bg-[#111] font-bold text-sm transition-colors" onClick={() => setShowAdd(false)}>Cancel</button>
+                <button type="submit" className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-colors shadow-lg disabled:opacity-50" disabled={adding}>
+                  {adding ? "Creating..." : "Create Task"}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        .task-row:hover {
-          background: #080808 !important;
-        }
-        .erp-select-ghost {
-          background: none;
-          border: none;
-          color: #aaa;
-          outline: none;
-          cursor: pointer;
-          font-family: inherit;
-        }
-        .erp-select-ghost:hover {
-          color: #fff;
-        }
-        .erp-select-ghost option {
-          background: #000;
-          color: #fff;
-        }
-        .status-dropdown option {
-          background: #000;
-          color: #fff;
-        }
-      `}</style>
     </div>
   );
 }

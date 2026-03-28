@@ -15,7 +15,7 @@ import {
 export default function Home() {
   return (
     <CompanyProvider>
-    <main className="bg-black min-h-screen text-white">
+    <main className="min-h-screen" style={{ background: "#000", color: "#eef2ff" }}>
       <Nav />
       <Hero />
       <AboutSection />

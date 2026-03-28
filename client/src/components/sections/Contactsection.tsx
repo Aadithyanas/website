@@ -7,7 +7,6 @@ import {
   Loader2, MapPin, Clock, ArrowRight,
 } from "lucide-react";
 
-// ── Motion config ─────────────────────────────────────────────────────────────
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VP   = { once: true, amount: 0.12 };
 
@@ -27,16 +26,9 @@ const fadeIn = (delay = 0) => ({
   },
 });
 
-// ── Shared input style ────────────────────────────────────────────────────────
-const inputCls = [
-  "w-full rounded-xl px-4 py-3 text-sm text-white",
-  "placeholder:text-gray-600",
-  "focus:outline-none transition-all duration-300",
-].join(" ");
-
 type Status = "idle" | "loading" | "success" | "error";
 
-// ── Animated floating label input ─────────────────────────────────────────────
+// ── Floating-label Input ───────────────────────────────────────────────────────
 const Field = ({
   label, name, type = "text", value, onChange, required = true,
 }: {
@@ -49,7 +41,11 @@ const Field = ({
   return (
     <div className="relative">
       <motion.label
-        animate={{ y: active ? -22 : 0, scale: active ? 0.82 : 1, color: active ? "#22d3ee" : "rgba(100,120,140,0.8)" }}
+        animate={{
+          y: active ? -22 : 0,
+          scale: active ? 0.82 : 1,
+          color: active ? "#818cf8" : "rgba(110,130,168,0.8)",
+        }}
         transition={{ duration: 0.22, ease: "easeOut" }}
         className="absolute left-4 top-3.5 pointer-events-none font-mono tracking-widest uppercase text-xs origin-left"
         style={{ transformOrigin: "left center" }}
@@ -61,13 +57,17 @@ const Field = ({
         onChange={onChange}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        className={inputCls}
+        className="w-full rounded-xl px-4 text-sm focus:outline-none transition-all duration-300"
         style={{
-          background: focused ? "rgba(34,211,238,0.04)" : "rgba(255,255,255,0.025)",
-          border: `1px solid ${focused ? "rgba(34,211,238,0.45)" : "rgba(255,255,255,0.08)"}`,
-          boxShadow: focused ? "0 0 0 3px rgba(34,211,238,0.07)" : "none",
           paddingTop: "1.4rem",
           paddingBottom: "0.6rem",
+          color: "#eef2ff",
+          background: focused ? "rgba(99,102,241,0.07)" : "rgba(26,32,53,0.8)",
+          border: `1px solid ${focused ? "rgba(99,102,241,0.5)" : "rgba(99,102,241,0.12)"}`,
+          /* Neumorphic inset when focused */
+          boxShadow: focused
+            ? "inset 3px 3px 10px rgba(0,0,0,0.4), inset -1px -1px 5px rgba(255,255,255,0.04), 0 0 0 3px rgba(99,102,241,0.08)"
+            : "inset 2px 2px 8px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)",
         }}
       />
     </div>
@@ -85,7 +85,11 @@ const TextAreaField = ({
   return (
     <div className="relative">
       <motion.label
-        animate={{ y: active ? -22 : 0, scale: active ? 0.82 : 1, color: active ? "#22d3ee" : "rgba(100,120,140,0.8)" }}
+        animate={{
+          y: active ? -22 : 0,
+          scale: active ? 0.82 : 1,
+          color: active ? "#818cf8" : "rgba(110,130,168,0.8)",
+        }}
         transition={{ duration: 0.22, ease: "easeOut" }}
         className="absolute left-4 top-3.5 pointer-events-none font-mono tracking-widest uppercase text-xs origin-left"
         style={{ transformOrigin: "left center" }}
@@ -97,20 +101,23 @@ const TextAreaField = ({
         onChange={onChange}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        className={`${inputCls} resize-none`}
+        className="w-full rounded-xl px-4 text-sm focus:outline-none resize-none transition-all duration-300"
         style={{
-          background: focused ? "rgba(34,211,238,0.04)" : "rgba(255,255,255,0.025)",
-          border: `1px solid ${focused ? "rgba(34,211,238,0.45)" : "rgba(255,255,255,0.08)"}`,
-          boxShadow: focused ? "0 0 0 3px rgba(34,211,238,0.07)" : "none",
           paddingTop: "1.4rem",
           paddingBottom: "0.6rem",
+          color: "#eef2ff",
+          background: focused ? "rgba(99,102,241,0.07)" : "rgba(26,32,53,0.8)",
+          border: `1px solid ${focused ? "rgba(99,102,241,0.5)" : "rgba(99,102,241,0.12)"}`,
+          boxShadow: focused
+            ? "inset 3px 3px 10px rgba(0,0,0,0.4), inset -1px -1px 5px rgba(255,255,255,0.04), 0 0 0 3px rgba(99,102,241,0.08)"
+            : "inset 2px 2px 8px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)",
         }}
       />
     </div>
   );
 };
 
-// ── Contact info card ─────────────────────────────────────────────────────────
+// ── Info card ─────────────────────────────────────────────────────────────────
 const InfoCard = ({
   icon, label, value, href, delay,
 }: {
@@ -125,36 +132,52 @@ const InfoCard = ({
     whileHover={{ x: 6, transition: { duration: 0.22 } }}
     className="flex items-center gap-4 p-4 rounded-2xl group no-underline"
     style={{
-      background: "rgba(255,255,255,0.025)",
-      border: "1px solid rgba(255,255,255,0.07)",
-      transition: "background 0.3s ease, border-color 0.3s ease",
+      background: "linear-gradient(145deg, rgba(26,32,53,0.9), rgba(20,25,41,0.92))",
+      border: "1px solid rgba(99,102,241,0.12)",
+      boxShadow: "5px 5px 16px rgba(0,0,0,0.48), -2px -2px 10px rgba(255,255,255,0.04)",
+      transition: "background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
     }}
     onMouseEnter={(e) => {
-      (e.currentTarget as HTMLAnchorElement).style.background = "rgba(34,211,238,0.06)";
-      (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(34,211,238,0.25)";
+      const el = e.currentTarget as HTMLAnchorElement;
+      el.style.background = "rgba(99,102,241,0.08)";
+      el.style.borderColor = "rgba(99,102,241,0.3)";
+      el.style.boxShadow = "0 4px 20px rgba(99,102,241,0.12), 5px 5px 16px rgba(0,0,0,0.50), -2px -2px 10px rgba(255,255,255,0.04)";
     }}
     onMouseLeave={(e) => {
-      (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.025)";
-      (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.07)";
+      const el = e.currentTarget as HTMLAnchorElement;
+      el.style.background = "linear-gradient(145deg, rgba(26,32,53,0.9), rgba(20,25,41,0.92))";
+      el.style.borderColor = "rgba(99,102,241,0.12)";
+      el.style.boxShadow = "5px 5px 16px rgba(0,0,0,0.48), -2px -2px 10px rgba(255,255,255,0.04)";
     }}
   >
     <div
-      className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-cyan-400"
+      className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
       style={{
-        background: "rgba(34,211,238,0.07)",
-        border: "1px solid rgba(34,211,238,0.18)",
+        background: "rgba(99,102,241,0.1)",
+        border: "1px solid rgba(99,102,241,0.22)",
+        color: "#818cf8",
+        /* Neumorphic inset on icon */
+        boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)",
         transition: "background 0.3s ease, box-shadow 0.3s ease",
       }}
     >
       {icon}
     </div>
     <div className="flex-1 min-w-0">
-      <div className="text-[10px] text-gray-600 font-mono tracking-[0.18em] uppercase mb-0.5">{label}</div>
-      <div className="text-sm font-medium text-gray-200 group-hover:text-cyan-400 transition-colors duration-200 truncate">
+      <div
+        className="text-[10px] font-mono tracking-[0.18em] uppercase mb-0.5"
+        style={{ color: "rgba(110,130,168,0.7)" }}
+      >
+        {label}
+      </div>
+      <div
+        className="text-sm font-medium truncate transition-colors duration-200"
+        style={{ color: "rgba(176,190,220,0.9)" }}
+      >
         {value}
       </div>
     </div>
-    <ArrowRight size={14} className="text-gray-600 group-hover:text-cyan-400 shrink-0 transition-colors duration-200" />
+    <ArrowRight size={14} style={{ color: "rgba(110,130,168,0.5)" }} className="shrink-0 transition-colors duration-200 group-hover:text-indigo-400" />
   </motion.a>
 );
 
@@ -167,14 +190,15 @@ const StatPill = ({ value, label, delay }: { value: string; label: string; delay
     viewport={VP}
     className="flex flex-col items-center justify-center p-4 rounded-2xl text-center"
     style={{
-      background: "rgba(255,255,255,0.025)",
-      border: "1px solid rgba(255,255,255,0.07)",
+      background: "linear-gradient(145deg, rgba(26,32,53,0.9), rgba(20,25,41,0.92))",
+      border: "1px solid rgba(99,102,241,0.12)",
+      boxShadow: "5px 5px 16px rgba(0,0,0,0.48), -2px -2px 10px rgba(255,255,255,0.04)",
     }}
   >
     <span
       className="text-2xl font-bold font-mono"
       style={{
-        background: "linear-gradient(135deg, #67e8f9, #3b82f6)",
+        background: "linear-gradient(135deg, #818cf8, #06d6a0)",
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",
         backgroundClip: "text",
@@ -182,7 +206,12 @@ const StatPill = ({ value, label, delay }: { value: string; label: string; delay
     >
       {value}
     </span>
-    <span className="text-[10px] text-gray-500 font-mono tracking-widest uppercase mt-1">{label}</span>
+    <span
+      className="text-[10px] font-mono tracking-widest uppercase mt-1"
+      style={{ color: "rgba(110,130,168,0.7)" }}
+    >
+      {label}
+    </span>
   </motion.div>
 );
 
@@ -222,14 +251,18 @@ export const ContactSection = () => {
   return (
     <section
       id="contact"
-      className="py-28 bg-black text-white relative border-t border-white/5 overflow-hidden"
+      className="py-28 text-white relative overflow-hidden"
+      style={{
+        background: "#000",
+        borderTop: "1px solid rgba(99,102,241,0.08)",
+      }}
     >
-      {/* ── Background atmosphere ── */}
+      {/* Background atmosphere */}
       <div aria-hidden className="absolute inset-0 pointer-events-none" style={{
         background: `
-          radial-gradient(ellipse 55% 45% at 15% 70%, rgba(6,182,212,0.08) 0%, transparent 60%),
-          radial-gradient(ellipse 45% 55% at 85% 25%, rgba(59,130,246,0.07) 0%, transparent 55%),
-          radial-gradient(ellipse 35% 40% at 50% 100%, rgba(99,102,241,0.05) 0%, transparent 60%)
+          radial-gradient(ellipse 55% 45% at 15% 70%, rgba(99,102,241,0.09) 0%, transparent 60%),
+          radial-gradient(ellipse 45% 55% at 85% 25%, rgba(6,214,160,0.07) 0%, transparent 55%),
+          radial-gradient(ellipse 35% 40% at 50% 100%, rgba(244,114,182,0.05) 0%, transparent 60%)
         `,
         filter: "blur(1px)",
       }} />
@@ -237,35 +270,36 @@ export const ContactSection = () => {
       {/* Subtle grid */}
       <div aria-hidden className="absolute inset-0 pointer-events-none" style={{
         backgroundImage: `
-          linear-gradient(rgba(34,211,238,0.02) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(34,211,238,0.02) 1px, transparent 1px)
+          linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px)
         `,
         backgroundSize: "80px 80px",
         maskImage: "radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 100%)",
       }} />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
 
-        {/* ── Section header ── */}
-        <div className="text-center mb-20">
+        {/* Section header */}
+        <div className="text-center mb-16 sm:mb-20">
           <motion.p
             variants={fadeUp(0, 12)} initial="hidden" whileInView="visible" viewport={VP}
             className="font-mono tracking-[0.24em] uppercase text-xs mb-5 inline-flex items-center gap-2"
-            style={{ color: "rgba(34,211,238,0.75)" }}
+            style={{ color: "rgba(99,102,241,0.8)" }}
           >
-            <span className="w-8 h-px" style={{ background: "linear-gradient(90deg, transparent, #22d3ee)" }} />
+            <span className="w-8 h-px" style={{ background: "linear-gradient(90deg, transparent, #6366f1)" }} />
             Get In Touch
-            <span className="w-8 h-px" style={{ background: "linear-gradient(90deg, #22d3ee, transparent)" }} />
+            <span className="w-8 h-px" style={{ background: "linear-gradient(90deg, #6366f1, transparent)" }} />
           </motion.p>
 
           <motion.h3
             variants={fadeUp(0.1, 28)} initial="hidden" whileInView="visible" viewport={VP}
-            className="text-5xl md:text-6xl font-bold mb-5 tracking-tight"
+            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-5 tracking-tight"
+            style={{ color: "#eef2ff" }}
           >
-            Let's Build
+            Let&apos;s Build
             <span style={{
               display: "block",
-              background: "linear-gradient(135deg, #67e8f9 0%, #3b82f6 50%, #a78bfa 100%)",
+              background: "linear-gradient(135deg, #a5b4fc 0%, #6366f1 45%, #06d6a0 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             }}>
               Something Great
@@ -274,19 +308,18 @@ export const ContactSection = () => {
 
           <motion.p
             variants={fadeUp(0.2, 16)} initial="hidden" whileInView="visible" viewport={VP}
-            className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed"
+            className="text-lg max-w-xl mx-auto leading-relaxed"
+            style={{ color: "rgba(176,190,220,0.72)" }}
           >
-            Whether you're an institution, enterprise, or student — reach out and let's explore what we can build together.
+            Whether you&apos;re an institution, enterprise, or student — reach out and let&apos;s explore what we can build together.
           </motion.p>
         </div>
 
-        {/* ── Main grid ── */}
-        <div className="grid lg:grid-cols-5 gap-8">
+        {/* Main grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
 
-          {/* ── LEFT COLUMN (2/5) ── */}
-          <div className="lg:col-span-2 flex flex-col gap-5">
-
-            {/* Contact cards */}
+          {/* LEFT COLUMN */}
+          <div className="lg:col-span-2 flex flex-col gap-4">
             <InfoCard icon={<Mail size={18} />}  label="Email"    value="info@ajuedsolutions.com" href="mailto:info@ajuedsolutions.com" delay={0.25} />
             <InfoCard icon={<Phone size={18} />} label="Phone"    value="+91 8301 973 970"         href="tel:+918301973970"              delay={0.32} />
             <InfoCard icon={<MapPin size={18} />} label="Location" value="Kerala, India"           href="https://maps.google.com"        delay={0.39} />
@@ -297,9 +330,9 @@ export const ContactSection = () => {
               variants={fadeUp(0.5, 16)} initial="hidden" whileInView="visible" viewport={VP}
               className="grid grid-cols-3 gap-3 mt-2"
             >
-              <StatPill value="200+"  label="Students"  delay={0.52} />
-              <StatPill value="50+"   label="Projects"  delay={0.58} />
-              <StatPill value="3+"    label="Companies" delay={0.64} />
+              <StatPill value="200+" label="Students"  delay={0.52} />
+              <StatPill value="50+"  label="Projects"  delay={0.58} />
+              <StatPill value="3+"   label="Companies" delay={0.64} />
             </motion.div>
 
             {/* Quote card */}
@@ -307,43 +340,55 @@ export const ContactSection = () => {
               variants={fadeUp(0.68, 16)} initial="hidden" whileInView="visible" viewport={VP}
               className="rounded-2xl p-5 mt-auto"
               style={{
-                background: "linear-gradient(145deg, rgba(34,211,238,0.06), rgba(59,130,246,0.04))",
-                border: "1px solid rgba(34,211,238,0.15)",
+                background: "linear-gradient(145deg, rgba(26,32,53,0.92), rgba(20,25,41,0.95))",
+                border: "1px solid rgba(99,102,241,0.18)",
+                boxShadow: "5px 5px 18px rgba(0,0,0,0.5), -2px -2px 10px rgba(255,255,255,0.04)",
               }}
             >
-              <div className="text-3xl text-cyan-500/30 font-serif leading-none mb-2">"</div>
-              <p className="text-gray-400 text-sm leading-relaxed italic">
+              <div className="text-3xl font-serif leading-none mb-2" style={{ color: "rgba(99,102,241,0.35)" }}>"</div>
+              <p className="text-sm leading-relaxed italic" style={{ color: "rgba(176,190,220,0.8)" }}>
                 Innovate. Educate. Empower. We're here to shape the future with you.
               </p>
               <div className="mt-3 flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-[9px] font-bold text-white">A</div>
-                <span className="text-xs text-gray-500 font-mono tracking-wide">AJU ED Solutions</span>
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1, #06d6a0)",
+                    boxShadow: "0 0 10px rgba(99,102,241,0.4)",
+                  }}
+                >
+                  A
+                </div>
+                <span className="text-xs font-mono tracking-wide" style={{ color: "rgba(110,130,168,0.7)" }}>
+                  AJU ED Solutions
+                </span>
               </div>
             </motion.div>
           </div>
 
-          {/* ── RIGHT COLUMN (3/5) — Form ── */}
+          {/* RIGHT COLUMN — Form */}
           <motion.div
             variants={fadeIn(0.3)} initial="hidden" whileInView="visible" viewport={VP}
             className="lg:col-span-3"
           >
             <div
-              className="relative rounded-3xl p-8 h-full"
+              className="relative rounded-3xl p-6 sm:p-8 h-full"
               style={{
-                background: "linear-gradient(145deg, rgba(255,255,255,0.04), rgba(0,0,0,0.2))",
-                border: "1px solid rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px)",
+                background: "linear-gradient(145deg, rgba(26,32,53,0.92), rgba(20,25,41,0.95))",
+                border: "1px solid rgba(99,102,241,0.14)",
+                backdropFilter: "blur(14px)",
+                boxShadow: "6px 6px 22px rgba(0,0,0,0.55), -3px -3px 12px rgba(255,255,255,0.04)",
               }}
             >
               {/* Corner glows */}
               <div aria-hidden className="absolute top-0 right-0 w-48 h-48 rounded-full pointer-events-none"
-                style={{ background: "radial-gradient(circle, rgba(34,211,238,0.07) 0%, transparent 70%)", filter: "blur(32px)" }} />
+                style={{ background: "radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)", filter: "blur(32px)" }} />
               <div aria-hidden className="absolute bottom-0 left-0 w-40 h-40 rounded-full pointer-events-none"
-                style={{ background: "radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)", filter: "blur(28px)" }} />
+                style={{ background: "radial-gradient(circle, rgba(6,214,160,0.06) 0%, transparent 70%)", filter: "blur(28px)" }} />
 
               <AnimatePresence mode="wait">
 
-                {/* ── Success ── */}
+                {/* Success */}
                 {status === "success" ? (
                   <motion.div
                     key="success"
@@ -357,11 +402,12 @@ export const ContactSection = () => {
                       initial={{ scale: 0, rotate: -30 }}
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ duration: 0.6, delay: 0.1, ease: [0.34, 1.56, 0.64, 1] }}
-                      className="w-20 h-20 rounded-full flex items-center justify-center text-cyan-400"
+                      className="w-20 h-20 rounded-full flex items-center justify-center"
                       style={{
-                        background: "rgba(34,211,238,0.08)",
-                        border: "1px solid rgba(34,211,238,0.3)",
-                        boxShadow: "0 0 40px rgba(34,211,238,0.2)",
+                        background: "rgba(6,214,160,0.1)",
+                        border: "1px solid rgba(6,214,160,0.35)",
+                        boxShadow: "0 0 40px rgba(6,214,160,0.22), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04)",
+                        color: "#06d6a0",
                       }}
                     >
                       <CheckCircle2 size={36} />
@@ -371,8 +417,8 @@ export const ContactSection = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.3, ease: EASE }}
                     >
-                      <h4 className="text-2xl font-bold text-white mb-2">Message Sent!</h4>
-                      <p className="text-gray-400 text-sm max-w-xs mx-auto">
+                      <h4 className="text-2xl font-bold mb-2" style={{ color: "#eef2ff" }}>Message Sent!</h4>
+                      <p className="text-sm max-w-xs mx-auto" style={{ color: "rgba(176,190,220,0.72)" }}>
                         Thanks for reaching out. We'll get back to you within 24 hours.
                       </p>
                     </motion.div>
@@ -383,7 +429,13 @@ export const ContactSection = () => {
                       onClick={() => setStatus("idle")}
                       whileHover={{ scale: 1.04 }}
                       whileTap={{ scale: 0.96 }}
-                      className="mt-2 text-xs text-gray-500 hover:text-white font-mono tracking-widest uppercase border border-white/10 px-5 py-2.5 rounded-full hover:border-white/25 transition-all duration-200"
+                      className="mt-2 text-xs font-mono tracking-widest uppercase px-5 py-2.5 rounded-full transition-all duration-200"
+                      style={{
+                        color: "rgba(176,190,220,0.65)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "transparent",
+                        boxShadow: "3px 3px 12px rgba(0,0,0,0.42), -1px -1px 6px rgba(255,255,255,0.04)",
+                      }}
                     >
                       Send Another
                     </motion.button>
@@ -391,7 +443,7 @@ export const ContactSection = () => {
 
                 ) : (
 
-                  // ── Form ──
+                  // Form
                   <motion.form
                     key="form"
                     initial={{ opacity: 0 }}
@@ -402,23 +454,26 @@ export const ContactSection = () => {
                     onSubmit={handleSubmit}
                   >
                     <div className="mb-1">
-                      <h4 className="text-lg font-semibold text-white mb-1">Send us a message</h4>
-                      <p className="text-gray-500 text-xs font-mono tracking-wide">All fields are required</p>
+                      <h4 className="text-lg font-semibold mb-1" style={{ color: "#eef2ff" }}>
+                        Send us a message
+                      </h4>
+                      <p className="text-xs font-mono tracking-wide" style={{ color: "rgba(110,130,168,0.65)" }}>
+                        All fields are required
+                      </p>
                     </div>
 
-                    {/* Name + Email */}
-                    <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Field label="Your Name"  name="name"  value={form.name}  onChange={handleChange as any} />
                       <Field label="Your Email" name="email" type="email" value={form.email} onChange={handleChange as any} />
                     </div>
 
-                    {/* Message */}
-                    <TextAreaField label="Your Message" name="message" value={form.message} onChange={handleChange as any} rows={15} />
+                    <TextAreaField label="Your Message" name="message" value={form.message} onChange={handleChange as any} rows={12} />
 
-                    {/* Character count */}
                     <div className="flex justify-end -mt-2">
-                      <span className="text-[10px] font-mono"
-                        style={{ color: form.message.length > 400 ? "#f87171" : "rgba(100,120,140,0.6)" }}>
+                      <span
+                        className="text-[10px] font-mono"
+                        style={{ color: form.message.length > 400 ? "#f87171" : "rgba(110,130,168,0.6)" }}
+                      >
                         {form.message.length} / 500
                       </span>
                     </div>
@@ -431,10 +486,11 @@ export const ContactSection = () => {
                           animate={{ opacity: 1, y: 0,  height: "auto" }}
                           exit={{   opacity: 0, y: -8,  height: 0 }}
                           transition={{ duration: 0.3, ease: EASE }}
-                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400 overflow-hidden"
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm overflow-hidden"
                           style={{
                             background: "rgba(239,68,68,0.07)",
-                            border: "1px solid rgba(239,68,68,0.2)",
+                            border: "1px solid rgba(239,68,68,0.22)",
+                            color: "#fca5a5",
                           }}
                         >
                           <AlertCircle size={16} className="shrink-0" />
@@ -451,18 +507,18 @@ export const ContactSection = () => {
                       whileTap={status  !== "loading" ? { scale: 0.98 } : {}}
                       className="w-full py-4 rounded-2xl text-white font-bold tracking-[0.12em] uppercase text-sm flex items-center justify-center gap-2.5 disabled:opacity-60 disabled:cursor-not-allowed mt-auto"
                       style={{
-                        background: "linear-gradient(135deg, #06b6d4 0%, #3b82f6 60%, #6366f1 100%)",
-                        boxShadow: "0 0 28px rgba(6,182,212,0.28), 0 4px 16px rgba(0,0,0,0.3)",
+                        background: "linear-gradient(135deg, #6366f1 0%, #818cf8 55%, #06d6a0 100%)",
+                        boxShadow: "0 4px 24px rgba(99,102,241,0.38), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04)",
                         transition: "box-shadow 0.3s ease, opacity 0.2s ease, transform 0.2s ease",
                       }}
                       onMouseEnter={(e) => {
                         if (status !== "loading")
                           (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                            "0 0 48px rgba(6,182,212,0.5), 0 8px 24px rgba(0,0,0,0.4)";
+                            "0 8px 40px rgba(99,102,241,0.58), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04)";
                       }}
                       onMouseLeave={(e) => {
                         (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                          "0 0 28px rgba(6,182,212,0.28), 0 4px 16px rgba(0,0,0,0.3)";
+                          "0 4px 24px rgba(99,102,241,0.38), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04)";
                       }}
                     >
                       {status === "loading" ? (
@@ -478,8 +534,7 @@ export const ContactSection = () => {
                       )}
                     </motion.button>
 
-                    {/* Trust line */}
-                    <p className="text-center text-[10px] text-gray-600 font-mono tracking-wide">
+                    <p className="text-center text-[10px] font-mono tracking-wide" style={{ color: "rgba(110,130,168,0.55)" }}>
                       🔒 Your information is private and secure
                     </p>
                   </motion.form>

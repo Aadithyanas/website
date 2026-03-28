@@ -1,10 +1,12 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ERPAuthProvider, useERPAuth, apiClient } from "@/src/components/erp/ERPAuthContext";
 import { ERPWebSocketProvider } from "@/src/components/erp/ERPWebSocketProvider";
 import { useERPWS } from "@/src/components/erp/ERPWebSocketProvider";
 import ERPSidebar from "@/src/components/erp/ERPSidebar";
+import { Menu } from "lucide-react";
 import "@/src/components/erp/erp.css";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -12,12 +14,14 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isConnected } = useERPWS();
   const router = useRouter();
   const [notifCount, setNotifCount] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/erp/login");
     }
   }, [loading, user, router]);
+
   useEffect(() => {
     if (token) {
       // Get unread count
@@ -46,11 +50,10 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#000000", color: "#fff" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: "40px", height: "40px", borderRadius: "50%", border: "2px solid #222", borderTopColor: "#fff", margin: "0 auto 16px", animation: "spin 0.8s linear infinite" }} />
-          <p style={{ color: "#888", fontSize: "14px" }}>Authenticating...</p>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="text-center">
+          <div className="w-10 h-10 rounded-full border-2 border-[#222] border-t-white mx-auto mb-4 animate-spin" />
+          <p className="text-[#888] text-sm font-semibold tracking-wider">AUTHENTICATING...</p>
         </div>
       </div>
     );
@@ -59,60 +62,49 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#000000", color: "#ffffff", fontFamily: "'Inter', system-ui, sans-serif" }}>
-      <ERPSidebar notifCount={notifCount} />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+    <div className="flex h-screen overflow-hidden bg-black text-white font-sans antialiased selection:bg-white/20">
+      <ERPSidebar notifCount={notifCount} mobileOpen={mobileOpen} closeMobile={() => setMobileOpen(false)} />
+      
+      <div className="flex-1 flex flex-col min-w-0 bg-[#000]">
+        
         {/* Top bar */}
-        <header style={{
-          height: "56px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 28px",
-          borderBottom: "1px solid #1a1a1a",
-          background: "#000",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <h2 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#fff", letterSpacing: "0.05em" }}>
-              WORKSPACE
-            </h2>
-            <div 
-              title={isConnected ? "WebSocket Connected" : "WebSocket Disconnected"}
-              style={{ 
-                width: "6px", height: "6px", borderRadius: "50%", 
-                background: isConnected ? "#10b981" : "#ef4444",
-                boxShadow: isConnected ? "0 0 8px #10b981" : "none",
-                transition: "0.3s"
-              }} 
-            />
+        <header className="h-[60px] flex items-center justify-between px-4 sm:px-8 border-b border-[#1a1a1a] bg-[#000] sticky top-0 z-10 transition-colors">
+          <div className="flex items-center gap-4">
+            <button
+              className="md:hidden p-2 -ml-2 text-gray-400 hover:text-white hover:bg-[#111] rounded-lg transition-colors outline-none"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open Menu"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="flex items-center gap-2">
+              <h2 className="m-0 text-[13px] font-extrabold text-white tracking-[0.15em] uppercase hidden sm:block">
+                WORKSPACE
+              </h2>
+              <div 
+                title={isConnected ? "WebSocket Connected" : "WebSocket Disconnected"}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${isConnected ? "bg-emerald-500 shadow-[0_0_10px_#10b981]" : "bg-red-500 shadow-[0_0_10px_#ef4444]"}`} 
+              />
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          
+          <div className="flex items-center gap-3">
             {notifCount > 0 && (
-              <span style={{
-                background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)",
-                color: "#f87171", borderRadius: "9999px", fontSize: "12px",
-                fontWeight: 700, padding: "2px 10px",
-              }}>
-                {notifCount} new
+              <span className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-full text-[11px] font-bold px-3 py-1 ml-auto">
+                {notifCount} unread
               </span>
             )}
-            <div style={{
-              padding: "4px 12px", borderRadius: "4px",
-              background: "#fff", border: "1px solid #fff",
-              color: "#000", fontSize: "11px", fontWeight: 800,
-              textTransform: "uppercase", letterSpacing: "0.05em"
-            }}>
-              {user.role === "admin" ? "Admin" : "Member"}
+            <div className="px-3.5 py-1.5 rounded-lg bg-[#111] border border-[#222] text-gray-300 text-[11px] font-extrabold uppercase tracking-widest hidden sm:block">
+              {user.role}
             </div>
           </div>
         </header>
 
         {/* Main content */}
-        <main style={{ flex: 1, padding: "28px", overflow: "auto" }}>
-          {children}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto no-scrollbar scroll-smooth">
+          <div className="max-w-[1600px] mx-auto w-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>

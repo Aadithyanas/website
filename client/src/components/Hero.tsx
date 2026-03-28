@@ -35,20 +35,14 @@ const Hero = () => {
   const rightRef   = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Track whether Spline has finished loading
   const [splineReady, setSplineReady] = useState(false);
-  // Prevent the intro timeline from firing twice
   const animatedRef = useRef(false);
 
-  // Called when SplineScene signals it is ready
   const handleSplineLoad = useCallback(() => {
     setSplineReady(true);
   }, []);
 
-  // ── Left-panel entrance (runs immediately — no dependency on Spline) ──────
   useEffect(() => {
-    // Set all animated elements to invisible BEFORE first paint
-    // so there is never a flash of visible-then-hidden content
     gsap.set([".title-line", taglineRef.current, badgesRef.current, btnsRef.current], {
       opacity: 0,
     });
@@ -68,7 +62,6 @@ const Hero = () => {
         "-=0.25"
       );
 
-    // Particles — deferred to next frame so they don't cause layout thrash
     requestAnimationFrame(() => {
       gsap.to(".particle", {
         y: "random(-20, 20)",
@@ -82,24 +75,19 @@ const Hero = () => {
     });
   }, []);
 
-  // ── Right-panel entrance — waits for Spline, then fades + dissolves overlay ─
   useEffect(() => {
     if (!splineReady || animatedRef.current) return;
     animatedRef.current = true;
 
     const tl = gsap.timeline();
-
-    // 1. Fade the loading overlay out
     if (overlayRef.current) {
       tl.to(overlayRef.current, { opacity: 0, duration: 0.45, ease: "power2.out" });
     }
-
-    // 2. Slide + fade the Spline panel in
     tl.fromTo(
       rightRef.current,
       { opacity: 0, x: 80 },
       { opacity: 1, x: 0, duration: 0.9, ease: "power3.out" },
-      "<0.05" // starts just after overlay begins fading
+      "<0.05"
     );
   }, [splineReady]);
 
@@ -111,52 +99,51 @@ const Hero = () => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-        /* ── Reset / base ── */
         *, *::before, *::after { box-sizing: border-box; }
 
+        /* ── Section base ── */
         .hero-section {
           position: relative;
           min-height: 100svh;
-          background: #020810;
+          background: #000000;
           display: flex;
           align-items: center;
           overflow: hidden;
           padding-top: 20px;
-          /* Prevent any subpixel flicker during GSAP transforms */
           transform: translateZ(0);
           will-change: auto;
         }
 
-        /* ── Glows ── */
+        /* ── Glows — softer, material-style ── */
         .hero-bg-glow { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
         .glow-1 {
-          position: absolute; top: -20%; left: -10%; width: 55%; height: 70%;
-          background: radial-gradient(ellipse at center, rgba(6,182,212,0.12) 0%, rgba(6,182,212,0.04) 50%, transparent 70%);
-          filter: blur(40px);
-          animation: driftA 10s ease-in-out infinite alternate;
+          position: absolute; top: -15%; left: -5%; width: 50%; height: 65%;
+          background: radial-gradient(ellipse at center, rgba(99,102,241,0.13) 0%, rgba(99,102,241,0.04) 50%, transparent 70%);
+          filter: blur(50px);
+          animation: driftA 12s ease-in-out infinite alternate;
           will-change: transform;
         }
         .glow-2 {
-          position: absolute; bottom: -10%; right: -5%; width: 50%; height: 60%;
-          background: radial-gradient(ellipse at center, rgba(99,102,241,0.1) 0%, transparent 65%);
-          filter: blur(50px);
-          animation: driftB 13s ease-in-out infinite alternate;
+          position: absolute; bottom: -10%; right: -5%; width: 48%; height: 58%;
+          background: radial-gradient(ellipse at center, rgba(6,214,160,0.09) 0%, transparent 65%);
+          filter: blur(55px);
+          animation: driftB 15s ease-in-out infinite alternate;
           will-change: transform;
         }
         .glow-3 {
-          position: absolute; top: 40%; left: 40%; width: 30%; height: 40%;
-          background: radial-gradient(ellipse at center, rgba(34,211,238,0.06) 0%, transparent 60%);
-          filter: blur(60px);
+          position: absolute; top: 45%; left: 42%; width: 28%; height: 38%;
+          background: radial-gradient(ellipse at center, rgba(244,114,182,0.06) 0%, transparent 60%);
+          filter: blur(65px);
         }
         @keyframes driftA { from{transform:translate(0,0) scale(1)} to{transform:translate(4%,6%) scale(1.08)} }
         @keyframes driftB { from{transform:translate(0,0) scale(1)} to{transform:translate(-5%,-4%) scale(1.1)} }
 
-        /* ── Grid ── */
+        /* ── Flat grid ── */
         .hero-grid {
           position: absolute; inset: 0; z-index: 0; pointer-events: none;
           background-image:
-            linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+            linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
           background-size: 64px 64px;
           mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
         }
@@ -186,12 +173,12 @@ const Hero = () => {
           display: inline-flex; align-items: center; gap: 8px;
           font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500;
           letter-spacing: 0.22em; text-transform: uppercase;
-          color: rgba(34,211,238,0.7); opacity: 0;
+          color: rgba(99,102,241,0.8); opacity: 0;
           animation: fadeSlideUp 0.6s 0.1s forwards;
         }
         .eyebrow-dot {
-          width: 6px; height: 6px; background: #22d3ee; border-radius: 50%;
-          box-shadow: 0 0 8px #22d3ee; animation: pulse 2s infinite;
+          width: 6px; height: 6px; background: #818cf8; border-radius: 50%;
+          box-shadow: 0 0 8px #818cf8; animation: pulse 2s infinite;
         }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.4)} }
 
@@ -200,11 +187,10 @@ const Hero = () => {
         .title-line {
           font-family: 'Rajdhani', sans-serif; font-weight: 700;
           letter-spacing: 0.04em; text-transform: uppercase;
-          /* opacity set to 0 via GSAP before first paint — no CSS opacity here */
         }
         .line-1 {
           display: block; font-size: clamp(2.6rem, 6vw, 6rem);
-          background: linear-gradient(135deg, #e0f7ff 0%, #67e8f9 50%, #22d3ee 100%);
+          background: linear-gradient(135deg, #eef2ff 0%, #a5b4fc 50%, #818cf8 100%);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
         .line-2 { display: flex; align-items: baseline; gap: 0.2em; margin-top: -0.05em; }
@@ -212,14 +198,14 @@ const Hero = () => {
           font-family: 'Rajdhani', sans-serif; font-weight: 700;
           font-size: clamp(2.6rem, 5vw, 5rem);
           letter-spacing: 0.04em; text-transform: uppercase;
-          background: linear-gradient(135deg, #93c5fd 0%, #818cf8 60%, #c4b5fd 100%);
+          background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 55%, #06d6a0 100%);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
         .llp-text {
           font-family: 'Rajdhani', sans-serif; font-weight: 700;
           font-size: clamp(2.6rem, 5vw, 5rem);
           margin-left: 10px; text-transform: uppercase;
-          background: linear-gradient(135deg, #93c5fd 0%, #818cf8 60%, #c4b5fd 100%);
+          background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 60%, #06d6a0 100%);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
           align-self: flex-end; padding-bottom: 0.2em;
         }
@@ -227,65 +213,70 @@ const Hero = () => {
         /* Tagline */
         .tagline {
           font-family: 'DM Sans', sans-serif; font-size: clamp(0.9rem, 1.8vw, 1.15rem);
-          font-weight: 300; line-height: 1.75; color: rgba(180,210,230,0.75);
+          font-weight: 300; line-height: 1.75; color: rgba(176,190,220,0.85);
           max-width: 44ch;
-          /* opacity controlled by GSAP */
         }
-        .tagline strong { font-weight: 500; color: #67e8f9; }
+        .tagline strong { font-weight: 500; color: #a5b4fc; }
 
-        /* Badges */
+        /* Badges — flat material style with subtle neumorphic shadow */
         .badges-row { display: flex; flex-wrap: wrap; gap: 8px; }
         .tech-badge {
           font-family: 'DM Sans', sans-serif; font-size: 0.68rem; font-weight: 500;
           letter-spacing: 0.1em; text-transform: uppercase;
-          color: rgba(103,232,249,0.85); background: rgba(6,182,212,0.07);
-          border: 1px solid rgba(6,182,212,0.2); border-radius: 100px;
-          padding: 5px 14px; backdrop-filter: blur(6px);
+          color: rgba(165,180,252,0.9); background: rgba(99,102,241,0.08);
+          border: 1px solid rgba(99,102,241,0.22); border-radius: 100px;
+          padding: 5px 14px;
+          /* Neumorphic badge shadow */
+          box-shadow: 2px 2px 8px rgba(0,0,0,0.4), -1px -1px 4px rgba(255,255,255,0.04);
           animation: badgeFloat 4s ease-in-out infinite alternate;
           transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
         }
         .tech-badge:hover {
-          background: rgba(6,182,212,0.18); border-color: rgba(34,211,238,0.6);
-          box-shadow: 0 0 14px rgba(34,211,238,0.2);
+          background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.55);
+          box-shadow: 0 0 14px rgba(99,102,241,0.25), 2px 2px 8px rgba(0,0,0,0.4), -1px -1px 4px rgba(255,255,255,0.04);
         }
         @keyframes badgeFloat { from{transform:translateY(0)} to{transform:translateY(-4px)} }
 
-        /* Buttons */
+        /* Buttons — flat material + neumorphic */
         .btns-row { display: flex; flex-wrap: wrap; gap: 16px; }
         .btn-primary {
           position: relative; font-family: 'Syne', sans-serif; font-size: 0.82rem;
           font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
-          color: #020810; background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
+          color: #fff; background: linear-gradient(135deg, #6366f1 0%, #818cf8 60%, #06d6a0 100%);
           border: none; border-radius: 100px; padding: 13px 28px; cursor: pointer;
-          overflow: hidden; box-shadow: 0 0 24px rgba(34,211,238,0.35);
+          overflow: hidden;
+          box-shadow: 0 4px 20px rgba(99,102,241,0.45), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04);
           transition: box-shadow 0.3s, transform 0.2s;
         }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(34,211,238,0.55), 0 8px 20px rgba(0,0,0,0.3); }
+        .btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 36px rgba(99,102,241,0.65), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04);
+        }
         .btn-outline {
           position: relative; font-family: 'Syne', sans-serif; font-size: 0.82rem;
           font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
-          color: #67e8f9; background: rgba(6,182,212,0.05);
-          border: 1px solid rgba(34,211,238,0.3); border-radius: 100px;
-          padding: 13px 28px; cursor: pointer; backdrop-filter: blur(8px);
+          color: #a5b4fc; background: rgba(99,102,241,0.06);
+          border: 1px solid rgba(99,102,241,0.3); border-radius: 100px;
+          padding: 13px 28px; cursor: pointer;
+          box-shadow: 3px 3px 14px rgba(0,0,0,0.45), -1px -1px 6px rgba(255,255,255,0.04);
           overflow: hidden; transition: all 0.3s;
         }
-        .btn-outline:hover { border-color: rgba(34,211,238,0.7); box-shadow: 0 0 20px rgba(34,211,238,0.2); transform: translateY(-2px); }
+        .btn-outline:hover {
+          border-color: rgba(99,102,241,0.65);
+          box-shadow: 0 0 22px rgba(99,102,241,0.25), 3px 3px 14px rgba(0,0,0,0.45), -1px -1px 6px rgba(255,255,255,0.04);
+          transform: translateY(-2px);
+        }
 
-        /* ── RIGHT PANEL ── */
+        /* ── Right panel ── */
         .hero-right {
           position: relative;
           width: 100%;
           height: 760px;
           border-radius: 24px;
-          /* opacity starts at 0 — GSAP will animate it in after Spline loads */
           opacity: 0;
-          /* Promote to own compositor layer: eliminates flicker on GPU */
           transform: translateZ(0);
           will-change: opacity, transform;
-          /* Do NOT use overflow:hidden — it clips the Spline canvas */
         }
-
-        /* Ensure every child Spline renders fills the box */
         .hero-right > div,
         .hero-right canvas {
           position: absolute !important;
@@ -296,22 +287,15 @@ const Hero = () => {
 
         /* ── Spline loading skeleton ── */
         .spline-loader-overlay {
-          position: absolute;
-          inset: 0;
-          z-index: 20;
-          border-radius: 24px;
-          background: #020810;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          position: absolute; inset: 0; z-index: 20; border-radius: 24px;
+          background: #000000;
+          display: flex; align-items: center; justify-content: center;
           pointer-events: none;
-          /* starts visible, GSAP fades it out when Spline is ready */
         }
         .spline-loader-pulse {
-          width: 48px; height: 48px;
-          border-radius: 50%;
-          border: 2px solid rgba(34,211,238,0.15);
-          border-top-color: rgba(34,211,238,0.7);
+          width: 48px; height: 48px; border-radius: 50%;
+          border: 2px solid rgba(99,102,241,0.15);
+          border-top-color: rgba(99,102,241,0.8);
           animation: spinPulse 1s linear infinite;
         }
         @keyframes spinPulse { to { transform: rotate(360deg); } }
@@ -324,12 +308,12 @@ const Hero = () => {
         }
         .scroll-line {
           width: 1px; height: 36px;
-          background: linear-gradient(180deg, rgba(34,211,238,0.7), transparent);
+          background: linear-gradient(180deg, rgba(99,102,241,0.8), transparent);
           animation: scrollPulse 2s ease-in-out infinite;
         }
         .scroll-text {
           font-family: 'DM Sans', sans-serif; font-size: 0.58rem;
-          letter-spacing: 0.2em; text-transform: uppercase; color: rgba(34,211,238,0.45);
+          letter-spacing: 0.2em; text-transform: uppercase; color: rgba(99,102,241,0.5);
         }
         @keyframes scrollPulse { 0%,100%{opacity:0.5;transform:scaleY(1)} 50%{opacity:1;transform:scaleY(1.2)} }
         @keyframes fadeSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
@@ -353,7 +337,6 @@ const Hero = () => {
           .tagline { max-width: 60ch; }
           .badges-row { justify-content: center; }
           .btns-row { justify-content: center; }
-          /* On mobile Spline can be visible immediately — no slide-in needed */
           .hero-right { height: 420px; width: 100%; }
           .scroll-ind { display: none; }
         }
@@ -365,13 +348,13 @@ const Hero = () => {
           .tagline { font-size: 0.88rem; }
           .eyebrow { font-size: 0.6rem; }
           .btn-primary, .btn-outline { padding: 11px 22px; font-size: 0.75rem; }
-          .hero-right { height: 340px; border-radius: 16px; }
+          .hero-right { height: 320px; border-radius: 16px; }
           .tech-badge { font-size: 0.62rem; padding: 4px 11px; }
         }
         @media (max-width: 400px) {
           .hero-inner { padding: 1rem 0.75rem; }
           .line-1, .solutions-text, .llp-text { font-size: clamp(1.7rem, 11vw, 2.4rem); }
-          .hero-right { height: 300px; }
+          .hero-right { height: 280px; }
           .btns-row { flex-direction: column; align-items: center; }
           .btn-primary, .btn-outline { width: 100%; max-width: 280px; justify-content: center; }
         }
@@ -396,9 +379,9 @@ const Hero = () => {
             top:  `${10 + (i * 5.1) % 80}%`,
             left: `${5  + (i * 7.3) % 90}%`,
             background:
-              i % 3 === 0 ? "rgba(34,211,238,0.55)"
-              : i % 3 === 1 ? "rgba(99,102,241,0.45)"
-              : "rgba(167,139,250,0.4)",
+              i % 3 === 0 ? "rgba(99,102,241,0.6)"
+              : i % 3 === 1 ? "rgba(6,214,160,0.5)"
+              : "rgba(244,114,182,0.45)",
             boxShadow: `0 0 ${4 + (i % 4)}px currentColor`,
           }}
         />
@@ -434,18 +417,22 @@ const Hero = () => {
 
         {/* ── RIGHT — Spline ── */}
         <div className="hero-right" ref={rightRef}>
-          {/* Loading overlay — visible until Spline fires onLoad */}
           <div className="spline-loader-overlay" ref={overlayRef}>
             <div className="spline-loader-pulse" />
           </div>
-
-          <Spotlight className="-top-20 -left-20" fill="rgba(34,211,238,0.15)" />
+          <Spotlight className="-top-20 -left-20" fill="rgba(99,102,241,0.18)" />
           <SplineScene
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
             className="w-full h-full"
-            onLoad={handleSplineLoad}   // ← wire this up in your SplineScene component
+            onLoad={handleSplineLoad}
           />
         </div>
+      </div>
+
+      {/* ── Scroll indicator ── */}
+      <div className="scroll-ind">
+        <div className="scroll-line" />
+        <span className="scroll-text">Scroll</span>
       </div>
     </section>
   );

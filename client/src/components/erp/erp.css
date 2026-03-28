@@ -9,14 +9,15 @@
 .erp-card {
   background: #000;
   border: 1px solid #222;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 24px;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .erp-card:hover {
-  border-color: #444;
-  background: #050505;
+  border-color: #333;
+  background: #030303;
+  box-shadow: 0 4px 24px rgba(255, 255, 255, 0.02);
 }
 
 .erp-btn {
@@ -26,19 +27,22 @@
   font-size: 14px;
   cursor: pointer;
   border: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  outline: none;
 }
 
 .erp-btn-primary {
   background: #ffffff;
   color: #000000;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.1);
 }
 .erp-btn-primary:hover {
-  background: #f3f4f6;
-  transform: translateY(-1px);
+  background: #f0f0f0;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
 }
 
 .erp-btn-ghost {
@@ -70,7 +74,7 @@
   color: #fff;
   font-size: 14px;
   outline: none;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   box-sizing: border-box;
 }
 .erp-input:focus {
@@ -143,7 +147,7 @@
   padding: 8px 32px 8px 12px;
   outline: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .erp-select:focus { border-color: #888; }
 .erp-select option { background: #000; color: #fff; }

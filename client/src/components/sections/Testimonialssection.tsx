@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Star } from "lucide-react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Star, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 
-// ── Shared easing / viewport ──────────────────────────────────────────────────
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VP   = { once: true, amount: 0.15 };
 
@@ -18,8 +17,8 @@ const fadeUp = (delay = 0, distance = 24) => ({
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
-  "#1a73e8", "#ea4335", "#34a853", "#fbbc04",
-  "#9c27b0", "#00acc1", "#e67c73", "#0f9d58",
+  "#6366f1", "#818cf8", "#06d6a0", "#f472b6",
+  "#a78bfa", "#38bdf8", "#fb923c", "#34d399",
 ];
 const getInitials = (name: string) =>
   name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
@@ -28,10 +27,16 @@ const getColor = (name: string) =>
     name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % AVATAR_COLORS.length
   ];
 
-const GoogleAvatar = ({ name, size = 44 }: { name: string; size?: number }) => (
+const GoogleAvatar = ({ name, size = 48 }: { name: string; size?: number }) => (
   <div
-    className="shrink-0 flex items-center justify-center rounded-full text-white font-bold select-none shadow-md"
-    style={{ background: getColor(name), width: size, height: size, fontSize: size * 0.38 }}
+    className="shrink-0 flex items-center justify-center rounded-full text-white font-bold select-none"
+    style={{
+      background: `linear-gradient(135deg, ${getColor(name)}, ${getColor(name)}aa)`,
+      width: size,
+      height: size,
+      fontSize: size * 0.36,
+      boxShadow: `0 0 18px ${getColor(name)}44, 4px 4px 14px rgba(0,0,0,0.55), -2px -2px 8px rgba(255,255,255,0.04)`,
+    }}
   >
     {getInitials(name)}
   </div>
@@ -42,75 +47,97 @@ const TESTIMONIALS = [
   {
     text: "I had a wonderful experience at Aju ED Solutions. The faculty is highly knowledgeable, supportive, and always ready to clear doubts with patience. Highly recommended!",
     author: "Sradha Sunilkumar",
+    role: "B.Tech Student",
   },
   {
     text: "Thank you for helping me complete my mini project and teaching me patiently along the way. Learning was easy and enjoyable.",
     author: "Sreelekshmy",
+    role: "Engineering Student",
   },
   {
     text: "The infrastructure is modern, classrooms well-equipped, and the learning environment truly inspiring. The staff is professional and genuinely focused on student growth.",
     author: "Athul Ashok",
+    role: "Alumni",
   },
   {
     text: "Aju sir's classes helped me score very good grades. The teaching style made even tough subjects easier to understand.",
     author: "Abhishek",
+    role: "B.Tech Student",
   },
   {
     text: "The workshops bridged the gap between academics and industry. Learned how subjects interconnect and apply in real-world scenarios.",
     author: "Abin A S",
+    role: "Workshop Attendee",
   },
 ];
 
-// ── Card ──────────────────────────────────────────────────────────────────────
+// ── Testimonial Card ──────────────────────────────────────────────────────────
 const TestimonialCard = ({
-  author,
-  text,
-  setPaused,
+  text, author, role,
 }: {
-  author: string;
-  text: string;
-  paused: boolean;
-  setPaused: (v: boolean) => void;
+  text: string; author: string; role: string;
 }) => (
   <div
-    className="flex flex-col rounded-2xl border border-white/[0.07] p-5 shrink-0 select-none"
+    className="flex flex-col h-full rounded-3xl p-8 relative overflow-hidden"
     style={{
-      width: 320,
-      background: "linear-gradient(145deg, rgba(255,255,255,0.04), rgba(0,0,0,0))",
-      backdropFilter: "blur(10px)",
-      transition: "border-color 0.3s ease, box-shadow 0.3s ease",
-    }}
-    onMouseEnter={(e) => {
-      setPaused(true);
-      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.15)";
-      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 32px rgba(0,0,0,0.4)";
-    }}
-    onMouseLeave={(e) => {
-      setPaused(false);
-      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)";
-      (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+      background: "linear-gradient(145deg, #0d0d0d, #080808)",
+      border: "1px solid rgba(99,102,241,0.15)",
+      boxShadow: "6px 6px 22px rgba(0,0,0,0.65), -3px -3px 12px rgba(255,255,255,0.04)",
     }}
   >
+    {/* Top-right glow blob */}
+    <div
+      aria-hidden
+      className="absolute -top-8 -right-8 w-36 h-36 rounded-full pointer-events-none"
+      style={{
+        background: `radial-gradient(circle, ${getColor(author)}20 0%, transparent 70%)`,
+        filter: "blur(20px)",
+      }}
+    />
+
+    {/* Quote mark */}
+    <div
+      className="text-7xl font-serif leading-none mb-4 select-none"
+      style={{
+        background: "linear-gradient(135deg, #6366f1, #06d6a0)",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        backgroundClip: "text",
+        opacity: 0.35,
+        lineHeight: 0.8,
+      }}
+    >
+      &ldquo;
+    </div>
+
     {/* Stars */}
-    <div className="flex text-yellow-400 mb-3 gap-0.5">
+    <div className="flex gap-1 mb-4" style={{ color: "#fbbf24" }}>
       {[...Array(5)].map((_, i) => (
-        <Star key={i} size={13} className="fill-current" />
+        <Star key={i} size={16} className="fill-current" />
       ))}
     </div>
 
-    {/* Quote */}
-    <p className="text-sm text-gray-400 italic leading-relaxed flex-1 mb-4 line-clamp-3">
-      "{text}"
+    {/* Text */}
+    <p
+      className="text-base leading-relaxed flex-1 mb-8 italic"
+      style={{ color: "rgba(200,210,230,0.82)" }}
+    >
+      {text}
     </p>
 
-    {/* Author */}
-    <div className="flex items-center gap-3 mt-auto pt-3 border-t border-white/[0.05]">
-      <GoogleAvatar name={author} size={36} />
+    {/* Author footer */}
+    <div
+      className="flex items-center gap-4 pt-5"
+      style={{ borderTop: "1px solid rgba(99,102,241,0.1)" }}
+    >
+      <GoogleAvatar name={author} size={48} />
       <div>
-        <span className="text-sm font-semibold text-white block leading-none mb-0.5">
+        <p className="font-semibold text-base" style={{ color: "#eef2ff" }}>
           {author}
-        </span>
-        <span className="text-xs text-gray-600 font-mono tracking-wide">Google Review</span>
+        </p>
+        <p className="text-xs font-mono tracking-wide mt-0.5" style={{ color: "rgba(110,130,168,0.75)" }}>
+          {role} · Google Review
+        </p>
       </div>
     </div>
   </div>
@@ -118,119 +145,248 @@ const TestimonialCard = ({
 
 // ── Section ───────────────────────────────────────────────────────────────────
 export const TestimonialsSection = () => {
-  const [paused, setPaused] = useState(false);
-  // 4× duplication for seamless loop
-  const items = [...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS];
+  const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const total = TESTIMONIALS.length;
+
+  // Touch/swipe support
+  const touchStartX = useRef<number | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? goNext() : goPrev();
+    }
+    touchStartX.current = null;
+  };
+
+  const goPrev = useCallback(() => {
+    setDirection(-1);
+    setCurrent((c) => (c - 1 + total) % total);
+  }, [total]);
+
+  const goNext = useCallback(() => {
+    setDirection(1);
+    setCurrent((c) => (c + 1) % total);
+  }, [total]);
+
+  const goTo = useCallback((idx: number) => {
+    setDirection(idx > current ? 1 : -1);
+    setCurrent(idx);
+  }, [current]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [goPrev, goNext]);
+
+  const variants = {
+    enter:  (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0, filter: "blur(6px)" }),
+    center: { x: 0, opacity: 1, filter: "blur(0px)" },
+    exit:   (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0, filter: "blur(6px)" }),
+  };
 
   return (
     <section
       id="testimonials"
-      className="py-24 bg-black text-white relative border-t border-white/5"
-      style={{ overflow: "hidden" }}
+      className="py-24 text-white relative overflow-hidden"
+      style={{ background: "#000", borderTop: "1px solid rgba(99,102,241,0.08)" }}
     >
-      <style>{`
-        @keyframes marquee-slow {
-          from { transform: translateX(0); }
-          to   { transform: translateX(calc(-100% / 4 - 0.25rem)); }
-        }
-        .marquee-track {
-          animation: marquee-slow 32s linear infinite;
-          /* smooth start — ease-in for first 2s via will-change promotion */
-          will-change: transform;
-        }
-        .marquee-track.paused { animation-play-state: paused; }
-      `}</style>
-
       {/* Ambient glow */}
       <div
         aria-hidden
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[220px] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at top, rgba(251,191,36,0.06) 0%, transparent 70%)",
-          filter: "blur(40px)",
+          background: "radial-gradient(ellipse at top, rgba(99,102,241,0.1) 0%, transparent 70%)",
+          filter: "blur(50px)",
         }}
       />
 
-      {/* Header */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 text-center mb-16">
-        <motion.p
-          variants={fadeUp(0, 12)}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VP}
-          className="font-mono tracking-widest uppercase text-sm mb-4"
-          style={{ color: "rgba(234,179,8,0.8)" }}
-        >
-          Feedback
-        </motion.p>
-        <motion.h3
-          variants={fadeUp(0.1, 24)}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VP}
-          className="text-4xl md:text-5xl font-bold mb-4"
-        >
-          Client Testimonials
-        </motion.h3>
-        <motion.p
-          variants={fadeUp(0.2, 16)}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VP}
-          className="text-gray-400 text-lg max-w-xl mx-auto"
-        >
-          Hear from students and partners who've experienced AJU ED Solutions firsthand.
-        </motion.p>
-      </div>
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
 
-      {/* Marquee */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={VP}
-        transition={{ duration: 0.8, delay: 0.3, ease: EASE }}
-        className="relative w-full"
-        style={{ overflowX: "clip", overflowY: "visible" }}
-      >
-        <div
-          className={`marquee-track flex w-max${paused ? " paused" : ""}`}
-          style={{ gap: "1rem", paddingBottom: "2rem" }}
+        {/* Header */}
+        <div className="text-center mb-14">
+          <motion.p
+            variants={fadeUp(0, 12)} initial="hidden" whileInView="visible" viewport={VP}
+            className="font-mono tracking-widest uppercase text-sm mb-4"
+            style={{ color: "rgba(251,191,36,0.9)" }}
+          >
+            Feedback
+          </motion.p>
+          <motion.h2
+            variants={fadeUp(0.1, 24)} initial="hidden" whileInView="visible" viewport={VP}
+            className="text-4xl sm:text-5xl font-bold mb-4"
+            style={{
+              background: "linear-gradient(135deg, #eef2ff 0%, #c7d2fe 55%, #a5b4fc 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+            }}
+          >
+            Client Testimonials
+          </motion.h2>
+          <motion.p
+            variants={fadeUp(0.2, 16)} initial="hidden" whileInView="visible" viewport={VP}
+            className="text-lg max-w-xl mx-auto"
+            style={{ color: "rgba(176,190,220,0.72)" }}
+          >
+            Hear from students and partners who&apos;ve experienced AJU ED Solutions firsthand.
+          </motion.p>
+        </div>
+
+        {/* Card slider */}
+        <motion.div
+          variants={fadeUp(0.25, 20)} initial="hidden" whileInView="visible" viewport={VP}
+          className="relative"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
         >
-          {items.map((t, i) => (
-            <TestimonialCard
+          {/* Prev / Next arrows */}
+          <button
+            onClick={goPrev}
+            aria-label="Previous testimonial"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full -translate-x-4 sm:-translate-x-6 transition-all duration-200"
+            style={{
+              background: "rgba(10,10,10,0.9)",
+              border: "1px solid rgba(99,102,241,0.25)",
+              color: "#818cf8",
+              boxShadow: "4px 4px 14px rgba(0,0,0,0.6), -2px -2px 8px rgba(255,255,255,0.04)",
+            }}
+            onMouseEnter={(e) => {
+              const b = e.currentTarget as HTMLButtonElement;
+              b.style.borderColor = "rgba(99,102,241,0.6)";
+              b.style.boxShadow = "0 0 18px rgba(99,102,241,0.3), 4px 4px 14px rgba(0,0,0,0.6), -2px -2px 8px rgba(255,255,255,0.04)";
+              b.style.color = "#eef2ff";
+            }}
+            onMouseLeave={(e) => {
+              const b = e.currentTarget as HTMLButtonElement;
+              b.style.borderColor = "rgba(99,102,241,0.25)";
+              b.style.boxShadow = "4px 4px 14px rgba(0,0,0,0.6), -2px -2px 8px rgba(255,255,255,0.04)";
+              b.style.color = "#818cf8";
+            }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          <button
+            onClick={goNext}
+            aria-label="Next testimonial"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full translate-x-4 sm:translate-x-6 transition-all duration-200"
+            style={{
+              background: "rgba(10,10,10,0.9)",
+              border: "1px solid rgba(99,102,241,0.25)",
+              color: "#818cf8",
+              boxShadow: "4px 4px 14px rgba(0,0,0,0.6), -2px -2px 8px rgba(255,255,255,0.04)",
+            }}
+            onMouseEnter={(e) => {
+              const b = e.currentTarget as HTMLButtonElement;
+              b.style.borderColor = "rgba(99,102,241,0.6)";
+              b.style.boxShadow = "0 0 18px rgba(99,102,241,0.3), 4px 4px 14px rgba(0,0,0,0.6), -2px -2px 8px rgba(255,255,255,0.04)";
+              b.style.color = "#eef2ff";
+            }}
+            onMouseLeave={(e) => {
+              const b = e.currentTarget as HTMLButtonElement;
+              b.style.borderColor = "rgba(99,102,241,0.25)";
+              b.style.boxShadow = "4px 4px 14px rgba(0,0,0,0.6), -2px -2px 8px rgba(255,255,255,0.04)";
+              b.style.color = "#818cf8";
+            }}
+          >
+            <ChevronRight size={20} />
+          </button>
+
+          {/* Animated card */}
+          <div className="overflow-hidden rounded-3xl mx-6 sm:mx-10" style={{ minHeight: 340 }}>
+            <AnimatePresence mode="wait" custom={direction}>
+              <motion.div
+                key={current}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.45, ease: EASE }}
+                className="w-full"
+              >
+                <TestimonialCard
+                  text={TESTIMONIALS[current].text}
+                  author={TESTIMONIALS[current].author}
+                  role={TESTIMONIALS[current].role}
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Dot indicators */}
+        <div className="flex justify-center gap-2.5 mt-8">
+          {TESTIMONIALS.map((_, i) => (
+            <button
               key={i}
-              author={t.author}
-              text={t.text}
-              paused={paused}
-              setPaused={setPaused}
+              onClick={() => goTo(i)}
+              aria-label={`Go to testimonial ${i + 1}`}
+              className="rounded-full transition-all duration-300"
+              style={{
+                width: i === current ? 28 : 8,
+                height: 8,
+                background: i === current
+                  ? "linear-gradient(90deg, #6366f1, #06d6a0)"
+                  : "rgba(99,102,241,0.2)",
+                boxShadow: i === current
+                  ? "0 0 10px rgba(99,102,241,0.5)"
+                  : "none",
+              }}
             />
           ))}
         </div>
 
-        {/* Fade edges */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-20 sm:w-40"
-          style={{ background: "linear-gradient(to right, #000, transparent)" }} />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-20 sm:w-40"
-          style={{ background: "linear-gradient(to left, #000, transparent)" }} />
-      </motion.div>
-
-      {/* CTA */}
-      <motion.div
-        variants={fadeUp(0.4, 16)}
-        initial="hidden"
-        whileInView="visible"
-        viewport={VP}
-        className="text-center mt-10"
-      >
-        <a
-          href="https://rb.gy/36cf7e"
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/15 text-sm text-gray-400 hover:bg-white/8 hover:text-white hover:border-white/35 transition-all duration-300"
+        {/* Counter text */}
+        <p
+          className="text-center mt-4 text-xs font-mono tracking-widest"
+          style={{ color: "rgba(110,130,168,0.6)" }}
         >
-          See More Google Reviews →
-        </a>
-      </motion.div>
+          {current + 1} / {total}
+        </p>
+
+        {/* CTA */}
+        <motion.div
+          variants={fadeUp(0.4, 16)} initial="hidden" whileInView="visible" viewport={VP}
+          className="text-center mt-10"
+        >
+          <a
+            href="https://rb.gy/36cf7e"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm transition-all duration-300"
+            style={{
+              border: "1px solid rgba(99,102,241,0.2)",
+              color: "rgba(176,190,220,0.75)",
+              background: "transparent",
+              boxShadow: "3px 3px 12px rgba(0,0,0,0.42), -1px -1px 6px rgba(255,255,255,0.04)",
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLAnchorElement;
+              el.style.background = "rgba(99,102,241,0.1)";
+              el.style.color = "#eef2ff";
+              el.style.borderColor = "rgba(99,102,241,0.45)";
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLAnchorElement;
+              el.style.background = "transparent";
+              el.style.color = "rgba(176,190,220,0.75)";
+              el.style.borderColor = "rgba(99,102,241,0.2)";
+            }}
+          >
+            <ExternalLink size={14} />
+            See All Google Reviews
+          </a>
+        </motion.div>
+      </div>
     </section>
   );
 };

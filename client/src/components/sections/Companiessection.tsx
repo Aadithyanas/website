@@ -5,7 +5,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Cpu, Palette, Building, CheckCircle2 } from "lucide-react";
 import { useCompany, CompanyId } from "./CompanyContext";
 
-// ── Shared easing ─────────────────────────────────────────────────────────────
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VP   = { once: true, amount: 0.15 };
 
@@ -17,7 +16,6 @@ const fadeUp = (delay = 0, distance = 28) => ({
   },
 });
 
-// ── Company data ──────────────────────────────────────────────────────────────
 const COMPANIES: {
   id: CompanyId;
   icon: React.ReactNode;
@@ -36,10 +34,10 @@ const COMPANIES: {
     title: "AJU TECHZORA",
     tagline: "Tech & Innovation",
     desc: "Web and mobile development, IoT, Robotics, AI/ML & Tech Solutions at low cost for customers and enterprises.",
-    color: "text-cyan-400",
-    accent: "rgba(34,211,238,0.10)",
-    border: "rgba(34,211,238,0.35)",
-    glow:   "rgba(34,211,238,0.15)",
+    color: "#818cf8",
+    accent: "rgba(99,102,241,0.10)",
+    border: "rgba(99,102,241,0.38)",
+    glow:   "rgba(99,102,241,0.18)",
     services: ["Web & App", "AI / ML", "IoT", "Robotics", "ERP"],
   },
   {
@@ -48,10 +46,10 @@ const COMPANIES: {
     title: "AJU Brandify",
     tagline: "Branding & Growth",
     desc: "Branding, Digital Marketing & Web Solutions to help businesses grow and shine online.",
-    color: "text-purple-400",
-    accent: "rgba(167,139,250,0.10)",
-    border: "rgba(167,139,250,0.35)",
-    glow:   "rgba(167,139,250,0.15)",
+    color: "#06d6a0",
+    accent: "rgba(6,214,160,0.10)",
+    border: "rgba(6,214,160,0.35)",
+    glow:   "rgba(6,214,160,0.16)",
     services: ["Branding", "Marketing"],
   },
   {
@@ -60,15 +58,14 @@ const COMPANIES: {
     title: "ScrumSpace CoWorks",
     tagline: "Community & Workspace",
     desc: "Modern coworking spaces with community-driven initiatives for startups and creators.",
-    color: "text-blue-400",
-    accent: "rgba(59,130,246,0.10)",
-    border: "rgba(59,130,246,0.35)",
-    glow:   "rgba(59,130,246,0.15)",
+    color: "#f472b6",
+    accent: "rgba(244,114,182,0.10)",
+    border: "rgba(244,114,182,0.32)",
+    glow:   "rgba(244,114,182,0.15)",
     services: ["Co-working"],
   },
 ];
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export const CompaniesSection = () => {
   const { activeCompany, setActiveCompany } = useCompany();
   const reduced = useReducedMotion();
@@ -87,63 +84,61 @@ export const CompaniesSection = () => {
   return (
     <section
       id="companies"
-      className="py-24 bg-black text-white relative border-t border-white/5 overflow-hidden"
+      className="py-24 text-white relative overflow-hidden"
+      style={{
+        background: "#000",
+        borderTop: "1px solid rgba(99,102,241,0.08)",
+      }}
     >
       {/* Ambient top glow */}
       <div
         aria-hidden
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[260px] pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at top, rgba(6,182,212,0.08) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse at top, rgba(99,102,241,0.09) 0%, transparent 70%)",
           filter: "blur(40px)",
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
 
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-14">
           <motion.p
-            variants={fadeUp(0, 12)}
-            initial="hidden"
-            whileInView="visible"
-            viewport={VP}
+            variants={fadeUp(0, 12)} initial="hidden" whileInView="visible" viewport={VP}
             className="font-mono tracking-widest uppercase text-sm mb-4"
-            style={{ color: "rgba(34,211,238,0.8)" }}
+            style={{ color: "rgba(99,102,241,0.85)" }}
           >
             Our Ventures
           </motion.p>
           <motion.h3
-            variants={fadeUp(0.1, 24)}
-            initial="hidden"
-            whileInView="visible"
-            viewport={VP}
-            className="text-4xl md:text-5xl font-bold mb-4"
+            variants={fadeUp(0.1, 24)} initial="hidden" whileInView="visible" viewport={VP}
+            className="text-4xl sm:text-5xl font-bold mb-4"
+            style={{
+              background: "linear-gradient(135deg, #eef2ff 0%, #c7d2fe 55%, #a5b4fc 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+            }}
           >
             Our Companies
           </motion.h3>
           <motion.p
-            variants={fadeUp(0.18, 16)}
-            initial="hidden"
-            whileInView="visible"
-            viewport={VP}
-            className="text-gray-400 text-lg"
+            variants={fadeUp(0.18, 16)} initial="hidden" whileInView="visible" viewport={VP}
+            className="text-lg mb-2"
+            style={{ color: "rgba(176,190,220,0.75)" }}
           >
             Innovating across multiple domains under the AJU umbrella
           </motion.p>
           <motion.p
-            variants={fadeUp(0.24, 12)}
-            initial="hidden"
-            whileInView="visible"
-            viewport={VP}
-            className="text-gray-600 text-sm mt-2 font-mono tracking-wide"
+            variants={fadeUp(0.24, 12)} initial="hidden" whileInView="visible" viewport={VP}
+            className="text-sm mt-2 font-mono tracking-wide"
+            style={{ color: "rgba(110,130,168,0.7)" }}
           >
             ↓ Click a company card to filter services below
           </motion.p>
         </div>
 
         {/* Cards */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6">
           {COMPANIES.map((comp, i) => {
             const isActive = activeCompany === comp.id;
             return (
@@ -157,17 +152,18 @@ export const CompaniesSection = () => {
                 animate={isActive ? { y: -8 } : { y: 0 }}
                 transition={{ duration: 0.35, ease: EASE }}
                 onClick={() => handleClick(comp.id)}
-                className="cursor-pointer relative rounded-2xl p-8 overflow-hidden"
+                className="cursor-pointer relative rounded-2xl p-7 overflow-hidden"
                 style={{
+                  /* Flat material base + neumorphic shadow */
                   background: isActive
-                    ? `linear-gradient(145deg, ${comp.accent}, rgba(5,5,5,0.95))`
-                    : "linear-gradient(145deg, rgba(255,255,255,0.03), rgba(0,0,0,0))",
-                  border: `1px solid ${isActive ? comp.border : "rgba(255,255,255,0.07)"}`,
+                    ? `linear-gradient(145deg, ${comp.accent}, rgba(5,5,5,0.98))`
+                    : "linear-gradient(145deg, rgba(12,12,14,0.95), rgba(8,8,10,0.98))",
+                  border: `1px solid ${isActive ? comp.border : "rgba(255,255,255,0.06)"}`,
                   boxShadow: isActive
-                    ? `0 8px 40px ${comp.glow}, 0 0 0 1px ${comp.border}`
-                    : "none",
+                    ? `0 8px 36px ${comp.glow}, 5px 5px 18px rgba(0,0,0,0.52), -2px -2px 10px rgba(255,255,255,0.04), 0 0 0 1px ${comp.border}`
+                    : "5px 5px 18px rgba(0,0,0,0.48), -2px -2px 10px rgba(255,255,255,0.04)",
                   transition: "background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease",
-                  backdropFilter: "blur(8px)",
+                  backdropFilter: "blur(10px)",
                 }}
               >
                 {/* Active badge */}
@@ -176,10 +172,19 @@ export const CompaniesSection = () => {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.25, ease: EASE }}
-                    className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15"
+                    className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                    style={{
+                      background: "rgba(255,255,255,0.07)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                    }}
                   >
-                    <CheckCircle2 size={11} className={comp.color} />
-                    <span className={`text-[10px] font-semibold tracking-widest uppercase ${comp.color}`}>Active</span>
+                    <CheckCircle2 size={11} style={{ color: comp.color }} />
+                    <span
+                      className="text-[10px] font-semibold tracking-widest uppercase"
+                      style={{ color: comp.color }}
+                    >
+                      Active
+                    </span>
                   </motion.div>
                 )}
 
@@ -190,7 +195,7 @@ export const CompaniesSection = () => {
                     className="absolute -top-12 -right-12 w-52 h-52 rounded-full pointer-events-none"
                     style={{
                       background: `radial-gradient(circle, ${comp.glow} 0%, transparent 70%)`,
-                      filter: "blur(28px)",
+                      filter: "blur(30px)",
                     }}
                   />
                 )}
@@ -206,32 +211,50 @@ export const CompaniesSection = () => {
 
                 {/* Icon */}
                 <div
-                  className={`${comp.color} mb-4 transition-transform duration-300 ${isActive ? "scale-110 drop-shadow-[0_0_12px_currentColor]" : ""}`}
+                  className="mb-4 transition-transform duration-300"
+                  style={{
+                    color: comp.color,
+                    transform: isActive ? "scale(1.1)" : "scale(1)",
+                    filter: isActive ? `drop-shadow(0 0 10px ${comp.color})` : "none",
+                    transition: "transform 0.3s ease, filter 0.3s ease",
+                  }}
                 >
                   {comp.icon}
                 </div>
 
                 {/* Tagline */}
-                <p className={`text-xs font-mono tracking-widest uppercase mb-2 ${comp.color} opacity-70`}>
+                <p
+                  className="text-xs font-mono tracking-widest uppercase mb-2"
+                  style={{ color: comp.color, opacity: 0.75 }}
+                >
                   {comp.tagline}
                 </p>
 
                 {/* Title */}
-                <h4 className="text-xl font-bold mb-3">{comp.title}</h4>
+                <h4
+                  className="text-xl font-bold mb-3"
+                  style={{ color: "#eef2ff" }}
+                >
+                  {comp.title}
+                </h4>
 
                 {/* Desc */}
-                <p className="text-gray-400 text-sm leading-relaxed mb-5">{comp.desc}</p>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: "rgba(176,190,220,0.72)" }}>
+                  {comp.desc}
+                </p>
 
                 {/* Pills */}
                 <div className="flex flex-wrap gap-2">
                   {comp.services.map((s) => (
                     <span
                       key={s}
-                      className={`text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full border transition-all duration-300 ${
-                        isActive
-                          ? `${comp.color} border-current bg-white/5`
-                          : "text-gray-600 border-white/10"
-                      }`}
+                      className="text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full border"
+                      style={{
+                        color: isActive ? comp.color : "rgba(110,130,168,0.65)",
+                        borderColor: isActive ? comp.border : "rgba(255,255,255,0.08)",
+                        background: isActive ? "rgba(255,255,255,0.05)" : "transparent",
+                        transition: "all 0.3s ease",
+                      }}
                     >
                       {s}
                     </span>
@@ -240,9 +263,11 @@ export const CompaniesSection = () => {
 
                 {/* CTA hint */}
                 <div
-                  className={`mt-5 text-xs font-mono tracking-widest transition-all duration-300 ${
-                    isActive ? comp.color : "text-gray-700"
-                  }`}
+                  className="mt-5 text-xs font-mono tracking-widest"
+                  style={{
+                    color: isActive ? comp.color : "rgba(110,130,168,0.55)",
+                    transition: "color 0.3s ease",
+                  }}
                 >
                   {isActive ? "▼ Showing filtered services" : "Click to filter services →"}
                 </div>
@@ -262,7 +287,21 @@ export const CompaniesSection = () => {
           >
             <button
               onClick={() => setActiveCompany("default")}
-              className="text-xs text-gray-500 hover:text-white font-mono tracking-widest uppercase border border-white/10 px-5 py-2.5 rounded-full hover:border-white/30 transition-all duration-200"
+              className="text-xs font-mono tracking-widest uppercase px-5 py-2.5 rounded-full transition-all duration-200"
+              style={{
+                color: "rgba(176,190,220,0.6)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                background: "transparent",
+                boxShadow: "3px 3px 12px rgba(0,0,0,0.42), -1px -1px 6px rgba(255,255,255,0.04)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.color = "#eef2ff";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.25)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.color = "rgba(176,190,220,0.6)";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.1)";
+              }}
             >
               ✕ Show All Services
             </button>

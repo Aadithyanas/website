@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useERPAuth, apiClient } from "./ERPAuthContext";
+import { X } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -59,19 +60,21 @@ const BanknotesIcon = () => (
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/erp/dashboard", icon: <HomeIcon /> },
-  { label: "Members", href: "/erp/dashboard/members", icon: <UsersIcon />, adminOnly: true },
   { label: "Tasks", href: "/erp/dashboard/tasks", icon: <TaskIcon /> },
   { label: "Attendance", href: "/erp/dashboard/attendance", icon: <CalendarIcon /> },
-  { label: "Org Settings", href: "/erp/dashboard/settings", icon: <CogIcon />, adminOnly: true },
+  { label: "Profile", href: "/erp/dashboard/profile", icon: <UserIcon /> },
+  { label: "Members", href: "/erp/dashboard/members", icon: <UsersIcon />, adminOnly: true },
   { label: "Payroll", href: "/erp/dashboard/payroll", icon: <BanknotesIcon />, adminOnly: true },
-  { label: "My Profile", href: "/erp/dashboard/profile", icon: <UserIcon /> },
+  { label: "Settings", href: "/erp/dashboard/settings", icon: <CogIcon />, adminOnly: true },
 ];
 
 interface ERPSidebarProps {
   notifCount?: number;
+  mobileOpen?: boolean;
+  closeMobile?: () => void;
 }
 
-export default function ERPSidebar({ notifCount = 0 }: ERPSidebarProps) {
+export default function ERPSidebar({ notifCount = 0, mobileOpen = false, closeMobile }: ERPSidebarProps) {
   const { user, token, isAdmin, logout, switchOrganization } = useERPAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -92,145 +95,82 @@ export default function ERPSidebar({ notifCount = 0 }: ERPSidebarProps) {
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
-  return (
-    <aside
-      className="erp-sidebar"
-      style={{
-        width: collapsed ? "72px" : "240px",
-        transition: "width 0.3s ease",
-        background: "#000000",
-        borderRight: "1px solid #222",
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        height: "100vh",
-        position: "sticky",
-        top: 0,
-        flexShrink: 0,
-        overflow: "hidden",
-      }}
-    >
-      {/* Logo & Org Picker */}
-      <div
-        style={{
-          padding: "20px 16px",
-          borderBottom: "1px solid rgba(167,139,250,0.1)",
-          position: "relative"
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }} onClick={() => !collapsed && setShowOrgPicker(!showOrgPicker)}>
-          <div
-            style={{
-              width: "36px", height: "36px", borderRadius: "10px", background: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 900, fontSize: "18px", color: "#000", flexShrink: 0,
-            }}
-          >
-            {user?.avatar ? <img src={user.avatar} alt={user?.name || "User Avatar"} style={{ width: "100%", height: "100%", borderRadius: "10px", objectFit: "cover" }} /> : "E"}
+  // Sidebar content component to reuse for both desktop and mobile
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full bg-black border-r border-[#1a1a1a] w-[250px] transition-all duration-300 shadow-2xl">
+      {/* ── Logo & Org Picker ── */}
+      <div className="p-4 border-b border-[#1a1a1a] relative">
+        <div 
+          className="flex items-center gap-3 cursor-pointer select-none"
+          onClick={() => setShowOrgPicker(!showOrgPicker)}
+        >
+          <div className="w-9 h-9 rounded-xl bg-white text-black shrink-0 flex items-center justify-center font-black text-lg shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Avatar" className="w-full h-full rounded-xl object-cover" />
+            ) : (
+              "E"
+            )}
           </div>
-          {!collapsed && (
-            <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                <span style={{ fontWeight: 800, fontSize: "14px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {user?.org_name || "Team ERP"}
-                </span>
-                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ transform: showOrgPicker ? "rotate(180deg)" : "none", transition: "0.2s", color: "#666" }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-              <span style={{ fontSize: "10px", color: "#666", textTransform: "uppercase", fontWeight: 700 }}>WORKSPACE</span>
+          <div className="flex flex-col flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-sm text-white truncate w-full">
+                {user?.org_name || "Team ERP"}
+              </span>
+              <svg 
+                width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" 
+                className={`text-gray-500 transition-transform flex-shrink-0 ${showOrgPicker ? "rotate-180" : ""}`}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
-          )}
+            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Workspace</span>
+          </div>
         </div>
 
-        {/* Org Picker Dropdown */}
-        {!collapsed && showOrgPicker && (
-          <div style={{
-            position: "absolute", top: "70px", left: "12px", right: "12px",
-            background: "#0a0a0a", border: "1px solid #222", borderRadius: "12px",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.5)", zIndex: 100, overflow: "hidden"
-          }}>
-            <div style={{ padding: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
+        {/* Picker Dropdown */}
+        {showOrgPicker && (
+          <div className="absolute top-16 left-3 right-3 bg-[#0a0a0a] border border-[#222] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="p-1 flex flex-col gap-0.5">
               {accounts.map(acc => (
                 <button
                   key={acc.org_id}
-                  onClick={() => { switchOrganization(acc.org_id); setShowOrgPicker(false); }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "10px", padding: "8px", borderRadius: "6px",
-                    background: acc.org_id === user?.org_id ? "#111" : "transparent",
-                    border: "none", color: acc.org_id === user?.org_id ? "#fff" : "#999",
-                    cursor: "pointer", textAlign: "left", width: "100%", transition: "0.2s"
-                  }}
+                  onClick={() => { switchOrganization(acc.org_id); setShowOrgPicker(false); if (closeMobile) closeMobile(); }}
+                  className={`flex items-center gap-2.5 p-2 rounded-lg text-left w-full transition-colors ${
+                    acc.org_id === user?.org_id ? "bg-[#161616] text-white" : "text-gray-400 hover:bg-[#111] hover:text-white"
+                  }`}
                 >
-                   <div style={{ width: "24px", height: "24px", borderRadius: "6px", background: "#333", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                     {acc.org_name[0].toUpperCase()}
-                   </div>
-                   <span style={{ fontSize: "13px", fontWeight: 600 }}>{acc.org_name}</span>
+                  <div className="w-6 h-6 rounded bg-[#222] text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {acc.org_name[0].toUpperCase()}
+                  </div>
+                  <span className="text-xs font-semibold truncate">{acc.org_name}</span>
                 </button>
               ))}
             </div>
           </div>
         )}
-
-        {/* Global Expand/Collapse Button - More prominent */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          style={{
-            position: "absolute", right: "-12px", top: "28px", width: "26px", height: "26px",
-            background: "#fff", border: "1px solid #ddd", borderRadius: "50%",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#000", cursor: "pointer", zIndex: 101, boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-            transition: "all 0.2s"
-          }}
-          onMouseOver={e => e.currentTarget.style.transform = "scale(1.1)"}
-          onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
-        >
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d={collapsed ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} />
-          </svg>
-        </button>
       </div>
 
-      {/* Nav Items */}
-      <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto", scrollbarWidth: "none" }}>
+      {/* ── Navigation ── */}
+      <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1 outline-none no-scrollbar">
         {filteredItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
               href={item.href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "10px 12px",
-                marginBottom: "4px",
-                color: isActive ? "#fff" : "#666",
-                background: isActive ? "#111" : "transparent",
-                textDecoration: "none",
-                transition: "all 0.2s",
-                fontWeight: isActive ? 700 : 500,
-                fontSize: "14px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                borderLeft: isActive ? "3px solid #fff" : "3px solid transparent",
-                borderRadius: isActive ? "0 4px 4px 0" : "4px",
-              }}
+              onClick={closeMobile}
+              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 outline-none ${
+                isActive 
+                  ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.1)]" 
+                  : "text-gray-400 hover:text-white hover:bg-[#111]"
+              }`}
             >
-              <span style={{ flexShrink: 0 }}>{item.icon}</span>
-              {!collapsed && <span>{item.label}</span>}
-              {!collapsed && item.label === "Dashboard" && notifCount > 0 && (
-                <span
-                  style={{
-                    marginLeft: "auto",
-                    background: "#ef4444",
-                    color: "#fff",
-                    borderRadius: "9999px",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    padding: "1px 6px",
-                  }}
-                >
+              <span className={`shrink-0 ${isActive ? "text-black" : "text-gray-500 group-hover:text-white"}`}>
+                {item.icon}
+              </span>
+              <span className="text-sm font-semibold truncate flex-1 tracking-wide">{item.label}</span>
+              {item.label === "Dashboard" && notifCount > 0 && (
+                <span className="bg-red-500 text-white rounded-full text-[10px] font-bold px-1.5 min-w-[18px] text-center ml-auto">
                   {notifCount}
                 </span>
               )}
@@ -239,80 +179,66 @@ export default function ERPSidebar({ notifCount = 0 }: ERPSidebarProps) {
         })}
       </nav>
 
-      {/* User + Logout */}
-      <div
-        style={{
-          padding: "16px 8px",
-          borderTop: "1px solid rgba(167,139,250,0.1)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            padding: "8px 12px",
-            borderRadius: "10px",
-            marginBottom: "8px",
-          }}
-        >
+      {/* ── Profile Footer ── */}
+      <div className="p-4 border-t border-[#1a1a1a]">
+        <div className="flex items-center gap-3 p-2 mb-2">
           {user?.avatar ? (
-            <img
-              src={user.avatar}
-              alt={user.name}
-              style={{ width: "32px", height: "32px", borderRadius: "9999px", flexShrink: 0 }}
-            />
+            <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full shrink-0 object-cover" />
           ) : (
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "9999px",
-                background: "#111",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#fff",
-                border: "1px solid #333",
-                flexShrink: 0,
-              }}
-            >
+            <div className="w-8 h-8 rounded-full bg-[#111] border border-[#333] flex items-center justify-center text-xs font-bold text-white shrink-0">
               {initials}
             </div>
           )}
-          {!collapsed && (
-            <div style={{ overflow: "hidden" }}>
-              <p style={{ fontSize: "13px", fontWeight: 700, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {user?.name}
-              </p>
-              <p style={{ fontSize: "11px", color: "#888", margin: 0 }}>{user?.role}</p>
-            </div>
-          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white truncate">{user?.name}</p>
+            <p className="text-xs text-gray-500 truncate capitalize">{user?.role}</p>
+          </div>
         </div>
         <button
           onClick={logout}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: "10px",
-            background: "none",
-            border: "none",
-            color: "#ef4444",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: 500,
-            transition: "background 0.2s",
-          }}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-200 outline-none"
         >
           <LogoutIcon />
-          {!collapsed && <span>Logout</span>}
+          <span>Logout</span>
         </button>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* ── Mobile Drawer ── */}
+      <div 
+        className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={closeMobile}
+        />
+        {/* Slide-in panel */}
+        <div 
+          className={`absolute top-0 bottom-0 left-0 transition-transform duration-300 ease-in-out ${
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <SidebarContent />
+          {/* Close button inside mobile menu */}
+          <button 
+            className="absolute top-4 -right-12 w-10 h-10 bg-black border border-[#1a1a1a] rounded-xl text-gray-400 flex items-center justify-center shadow-2xl"
+            onClick={closeMobile}
+          >
+            <X size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Desktop Sidebar ── */}
+      <div className="hidden md:flex h-full flex-shrink-0">
+        <SidebarContent />
+      </div>
+    </>
   );
 }
