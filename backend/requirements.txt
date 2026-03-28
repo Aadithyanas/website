@@ -8,4 +8,6 @@ passlib[bcrypt]
 bcrypt==3.2.2
 python-jose[cryptography]
 httpx
+pydantic[email]
+email-validator
 razorpay
