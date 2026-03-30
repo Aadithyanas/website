@@ -23,7 +23,7 @@ interface PayrollMember {
 }
 
 export default function ERPPayrollPage() {
-  const { isAdmin, token, user: currentUser } = useERPAuth();
+  const { isAdmin, hasPermission, token, user: currentUser } = useERPAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [payrollData, setPayrollData] = useState<PayrollMember[]>([]);
@@ -51,12 +51,12 @@ export default function ERPPayrollPage() {
   }, []);
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAdmin && !hasPermission("manage_payroll")) {
       router.replace("/erp/dashboard");
       return;
     }
     fetchPayroll();
-  }, [isAdmin, token, month, year]);
+  }, [isAdmin, hasPermission, token, month, year]);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -187,7 +187,7 @@ export default function ERPPayrollPage() {
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const years = [2024, 2025, 2026, 2027];
 
-  if (!isAdmin) return null;
+  if (!isAdmin && !hasPermission("manage_payroll")) return null;
 
   return (
     <div className="w-full text-white">

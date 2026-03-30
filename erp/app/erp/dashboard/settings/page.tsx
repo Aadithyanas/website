@@ -4,7 +4,7 @@ import { useERPAuth, apiClient } from "@/src/components/erp/ERPAuthContext";
 import { useRouter } from "next/navigation";
 
 export default function ERPSettingsPage() {
-  const { isAdmin, token } = useERPAuth();
+  const { isAdmin, hasPermission, token } = useERPAuth();
   const router = useRouter();
   const [settings, setSettings] = useState({ 
     positions: [], teams: [], sprints: [],
@@ -18,11 +18,34 @@ export default function ERPSettingsPage() {
   const [msg, setMsg] = useState("");
 
   const [newVal, setNewVal] = useState({ pos: "", team: "", sprint: "" });
+  const [members, setMembers] = useState<any[]>([]);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [updatingMember, setUpdatingMember] = useState(false);
+
+  const ALL_PERMISSIONS = [
+    { id: "manage_members", label: "Manage Members (Invite/Edit)" },
+    { id: "manage_invoices", label: "Manage Invoices & Clients" },
+    { id: "manage_payroll", label: "Manage Payroll & Salaries" },
+    { id: "manage_tasks", label: "Manage All Tasks" },
+    { id: "manage_org_settings", label: "Manage Organization Settings" },
+  ];
 
   useEffect(() => {
-    if (!isAdmin) { router.replace("/erp/dashboard"); return; }
+    if (!isAdmin && !hasPermission("manage_org_settings")) { 
+        router.replace("/erp/dashboard"); return; 
+    }
     fetchSettings();
-  }, [isAdmin]);
+    fetchMembers();
+  }, [isAdmin, hasPermission]);
+
+  const fetchMembers = async () => {
+    try {
+      const res = await apiClient.get("/api/erp/members", { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      setMembers(res.data);
+    } catch (e) { console.error(e); }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -62,6 +85,34 @@ export default function ERPSettingsPage() {
   const removeItem = (type: 'positions' | 'teams' | 'sprints', index: number) => {
     const updated = { ...settings, [type]: settings[type].filter((_, i) => i !== index) };
     handleSave(updated);
+  };
+
+  const togglePermission = (permId: string) => {
+    if (!selectedMember) return;
+    const current = selectedMember.permissions || [];
+    const updated = current.includes(permId) 
+      ? current.filter((p: string) => p !== permId)
+      : [...current, permId];
+    setSelectedMember({ ...selectedMember, permissions: updated });
+  };
+
+  const saveMemberPermissions = async () => {
+    if (!selectedMember) return;
+    setUpdatingMember(true);
+    try {
+      await apiClient.put(`/api/erp/members/${selectedMember.id}`, {
+        permissions: selectedMember.permissions
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMsg(`✅ Permissions updated for ${selectedMember.name}`);
+      fetchMembers(); // refresh local list
+      setTimeout(() => setMsg(""), 3000);
+    } catch (e) {
+      setMsg("❌ Failed to update member permissions");
+    } finally {
+      setUpdatingMember(false);
+    }
   };
 
   if (loading) return <div style={{ color: "#888", padding: "40px" }}>Loading settings...</div>;
@@ -195,6 +246,58 @@ export default function ERPSettingsPage() {
           </button>
         </div>
       </div>
+
+      <div className="erp-card" style={{ marginTop: "24px", marginBottom: "40px" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: "16px", fontWeight: 700, color: "#fff" }}>Member Access Control</h3>
+        <p style={{ fontSize: "12px", color: "#666", marginBottom: "20px" }}>Grant specific permissions to HR, Managers or other members.</p>
+        
+        <div style={{ marginBottom: "20px" }}>
+            <label className="erp-label">Select Member</label>
+            <select 
+                className="erp-input"
+                onChange={(e) => {
+                    const m = members.find(m => m.id === e.target.value);
+                    setSelectedMember(m || null);
+                }}
+                value={selectedMember?.id || ""}
+            >
+                <option value="">-- Choose a member --</option>
+                {members.map(m => (
+                    <option key={m.id} value={m.id}>{m.name} ({m.email}) - {m.role}</option>
+                ))}
+            </select>
+        </div>
+
+        {selectedMember && (
+            <div style={{ padding: "20px", background: "#050505", borderRadius: "12px", border: "1px solid #222" }}>
+                <h4 style={{ margin: "0 0 16px", fontSize: "14px", color: "#fff" }}>Permissions for {selectedMember.name}</h4>
+                <div style={{ display: "grid", gap: "12px" }}>
+                    {ALL_PERMISSIONS.map(perm => (
+                        <label key={perm.id} style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", color: "#ccc", fontSize: "14px" }}>
+                            <input 
+                                type="checkbox" 
+                                checked={selectedMember.permissions?.includes(perm.id)}
+                                onChange={() => togglePermission(perm.id)}
+                                style={{ width: "16px", height: "16px", accentColor: "#fff" }}
+                            />
+                            {perm.label}
+                        </label>
+                    ))}
+                </div>
+                <div style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end" }}>
+                    <button 
+                        className="erp-btn erp-btn-primary" 
+                        onClick={saveMemberPermissions}
+                        disabled={updatingMember}
+                    >
+                        {updatingMember ? "Saving..." : "Update Permissions"}
+                    </button>
+                </div>
+            </div>
+        )}
+      </div>
+      
+      {saving && <div style={{ color: "#666", fontSize: "12px", textAlign: "center" }}>Saving changes...</div>}
       
       {saving && <div style={{ color: "#666", fontSize: "12px", textAlign: "center" }}>Saving changes...</div>}
     </div>

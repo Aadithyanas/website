@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useERPAuth, apiClient, API } from "@/src/components/erp/ERPAuthContext";
 import { Calendar as CalendarIcon, List as ListIcon, Plus, X, Upload, MessageSquare, Paperclip, MoreVertical, Image as ImageIcon } from "lucide-react";
 
@@ -8,10 +9,20 @@ interface Member { id: string; name: string; email: string; teams: string[]; tea
 interface Task { 
   id: string; title: string; description?: string; status: string;
   sprint?: string; team?: string; estimated_time?: string;
+  project_id?: string; project_name?: string;
   assigned_to: string; assigned_to_name: string; assigned_to_avatar?: string;
   priority: string; due_date?: string;
   created_at: string; updated_at: string; comments: Comment[];
   images: string[];
+}
+
+interface Project {
+  id: string;
+  name: string;
+  client_name?: string;
+  status: string;
+  progress: number;
+  deadline?: string;
 }
 
 const STATUSES = ["todo", "inprogress", "qc", "reviewing", "completed"];
@@ -45,6 +56,9 @@ const getUrl = (path?: string) => {
 };
 
 export default function ERPTasksPage() {
+  const searchParams = useSearchParams();
+  const projectIdFilter = searchParams.get("project_id");
+  
   const { user, token, isAdmin, isLeader } = useERPAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -52,8 +66,10 @@ export default function ERPTasksPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [newTask, setNewTask] = useState({ 
     title: "", description: "", status: "todo", sprint: "Backlog", 
-    team: "", estimated_time: "", assigned_to: "", priority: "medium", due_date: "" 
+    team: "", estimated_time: "", assigned_to: "", priority: "medium", due_date: "",
+    project_id: "" 
   });
+  const [projects, setProjects] = useState<Project[]>([]);
   const [adding, setAdding] = useState(false);
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
   const [commentText, setCommentText] = useState<Record<string, string>>({});
@@ -71,6 +87,7 @@ export default function ERPTasksPage() {
       fetchTasks();
       fetchMembers();
       fetchSettings();
+      fetchProjects();
     }
   }, [token]);
 
@@ -96,7 +113,11 @@ export default function ERPTasksPage() {
     if (userTeams.length === 1 && !newTask.team && showAdd) {
       setNewTask(prev => ({ ...prev, team: userTeams[0] }));
     }
-  }, [userTeams, showAdd]);
+    // Auto-set project if filter is active
+    if (projectIdFilter && showAdd && !newTask.project_id) {
+      setNewTask(prev => ({ ...prev, project_id: projectIdFilter }));
+    }
+  }, [userTeams, showAdd, projectIdFilter]);
 
   const fetchTasks = async () => {
     try {
@@ -113,12 +134,32 @@ export default function ERPTasksPage() {
     } catch (e) { console.error(e); }
   };
 
+  const fetchProjects = async () => {
+    try {
+      const saved = localStorage.getItem("erp_projects");
+      if (saved) {
+        setProjects(JSON.parse(saved));
+      } else {
+        setProjects([
+          { id: "p1", name: "Website Redesign", status: "active", progress: 65, deadline: "2026-05-15" },
+          { id: "p2", name: "Mobile App Development", status: "active", progress: 30, deadline: "2026-07-01" },
+          { id: "p3", name: "Brand Identity", status: "completed", progress: 100, deadline: "2026-03-20" },
+          { id: "p4", name: "ERP Integration", status: "on_hold", progress: 15, deadline: "2026-12-31" },
+        ]);
+      }
+    } catch (e) { console.error(e); }
+  };
+
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     setAdding(true);
     try {
       await apiClient.post("/api/erp/tasks", newTask, { headers: h });
-      setNewTask({ title: "", description: "", status: "todo", sprint: "Backlog", team: "", estimated_time: "", assigned_to: "", priority: "medium", due_date: "" });
+      setNewTask({ 
+        title: "", description: "", status: "todo", sprint: "Backlog", 
+        team: "", estimated_time: "", assigned_to: "", priority: "medium", due_date: "",
+        project_id: ""
+      });
       setShowAdd(false);
       fetchTasks();
     } catch (e) { console.error(e); }
@@ -126,10 +167,19 @@ export default function ERPTasksPage() {
   };
 
   const handleStatusChange = async (taskId: string, status: string) => {
+    // Optimized: Update local state immediately for snappy UI
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
+    
     try {
+      // Use standard object for the put request
       await apiClient.put(`/api/erp/tasks/${taskId}`, { status }, { headers: h });
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
-    } catch (e) { console.error(e); }
+      console.log(`Task ${taskId} status updated to ${status}`);
+    } catch (e) { 
+      console.error("Failed to update status on server", e);
+      // Revert if failed
+      fetchTasks();
+      alert("Failed to update task status. Please try again.");
+    }
   };
 
   const handlePriorityChange = async (taskId: string, priority: string) => {
@@ -196,10 +246,20 @@ export default function ERPTasksPage() {
 
   const initials = (name: string) => name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
 
-  // Group by Status for ClickUp feel
+  // Filter and Group Tasks
+  const filteredTasks = useMemo(() => {
+    if (!projectIdFilter) return tasks;
+    return tasks.filter(t => t.project_id === projectIdFilter);
+  }, [tasks, projectIdFilter]);
+
+  const activeProject = useMemo(() => {
+    if (!projectIdFilter) return null;
+    return projects.find(p => p.id === projectIdFilter);
+  }, [projects, projectIdFilter]);
+
   const statusGroups: Record<string, Task[]> = {};
   STATUSES.forEach(s => statusGroups[s] = []);
-  tasks.forEach(t => {
+  filteredTasks.forEach(t => {
     const s = STATUSES.includes(t.status) ? t.status : "todo";
     statusGroups[s].push(t);
   });
@@ -265,31 +325,117 @@ export default function ERPTasksPage() {
 
   return (
     <div className="w-full">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 border-b border-[#1a1a1a] pb-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold m-0 mb-2 text-white">Project Tasks</h1>
-          <div className="flex gap-4 text-xs font-semibold text-[#666]">
+      {/* Dynamic Header: Specialized Project Dashboard or General Workspace */}
+      <div className="border-b border-[#1a1a1a] pb-6 mb-8">
+        {activeProject ? (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-400 uppercase tracking-[0.2em]">
+                  <span className="cursor-pointer hover:underline" onClick={() => window.location.href = '/erp/dashboard/projects'}>Projects</span>
+                  <span className="text-gray-600">/</span>
+                  <span>Dashboard</span>
+                </div>
+                <h1 className="text-3xl font-black text-white m-0 tracking-tight flex items-center gap-3">
+                  <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
+                  {activeProject.name}
+                </h1>
+                <div className="flex items-center gap-3 text-xs font-bold text-gray-500 mt-1">
+                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded border border-white/5">
+                      <ListIcon size={12} className="text-gray-400" /> {filteredTasks.length} Tasks Total
+                   </div>
+                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded border border-white/5">
+                      <CalendarIcon size={12} className="text-gray-400" /> {activeProject.deadline || "No deadline"}
+                   </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button 
+                  className="bg-white/5 hover:bg-white/10 text-white px-4 py-2.5 rounded-xl text-sm font-bold border border-white/5 transition-all" 
+                  onClick={() => window.location.href = '/erp/dashboard/projects'}
+                >
+                  Exit Dashboard
+                </button>
+                <button 
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-lg shadow-indigo-500/20" 
+                  onClick={() => setShowAdd(true)}
+                >
+                  <Plus size={16} /> Add Project Task
+                </button>
+              </div>
+            </div>
+
+            {/* Project Quick Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-[#111]">
+               <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase text-gray-500 tracking-wider">
+                     <span>Project Progress</span>
+                     <span className="text-white">
+                       {filteredTasks.length > 0 
+                         ? Math.round((filteredTasks.filter(t => t.status === 'completed').length / filteredTasks.length) * 100) 
+                         : activeProject.progress
+                       }%
+                     </span>
+                  </div>
+                  <div className="h-1.5 bg-[#111] rounded-full overflow-hidden border border-white/5">
+                     <div 
+                        className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000" 
+                        style={{ 
+                          width: `${filteredTasks.length > 0 
+                            ? Math.round((filteredTasks.filter(t => t.status === 'completed').length / filteredTasks.length) * 100) 
+                            : activeProject.progress}%` 
+                        }} 
+                      />
+                  </div>
+               </div>
+               <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+                   <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                      <Plus size={16} />
+                   </div>
+                   <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-gray-500 uppercase">Completed</span>
+                      <span className="text-xs font-bold text-white">{filteredTasks.filter(t => t.status === 'completed').length} Tasks</span>
+                   </div>
+               </div>
+               <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+                   <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                      <MessageSquare size={16} />
+                   </div>
+                   <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-gray-500 uppercase">Active Activity</span>
+                      <span className="text-xs font-bold text-white">4 Conversations</span>
+                   </div>
+               </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold m-0 mb-2 text-white tracking-tight">Organization Workspace</h1>
+              <div className="flex gap-4 text-xs font-black uppercase tracking-wider text-[#666]">
+                <button 
+                  className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "list" ? "border-indigo-500 text-white" : "border-transparent text-gray-500 hover:text-gray-300"}`} 
+                  onClick={() => setViewMode("list")}
+                >
+                  <ListIcon size={14} /> List View
+                </button>
+                <button 
+                  className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "calendar" ? "border-indigo-500 text-white" : "border-transparent text-gray-500 hover:text-gray-300"}`} 
+                  onClick={() => setViewMode("calendar")}
+                >
+                  <CalendarIcon size={14} /> Calendar
+                </button>
+              </div>
+            </div>
             <button 
-              className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "list" ? "border-indigo-500 text-white" : "border-transparent hover:text-gray-300"}`} 
-              onClick={() => setViewMode("list")}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-[0_4px_20px_rgba(99,102,241,0.2)]" 
+              onClick={() => setShowAdd(true)}
             >
-              <ListIcon size={14} /> List View
-            </button>
-            <button 
-              className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "calendar" ? "border-indigo-500 text-white" : "border-transparent hover:text-gray-300"}`} 
-              onClick={() => setViewMode("calendar")}
-            >
-              <CalendarIcon size={14} /> Calendar
+              <Plus size={16} /> Create Global Task
             </button>
           </div>
-        </div>
-        <button 
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-[0_4px_14px_rgba(99,102,241,0.2)]" 
-          onClick={() => setShowAdd(true)}
-        >
-          <Plus size={16} /> Add Task
-        </button>
+        )}
       </div>
 
       {viewMode === "list" ? (
@@ -344,12 +490,16 @@ export default function ERPTasksPage() {
                             onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)}
                           >
                             {/* Title Section */}
-                            <div className="flex items-start lg:items-center gap-3 pr-4">
-                              <div className="mt-1 lg:mt-0 w-3.5 h-3.5 rounded-full border-[1.5px] flex-shrink-0" style={{ borderColor: STATUS_COLORS[statusKey] }} />
-                              <span className="text-sm font-semibold text-gray-200 line-clamp-2 lg:line-clamp-1">
-                                {task.title}
-                              </span>
-                            </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-semibold text-gray-200 line-clamp-2 lg:line-clamp-1">
+                                  {task.title}
+                                </span>
+                                {task.project_name && (
+                                  <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mt-0.5">
+                                    {task.project_name}
+                                  </span>
+                                )}
+                              </div>
 
                             {/* Details Grid for Mobile / Row for Desktop */}
                             <div className="grid grid-cols-2 gap-3 lg:contents pl-6 lg:pl-0">
@@ -604,6 +754,18 @@ export default function ERPTasksPage() {
                   onChange={e => setNewTask({ ...newTask, description: e.target.value })} 
                   placeholder="Add more details, links, or context..." 
                 />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Project</label>
+                <select 
+                  className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-4 py-2.5 outline-none transition-colors text-sm appearance-none cursor-pointer" 
+                  value={newTask.project_id} 
+                  onChange={e => setNewTask({ ...newTask, project_id: e.target.value })}
+                >
+                  <option value="">No Project</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

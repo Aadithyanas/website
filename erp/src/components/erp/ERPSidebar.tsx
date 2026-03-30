@@ -10,6 +10,7 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   adminOnly?: boolean;
+  permission?: string;
 }
 
 const HomeIcon = () => (
@@ -58,14 +59,42 @@ const BanknotesIcon = () => (
   </svg>
 );
 
+const BriefcaseIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+);
+
+const DocumentIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+);
+
+const ReceiptIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l6-6m-5.5.5h.5m.5 0h.5m.5 0h.5m-3 3h.5m.5 0h.5m.5 0h.5m-3 3h.5m.5 0h.5m.5 0h.5M21 21H3V3h18v18z" />
+  </svg>
+);
+
+const FolderIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+  </svg>
+);
+
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/erp/dashboard", icon: <HomeIcon /> },
+  { label: "Projects", href: "/erp/dashboard/projects", icon: <FolderIcon /> },
   { label: "Tasks", href: "/erp/dashboard/tasks", icon: <TaskIcon /> },
   { label: "Attendance", href: "/erp/dashboard/attendance", icon: <CalendarIcon /> },
+  { label: "Clients", href: "/erp/dashboard/clients", icon: <BriefcaseIcon /> },
+  { label: "Invoices", href: "/erp/dashboard/invoices", icon: <DocumentIcon />, permission: "manage_invoices" },
+  { label: "Expenses", href: "/erp/dashboard/expenses", icon: <ReceiptIcon />, permission: "manage_payroll" },
   { label: "Profile", href: "/erp/dashboard/profile", icon: <UserIcon /> },
-  { label: "Members", href: "/erp/dashboard/members", icon: <UsersIcon />, adminOnly: true },
-  { label: "Payroll", href: "/erp/dashboard/payroll", icon: <BanknotesIcon />, adminOnly: true },
-  { label: "Settings", href: "/erp/dashboard/settings", icon: <CogIcon />, adminOnly: true },
+  { label: "Members", href: "/erp/dashboard/members", icon: <UsersIcon />, adminOnly: true, permission: "manage_members" },
+  { label: "Payroll", href: "/erp/dashboard/payroll", icon: <BanknotesIcon />, adminOnly: true, permission: "manage_payroll" },
+  { label: "Settings", href: "/erp/dashboard/settings", icon: <CogIcon />, adminOnly: true, permission: "manage_org_settings" },
 ];
 
 interface ERPSidebarProps {
@@ -75,7 +104,7 @@ interface ERPSidebarProps {
 }
 
 export default function ERPSidebar({ notifCount = 0, mobileOpen = false, closeMobile }: ERPSidebarProps) {
-  const { user, token, isAdmin, logout, switchOrganization } = useERPAuth();
+  const { user, token, isAdmin, hasPermission, logout, switchOrganization } = useERPAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [showOrgPicker, setShowOrgPicker] = useState(false);
@@ -89,7 +118,15 @@ export default function ERPSidebar({ notifCount = 0, mobileOpen = false, closeMo
     }
   }, [token]);
 
-  const filteredItems = navItems.filter((item) => !item.adminOnly || isAdmin);
+  const filteredItems = navItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) {
+        // Even if adminOnly, check if they have specific permission
+        if (item.permission && hasPermission(item.permission)) return true;
+        return false;
+    }
+    if (item.permission && !hasPermission(item.permission)) return false;
+    return true;
+  });
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)

@@ -7,12 +7,14 @@ interface Member {
   id: string; name: string; email: string; phone?: string;
   position?: string; role: string; teams: string[]; team_role?: string; sprint?: string;
   avatar?: string; registered: boolean; base_salary: number;
+  bank_name?: string; account_number?: string; ifsc_code?: string;
+  permissions?: string[];
 }
 
 // Removed hardcoded TEAMS
 
 export default function ERPMembersPage() {
-  const { isAdmin, token } = useERPAuth();
+  const { isAdmin, hasPermission, token } = useERPAuth();
   const router = useRouter();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,17 +23,21 @@ export default function ERPMembersPage() {
   
   const [form, setForm] = useState({ 
     name: "", email: "", phone: "", position: "", teams: [] as string[], 
-    team_role: "", sprint: "", role: "member", base_salary: 0 
+    team_role: "", sprint: "", role: "member", base_salary: 0,
+    bank_name: "", account_number: "", ifsc_code: "",
+    permissions: [] as string[]
   });
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState("");
   const [availableSettings, setAvailableSettings] = useState({ positions: [] as string[], teams: [] as string[], sprints: [] as string[] });
 
   useEffect(() => {
-    if (!isAdmin) { router.replace("/erp/dashboard"); return; }
+    if (!isAdmin && !hasPermission("manage_members")) {
+        router.replace("/erp/dashboard"); return;
+    }
     fetchMembers();
     fetchSettings();
-  }, [isAdmin, token]);
+  }, [isAdmin, hasPermission, token]);
 
   const fetchSettings = async () => {
     try {
@@ -64,7 +70,7 @@ export default function ERPMembersPage() {
       setTimeout(() => { 
         setShowModal(false); 
         setEditMember(null); 
-        setForm({ name: "", email: "", phone: "", position: "", teams: [], team_role: "", sprint: "", role: "member", base_salary: 0 }); 
+        setForm({ name: "", email: "", phone: "", position: "", teams: [], team_role: "", sprint: "", role: "member", base_salary: 0, bank_name: "", account_number: "", ifsc_code: "", permissions: [] }); 
         setMsg(""); 
       }, 1500);
     } catch (err: any) {
@@ -92,7 +98,11 @@ export default function ERPMembersPage() {
       team_role: m.team_role || "", 
       sprint: m.sprint || "", 
       role: m.role || "member",
-      base_salary: m.base_salary || 0
+      base_salary: m.base_salary || 0,
+      bank_name: m.bank_name || "",
+      account_number: m.account_number || "",
+      ifsc_code: m.ifsc_code || "",
+      permissions: m.permissions || []
     });
     setShowModal(true);
   };
@@ -115,7 +125,7 @@ export default function ERPMembersPage() {
           <h1 style={{ fontSize: "24px", fontWeight: 800, margin: "0 0 4px", color: "#fff", letterSpacing: "-0.02em" }}>Team Members</h1>
           <p style={{ color: "#888", margin: 0, fontSize: "14px" }}>{members.length} members total in your organization.</p>
         </div>
-        <button className="erp-btn erp-btn-primary" onClick={() => { setEditMember(null); setForm({ name: "", email: "", phone: "", position: "", teams: [], team_role: "", sprint: "", role: "member", base_salary: 0 }); setShowModal(true); setMsg(""); }}>
+        <button className="erp-btn erp-btn-primary" onClick={() => { setEditMember(null); setForm({ name: "", email: "", phone: "", position: "", teams: [], team_role: "", sprint: "", role: "member", base_salary: 0, bank_name: "", account_number: "", ifsc_code: "", permissions: [] }); setShowModal(true); setMsg(""); }}>
           + Invite Member
         </button>
       </div>
@@ -236,6 +246,35 @@ export default function ERPMembersPage() {
                 </select>
               </div>
 
+              {/* Permissions Section */}
+              <div style={{ marginTop: "8px", borderTop: "1px dashed #222", paddingTop: "16px" }}>
+                <p style={{ margin: "0 0 12px", fontSize: "12px", fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Module Permissions</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  {[
+                    { id: "manage_members", label: "Members" },
+                    { id: "manage_invoices", label: "Invoices" },
+                    { id: "manage_payroll", label: "Payroll" },
+                    { id: "manage_tasks", label: "Tasks" },
+                    { id: "manage_org_settings", label: "Settings" },
+                  ].map(perm => (
+                    <label key={perm.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#ccc", fontSize: "13px" }}>
+                      <input 
+                        type="checkbox" 
+                        checked={form.permissions.includes(perm.id)}
+                        onChange={() => {
+                          const next = form.permissions.includes(perm.id)
+                            ? form.permissions.filter(p => p !== perm.id)
+                            : [...form.permissions, perm.id];
+                          setForm({ ...form, permissions: next });
+                        }}
+                        style={{ width: "14px", height: "14px", accentColor: "#f59e0b" }}
+                      />
+                      {perm.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div>
                   <label className="erp-label">Phone Number</label>
@@ -249,7 +288,6 @@ export default function ERPMembersPage() {
                   </select>
                 </div>
               </div>
-
               <div>
                 <label className="erp-label">Base Salary (Monthly)</label>
                 <div style={{ position: "relative" }}>
@@ -262,6 +300,27 @@ export default function ERPMembersPage() {
                     onChange={e => setForm({ ...form, base_salary: parseInt(e.target.value) || 0 })} 
                     placeholder="e.g. 5000" 
                   />
+                </div>
+              </div>
+
+              {/* Banking Section */}
+              <div style={{ marginTop: "8px", borderTop: "1px dashed #222", paddingTop: "16px" }}>
+                <p style={{ margin: "0 0 12px", fontSize: "12px", fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>Banking Information</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "16px" }}>
+                  <div>
+                    <label className="erp-label">Bank Name</label>
+                    <input className="erp-input" value={form.bank_name} onChange={e => setForm({ ...form, bank_name: e.target.value })} placeholder="e.g. HDFC Bank" />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    <div>
+                      <label className="erp-label">Account Number</label>
+                      <input className="erp-input" value={form.account_number} onChange={e => setForm({ ...form, account_number: e.target.value })} placeholder="1234567890" />
+                    </div>
+                    <div>
+                      <label className="erp-label">IFSC Code</label>
+                      <input className="erp-input" value={form.ifsc_code} onChange={e => setForm({ ...form, ifsc_code: e.target.value })} placeholder="HDFC000123" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
