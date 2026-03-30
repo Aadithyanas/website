@@ -45,6 +45,10 @@ class InviteMemberRequest(BaseModel):
     sprint: Optional[str] = None
     org_id: Optional[str] = None
     base_salary: Optional[float] = 0.0
+    bank_name: Optional[str] = None
+    account_number: Optional[str] = None
+    ifsc_code: Optional[str] = None
+    permissions: List[str] = []
 
 
 class RegisterRequest(BaseModel):
@@ -68,6 +72,10 @@ class UserOut(BaseModel):
     org_name: Optional[str] = None
     avatar: Optional[str] = None
     base_salary: Optional[float] = 0.0
+    bank_name: Optional[str] = None
+    account_number: Optional[str] = None
+    ifsc_code: Optional[str] = None
+    permissions: List[str] = []
     created_at: datetime
 
 
@@ -80,6 +88,10 @@ class MemberUpdate(BaseModel):
     sprint: Optional[str] = None
     role: Optional[str] = None  # "admin" | "member"
     base_salary: Optional[float] = None
+    bank_name: Optional[str] = None
+    account_number: Optional[str] = None
+    ifsc_code: Optional[str] = None
+    permissions: Optional[List[str]] = None
 
 # ─── Comment ─────────────────────────────────────────────────────────────────
 
@@ -220,4 +232,93 @@ class PayrollRecordOut(BaseModel):
     base_salary: float
     net_salary: float
     status: str
+    updated_at: datetime
+
+
+# ─── CRM (Clients) ───────────────────────────────────────────────────────────
+
+class ClientCreate(BaseModel):
+    name: str
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    company: Optional[str] = None
+
+
+class ClientOut(BaseModel):
+    id: str
+    org_id: str
+    name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    company: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+# ─── Finance (Invoices) ───────────────────────────────────────────────────────
+
+class InvoiceItem(BaseModel):
+    description: str
+    quantity: float
+    price: float
+    total: float
+
+class InvoiceCreate(BaseModel):
+    client_id: str
+    invoice_number: str
+    items: List[InvoiceItem]
+    subtotal: float
+    tax_rate: float = 0.0
+    tax_amount: float = 0.0
+    total: float
+    status: str = "draft"  # draft, sent, paid, overdue
+    due_date: Optional[str] = None
+
+class InvoiceOut(BaseModel):
+    id: str
+    org_id: str
+    client_id: str
+    client_name: str
+    invoice_number: str
+    items: List[InvoiceItem]
+    subtotal: float
+    tax_rate: float
+    tax_amount: float
+    total: float
+    status: str
+    due_date: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+# ─── Expenses ─────────────────────────────────────────────────────────────────
+
+class ExpenseCreate(BaseModel):
+    title: str
+    amount: float
+    category: str
+    date: str
+    description: Optional[str] = None
+    status: str = "pending"  # pending, approved, rejected
+
+class ExpenseUpdate(BaseModel):
+    title: Optional[str] = None
+    amount: Optional[float] = None
+    category: Optional[str] = None
+    date: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+
+class ExpenseOut(BaseModel):
+    id: str
+    org_id: str
+    title: str
+    amount: float
+    category: str
+    date: str
+    description: Optional[str] = None
+    status: str
+    created_at: datetime
     updated_at: datetime

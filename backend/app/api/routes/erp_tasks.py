@@ -182,10 +182,11 @@ async def update_task(task_id: str, body: TaskUpdate, current_user: dict = Depen
     if not (is_admin or is_leader):
         # Exception: Allow members to update ONLY their own task's status
         is_owner = task.get("assigned_to") == str(current_user["_id"])
-        if is_owner and body.dict(exclude_unset=True).keys() == {"status"}:
+        requested_fields = set(body.dict(exclude_unset=True).keys())
+        if is_owner and (requested_fields == {"status"} or not requested_fields):
             pass # Allow status update
         else:
-            raise HTTPException(status_code=403, detail="Not authorized. Only leaders can edit tasks.")
+            raise HTTPException(status_code=403, detail="Not authorized. Only leaders can edit task details.")
     
     if body.status and body.status not in ["todo", "inprogress", "qc", "reviewing", "completed"]:
         raise HTTPException(status_code=400, detail="Invalid status")

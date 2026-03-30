@@ -12,6 +12,8 @@ router = APIRouter(prefix="/api/erp/payroll", tags=["ERP Payroll"])
 
 # Collection name for payroll records
 payroll_collection = db.payroll
+from app.services.email_service import send_salary_payslip_email
+from app.api.routes.erp_salary import get_salary_report
 
 # Initialize Razorpay Client
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_test_YOUR_KEY_ID")
@@ -146,16 +148,19 @@ async def update_payroll_status(
     body: PayrollStatusUpdate, 
     admin: dict = Depends(require_admin)
 ):
-    org_id = admin.get("org_id")
+    status = body.status
+    update_data: dict = {
+        "status": status,
+        "updated_at": datetime.utcnow()
+    }
     
+    if status == "paid":
+        net_salary = await calculate_member_net_salary(member_id, org_id, month, year)
+        update_data["net_salary"] = net_salary
+
     await payroll_collection.update_one(
         {"org_id": org_id, "member_id": member_id, "month": month, "year": year},
-        {
-            "$set": {
-                "status": body.status,
-                "updated_at": datetime.utcnow()
-            }
-        },
+        {"$set": update_data},
         upsert=True
     )
     
@@ -181,6 +186,11 @@ async def create_razorpay_order(
     # Razorpay amount is in Paise (1 INR = 100 Paise)
     amount_paise = int(float(net_salary) * 100)
     
+    # Fetch user to get bank details for Razorpay notes
+    user = await users_collection.find_one({"_id": ObjectId(member_id), "org_id": org_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Member not found")
+
     try:
         order_data = {
             "amount": amount_paise,
@@ -190,7 +200,10 @@ async def create_razorpay_order(
                 "member_id": member_id,
                 "month": month,
                 "year": year,
-                "org_id": org_id
+                "org_id": org_id,
+                "bank_name": user.get("bank_name", "N/A"),
+                "account_number": user.get("account_number", "N/A"),
+                "ifsc_code": user.get("ifsc_code", "N/A")
             }
         }
         order = razorpay_client.order.create(data=order_data)
@@ -226,12 +239,15 @@ async def verify_razorpay_payment(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid payment signature")
 
+    net_salary = await calculate_member_net_salary(member_id, org_id, month, year)
+
     # Update payroll status to paid
     await payroll_collection.update_one(
         {"org_id": org_id, "member_id": member_id, "month": month, "year": year},
         {
             "$set": {
                 "status": "paid",
+                "net_salary": net_salary,
                 "razorpay_payment_id": razorpay_payment_id,
                 "razorpay_order_id": razorpay_order_id,
                 "updated_at": datetime.utcnow()
@@ -240,4 +256,46 @@ async def verify_razorpay_payment(
         upsert=True
     )
 
-    return {"message": "Payment verified and payroll updated", "payment_id": razorpay_payment_id}
+    # 5. Generate and send payslip email
+    try:
+        user = await users_collection.find_one({"_id": ObjectId(member_id)})
+        if user:
+            # Get full salary report for the email
+            salary_data = await get_salary_report(member_id, int(month), int(year), admin)
+            month_name = calendar.month_name[int(month)]
+            await send_salary_payslip_email(
+                to_email=user["email"],
+                name=user["name"],
+                month_name=month_name,
+                year=int(year),
+                salary_data=salary_data,
+                org_name=admin.get("org_name", "Company ERP")
+            )
+    except Exception as e:
+        print(f"Failed to send payslip email: {str(e)}")
+
+@router.get("/paid-invoices")
+async def get_paid_salary_invoices(admin: dict = Depends(require_admin)):
+    org_id = admin.get("org_id")
+    
+    # Fetch all records with 'paid' status for this org
+    cursor = payroll_collection.find({"org_id": org_id, "status": "paid"}).sort("updated_at", -1)
+    
+    results = []
+    async for doc in cursor:
+        user = await users_collection.find_one({"_id": ObjectId(doc["member_id"])})
+        if user:
+            # Map payroll fields to invoice context
+            month_name = calendar.month_name[doc["month"]]
+            results.append({
+                "id": str(doc["_id"]),
+                "client_name": user.get("name", "Unknown Member"), # Alias for UI consistency
+                "invoice_number": f"PAY-{doc['year']}-{doc['month']:02d}-{str(doc['member_id'])[:4].upper()}",
+                "total": doc.get("net_salary", 0.0),
+                "status": "paid",
+                "due_date": f"{month_name} {doc['year']}",
+                "created_at": doc.get("updated_at", datetime.utcnow()).isoformat(),
+                "is_salary": True
+            })
+            
+    return results

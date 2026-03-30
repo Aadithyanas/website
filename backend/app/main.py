@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.api.routes import contact
-from app.api.routes import erp_auth, erp_members, erp_tasks, erp_attendance, erp_notifications, erp_settings, erp_salary, erp_payroll, erp_ws
+from app.api.routes import erp_auth, erp_members, erp_tasks, erp_attendance, erp_notifications, erp_settings, erp_salary, erp_payroll, erp_ws, erp_clients, erp_invoices, erp_expenses
 from app.core.database import create_indexes
 
 app = FastAPI(title="Portfolio + ERP API")
@@ -29,6 +29,9 @@ app.include_router(erp_notifications.router)
 app.include_router(erp_settings.router)
 app.include_router(erp_salary.router)
 app.include_router(erp_payroll.router)
+app.include_router(erp_clients.router)
+app.include_router(erp_invoices.router)
+app.include_router(erp_expenses.router)
 app.include_router(erp_ws.router)
 
 
