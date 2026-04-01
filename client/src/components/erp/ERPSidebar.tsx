@@ -58,10 +58,23 @@ const BanknotesIcon = () => (
   </svg>
 );
 
+const BriefcaseIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+);
+
+const DocumentIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+);
+
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/erp/dashboard", icon: <HomeIcon /> },
   { label: "Tasks", href: "/erp/dashboard/tasks", icon: <TaskIcon /> },
   { label: "Attendance", href: "/erp/dashboard/attendance", icon: <CalendarIcon /> },
+  { label: "Invoices", href: "/erp/dashboard/invoices", icon: <DocumentIcon /> },
   { label: "Profile", href: "/erp/dashboard/profile", icon: <UserIcon /> },
   { label: "Members", href: "/erp/dashboard/members", icon: <UsersIcon />, adminOnly: true },
   { label: "Payroll", href: "/erp/dashboard/payroll", icon: <BanknotesIcon />, adminOnly: true },

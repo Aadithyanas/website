@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ERPAuthProvider, useERPAuth, apiClient } from "@/src/components/erp/ERPAuthContext";
 import { ERPWebSocketProvider } from "@/src/components/erp/ERPWebSocketProvider";
 import { useERPWS } from "@/src/components/erp/ERPWebSocketProvider";
@@ -13,6 +13,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, token, loading } = useERPAuth();
   const { isConnected } = useERPWS();
   const router = useRouter();
+  const pathname = usePathname();
   const [notifCount, setNotifCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -59,7 +60,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  if (!user || loading) return null;
 
   return (
     <div className="flex h-screen overflow-hidden bg-black text-white font-sans antialiased selection:bg-white/20">
@@ -91,7 +92,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             {notifCount > 0 && (
               <span className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-full text-[11px] font-bold px-3 py-1 ml-auto">
-                {notifCount} unread
+                {notifCount}
               </span>
             )}
             <div className="px-3.5 py-1.5 rounded-lg bg-[#111] border border-[#222] text-gray-300 text-[11px] font-extrabold uppercase tracking-widest hidden sm:block">

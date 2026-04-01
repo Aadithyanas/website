@@ -19,6 +19,7 @@ interface User {
   avatar?: string;
   org_id?: string;
   org_name?: string;
+  permissions?: string[];
 }
 
 interface ERPAuthContextType {
@@ -32,6 +33,7 @@ interface ERPAuthContextType {
   switchOrganization: (orgId: string) => Promise<void>;
   isAdmin: boolean;
   isLeader: boolean;
+  hasPermission: (perm: string) => boolean;
 }
 
 const ERPAuthContext = createContext<ERPAuthContextType | null>(null);
@@ -144,6 +146,10 @@ export function ERPAuthProvider({ children }: { children: React.ReactNode }) {
         switchOrganization,
         isAdmin,
         isLeader,
+        hasPermission: (perm: string) => {
+          if (user?.role === "admin") return true;
+          return user?.permissions?.includes(perm) || false;
+        },
       }}
     >
       {children}
