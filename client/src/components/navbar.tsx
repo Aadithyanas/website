@@ -12,10 +12,10 @@ gsap.registerPlugin(ScrollToPlugin);
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 const NAV_LINKS = [
-  { name: "Home",         id: "#home" },
-  { name: "About",        id: "#about" },
-  { name: "Companies",    id: "#companies" },
-  { name: "Services",     id: "#services" },
+  { name: "Home", id: "#home" },
+  { name: "About", id: "#about" },
+  { name: "Companies", id: "#companies" },
+  { name: "Services", id: "#services" },
   { name: "Testimonials", id: "#testimonials" },
 ];
 
@@ -39,8 +39,8 @@ function useActiveSection(ids: string[]) {
 }
 
 const Nav = () => {
-  const [scrolled,  setScrolled]  = useState(false);
-  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [scrollPct, setScrollPct] = useState(0);
   const navRef = useRef<HTMLElement>(null);
 
@@ -49,7 +49,7 @@ const Nav = () => {
 
   useEffect(() => {
     const onScroll = () => {
-      const y   = window.scrollY;
+      const y = window.scrollY;
       const max = document.body.scrollHeight - window.innerHeight;
       setScrolled(y > 50);
       setScrollPct(max > 0 ? (y / max) * 100 : 0);
@@ -93,13 +93,13 @@ const Nav = () => {
         ref={navRef}
         className="fixed top-0 w-full z-50"
         initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0,   opacity: 1 }}
+        animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
         style={{
           background: scrolled
             ? "rgba(0,0,0,0.92)"
             : "transparent",
-          backdropFilter:       scrolled ? "blur(24px) saturate(160%)" : "none",
+          backdropFilter: scrolled ? "blur(24px) saturate(160%)" : "none",
           WebkitBackdropFilter: scrolled ? "blur(24px) saturate(160%)" : "none",
           borderBottom: scrolled
             ? "1px solid rgba(99,102,241,0.12)"
@@ -108,7 +108,7 @@ const Nav = () => {
             ? "0 4px 24px rgba(0,0,0,0.5)"
             : "none",
           transition: "background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease",
-          paddingTop:    scrolled ? "10px" : "18px",
+          paddingTop: scrolled ? "10px" : "18px",
           paddingBottom: scrolled ? "10px" : "18px",
         }}
       >
@@ -193,7 +193,7 @@ const Nav = () => {
                           }}
                           initial={{ opacity: 0, scaleX: 0 }}
                           animate={{ opacity: 1, scaleX: 1 }}
-                          exit={{   opacity: 0, scaleX: 0 }}
+                          exit={{ opacity: 0, scaleX: 0 }}
                           transition={{ duration: 0.3, ease: EASE }}
                         />
                       )}
@@ -246,47 +246,10 @@ const Nav = () => {
               </motion.button>
             </li>
 
-            {/* ERP Button */}
-            <li className="ml-2">
-              <Link
-                href="/erp"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "7px 16px",
-                  borderRadius: "9999px",
-                  background: "linear-gradient(135deg, rgba(6,214,160,0.18), rgba(6,214,160,0.08))",
-                  border: "1px solid rgba(6,214,160,0.35)",
-                  color: "#06d6a0",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  textDecoration: "none",
-                  fontFamily: "'DM Sans', 'Inter', sans-serif",
-                  transition: "all 0.25s ease",
-                  boxShadow: "3px 3px 10px rgba(0,0,0,0.4), -1px -1px 6px rgba(255,255,255,0.04)",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLAnchorElement;
-                  el.style.boxShadow = "0 0 20px rgba(6,214,160,0.35), 3px 3px 10px rgba(0,0,0,0.4), -1px -1px 6px rgba(255,255,255,0.04)";
-                  el.style.borderColor = "rgba(6,214,160,0.7)";
-                  el.style.color = "#fff";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLAnchorElement;
-                  el.style.boxShadow = "3px 3px 10px rgba(0,0,0,0.4), -1px -1px 6px rgba(255,255,255,0.04)";
-                  el.style.borderColor = "rgba(6,214,160,0.35)";
-                  el.style.color = "#06d6a0";
-                }}
-              >
-                <span>⚡</span> ERP
-              </Link>
-            </li>
+
           </ul>
 
-          {/* ── Hamburger ── */}
+
           <motion.button
             className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl"
             style={{
@@ -304,8 +267,8 @@ const Nav = () => {
               {menuOpen ? (
                 <motion.span key="x"
                   initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0,   opacity: 1 }}
-                  exit={{   rotate:  90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
                   <X size={20} />
@@ -313,8 +276,8 @@ const Nav = () => {
               ) : (
                 <motion.span key="menu"
                   initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0,  opacity: 1 }}
-                  exit={{   rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
                   <Menu size={20} />
@@ -331,7 +294,7 @@ const Nav = () => {
               key="mobile-menu"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
-              exit={{   opacity: 0, height: 0 }}
+              exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.35, ease: EASE }}
               className="lg:hidden overflow-hidden"
               style={{
@@ -402,35 +365,6 @@ const Nav = () => {
                   </button>
                 </motion.li>
 
-                <motion.li
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: (NAV_LINKS.length + 1) * 0.05, ease: EASE }}
-                  className="mt-2"
-                >
-                  <Link
-                    href="/erp"
-                    onClick={() => setMenuOpen(false)}
-                    style={{
-                      display: "block",
-                      textAlign: "center",
-                      padding: "12px",
-                      borderRadius: "12px",
-                      background: "linear-gradient(135deg, rgba(6,214,160,0.16), rgba(6,214,160,0.08))",
-                      border: "1px solid rgba(6,214,160,0.3)",
-                      color: "#06d6a0",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      textDecoration: "none",
-                      fontFamily: "'Inter', sans-serif",
-                      boxShadow: "3px 3px 12px rgba(0,0,0,0.45), -1px -1px 6px rgba(255,255,255,0.04)",
-                    }}
-                  >
-                    ⚡ Company ERP
-                  </Link>
-                </motion.li>
               </ul>
             </motion.div>
           )}
