@@ -42,8 +42,9 @@ export function ERPWebSocketProvider({ children }: { children: React.ReactNode }
       }
   
       // Use the centralized API URL to determine the WebSocket endpoint
-      // Replace http/https with ws/wss
-      const wsBase = API.replace(/^http/, "ws");
+      // Replace http/https with ws/wss and REMOVE the /api suffix if it exists
+      // The backend WebSocket router is at /ws/erp, while the REST API is often at /api
+      const wsBase = API.replace(/^http/, "ws").replace(/\/api\/?$/, "");
       const wsUrl = `${wsBase}/ws/erp/${token}`;
       
       console.log("Connecting to WebSocket:", wsUrl);
