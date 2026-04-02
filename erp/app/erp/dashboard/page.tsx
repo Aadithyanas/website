@@ -4,9 +4,9 @@ import { useERPAuth, apiClient } from "@/src/components/erp/ERPAuthContext";
 import Link from "next/link";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  AreaChart, Area, PieChart, Pie, Cell, Legend 
+  AreaChart, Area, PieChart, Pie, Cell, Legend, BarChart, Bar 
 } from 'recharts';
-import { TrendingUp, ArrowUpRight, ArrowDownRight, Wallet, Receipt, Users } from "lucide-react";
+import { TrendingUp, ArrowUpRight, ArrowDownRight, Wallet, Receipt, Users, LayoutList } from "lucide-react";
 
 interface Task { id: string; title: string; status: string; updated_at: string; }
 interface Leave { id: string; date: string; status: string; description: string; }
@@ -35,28 +35,51 @@ export default function ERPDashboardPage() {
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [members, setMembers] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [summary, setSummary] = useState({ monthly_total: 0, yearly_total: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!token) return;
     const h = { Authorization: `Bearer ${token}` };
     const canSeeMembers = isAdmin || hasPermission("manage_members");
+    const canSeeFinance = isAdmin || hasPermission("manage_payroll");
+
     Promise.all([
       apiClient.get("/api/erp/tasks", { headers: h }),
       apiClient.get("/api/erp/attendance", { headers: h }),
       apiClient.get("/api/erp/notifications", { headers: h }),
+      apiClient.get("/api/erp/projects", { headers: h }),
       ...(canSeeMembers ? [apiClient.get("/api/erp/members", { headers: h })] : []),
-    ]).then(([t, a, n, m]) => {
+      ...(canSeeFinance ? [apiClient.get("/api/erp/expenses/summary", { headers: h })] : []),
+    ]).then(([t, a, n, p, ...rest]) => {
       setTasks(t.data);
       setLeaves(a.data);
       setNotifs(n.data.filter((x: Notif) => !x.read).slice(0, 5));
-      if (m) setMembers(m.data);
+      setProjects(p.data);
+      
+      let memberIdx = 0;
+      if (canSeeMembers) {
+        setMembers(rest[memberIdx].data);
+        memberIdx++;
+      }
+      if (canSeeFinance) {
+        setSummary(rest[memberIdx].data);
+      }
     }).catch(console.error).finally(() => setLoading(false));
   }, [token, isAdmin, hasPermission]);
 
   const tasksByStatus = (s: string) => tasks.filter(t => t.status === s).length;
+  
+  const taskDistribution = [
+    { name: 'To Do', value: tasksByStatus('todo') },
+    { name: 'In Progress', value: tasksByStatus('inprogress') },
+    { name: 'QC', value: tasksByStatus('qc') },
+    { name: 'Reviewing', value: tasksByStatus('reviewing') },
+    { name: 'Completed', value: tasksByStatus('completed') },
+  ].filter(x => x.value > 0);
 
-  if (loading) return <div style={{ color: "#888" }}>Loading dashboard...</div>;
+  if (loading) return <div style={{ color: "#888", padding: "40px" }}>Syncing dashboard data...</div>;
 
   return (
     <div>
@@ -76,27 +99,24 @@ export default function ERPDashboardPage() {
         )}
         <StatCard title="Total Tasks" value={tasks.length} color="#60a5fa" icon="📋" href="/erp/dashboard/tasks" />
         <StatCard title="Completed" value={tasksByStatus("completed")} color="#34d399" icon="✅" href="/erp/dashboard/tasks" />
-        <StatCard title="In Progress" value={tasksByStatus("ongoing")} color="#f59e0b" icon="⚡" href="/erp/dashboard/tasks" />
+        <StatCard title="In Progress" value={tasksByStatus("inprogress")} color="#f59e0b" icon="⚡" href="/erp/dashboard/tasks" />
         <StatCard title="Pending Leaves" value={leaves.filter(l => l.status === "pending").length} color="#f472b6" icon="📅" href="/erp/dashboard/attendance" />
       </div>
 
-      {/* Financial Insights */}
-      {(isAdmin || hasPermission("manage_payroll")) && (
+      {/* Role Based Specific Overviews */}
+      {(isAdmin || hasPermission("manage_payroll")) ? (
         <div style={{ marginBottom: "28px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0, color: "#fff", display: "flex", alignItems: "center", gap: "8px" }}>
               <TrendingUp size={20} className="text-indigo-400" />
               Financial Insights
             </h2>
-            <div style={{ fontSize: "12px", color: "#888", display: "flex", gap: "12px" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#34d399" }} /> Revenue</span>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#f87171" }} /> Expenses</span>
-            </div>
           </div>
           
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px" }}>
             <div className="erp-card" style={{ height: "300px", padding: "20px" }}>
-              <ResponsiveContainer width="100%" height="100%">
+               <p style={{ margin: "0 0 20px", fontSize: "12px", fontWeight: 800, color: "#555", textTransform: "uppercase" }}>Project Revenue vs Expenses (Mock)</p>
+              <ResponsiveContainer width="100%" height="90%">
                 <AreaChart data={financialData}>
                   <defs>
                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
@@ -109,82 +129,104 @@ export default function ERPDashboardPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="#555" 
-                    fontSize={12} 
-                    tickLine={false} 
-                    axisLine={false}
-                    dy={10}
-                  />
-                  <YAxis 
-                    stroke="#555" 
-                    fontSize={12} 
-                    tickLine={false} 
-                    axisLine={false}
-                    tickFormatter={(value) => `$${value}`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ background: "#0c0c0c", border: "1px solid #222", borderRadius: "8px", fontSize: "12px" }}
-                    itemStyle={{ fontWeight: "bold" }}
-                  />
+                  <XAxis dataKey="name" stroke="#444" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                  <YAxis stroke="#444" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip contentStyle={{ background: "#0c0c0c", border: "1px solid #222", borderRadius: "8px", fontSize: "12px" }} />
                   <Area type="monotone" dataKey="revenue" stroke="#34d399" fillOpacity={1} fill="url(#colorRev)" strokeWidth={2} />
                   <Area type="monotone" dataKey="expenses" stroke="#f87171" fillOpacity={1} fill="url(#colorExp)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
 
-            <div className="erp-card" style={{ padding: "20px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div className="erp-card" style={{ padding: "24px", display: "flex", flexDirection: "column", height: "300px" }}>
               <div>
-                <h3 style={{ margin: "0 0 4px", fontSize: "14px", color: "#888" }}>Net Profit (Monthly)</h3>
-                <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-                  <span style={{ fontSize: "24px", fontWeight: 800, color: "#fff" }}>$12,450.00</span>
-                  <span style={{ fontSize: "12px", color: "#34d399", display: "flex", alignItems: "center", gap: "2px" }}>
-                    <TrendingUp size={12} /> +12%
-                  </span>
+                <h3 style={{ margin: "0 0 16px", fontSize: "12px", color: "#555", textTransform: "uppercase", fontWeight: 800 }}>Expense Summary</h3>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: "10px", color: "#888", fontWeight: 700, letterSpacing: "0.5px" }}>THIS MONTH</p>
+                    <p style={{ margin: "4px 0 0", fontSize: "28px", fontWeight: 800, color: "#fff", lineHeight: 1 }}>${summary.monthly_total.toLocaleString()}</p>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ margin: 0, fontSize: "10px", color: "#888", fontWeight: 700, letterSpacing: "0.5px" }}>YEAR TO DATE</p>
+                    <p style={{ margin: "4px 0 0", fontSize: "20px", fontWeight: 800, color: "#34d399", lineHeight: 1 }}>${summary.yearly_total.toLocaleString()}</p>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ height: "140px", marginTop: "20px" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Payroll', value: 6500 },
-                        { name: 'SaaS', value: 1200 },
-                        { name: 'Marketing', value: 2100 },
-                        { name: 'Office', value: 2650 },
-                      ]}
-                      innerRadius={40}
-                      outerRadius={60}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {financialData.map((_entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                       contentStyle={{ background: "#0c0c0c", border: "1px solid #222", borderRadius: "8px", fontSize: "11px" }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div style={{ flex: 1, marginTop: "24px", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                 <h3 style={{ margin: "0 0 0px", fontSize: "12px", color: "#555", textTransform: "uppercase", fontWeight: 800 }}>Task Distribution</h3>
+                <div style={{ flex: 1, position: "relative" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+                      <Pie data={taskDistribution} innerRadius={35} outerRadius={50} paddingAngle={4} dataKey="value" nameKey="name" stroke="none" cx="40%" cy="50%">
+                        {taskDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        cursor={false} 
+                        contentStyle={{ background: "rgba(10,10,10,0.95)", border: "1px solid #333", borderRadius: "8px", fontSize: "11px", padding: "8px", boxShadow: "0 8px 30px rgba(0,0,0,0.5)" }} 
+                        itemStyle={{ color: '#fff', fontWeight: 600 }} 
+                      />
+                      <Legend layout="vertical" verticalAlign="middle" align="right" iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: '#ccc', lineHeight: '20px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ marginBottom: "28px" }}>
+           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0, color: "#fff", display: "flex", alignItems: "center", gap: "8px" }}>
+              <LayoutList size={20} className="text-indigo-400" />
+              Project Progress Overview
+            </h2>
+          </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "12px" }}>
-                 <div style={{ padding: "8px", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p style={{ margin: 0, fontSize: "10px", color: "#555", textTransform: "uppercase" }}>Burn Rate</p>
-                    <p style={{ margin: 0, fontSize: "13px", fontWeight: 700, color: "#f87171" }}>$4.2k/mo</p>
-                 </div>
-                 <div style={{ padding: "8px", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p style={{ margin: 0, fontSize: "10px", color: "#555", textTransform: "uppercase" }}>Runway</p>
-                    <p style={{ margin: 0, fontSize: "13px", fontWeight: 700, color: "#60a5fa" }}>18 Months</p>
-                 </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px" }}>
+            <div className="erp-card" style={{ height: "300px", padding: "20px" }}>
+              <p style={{ margin: "0 0 20px", fontSize: "12px", fontWeight: 800, color: "#555", textTransform: "uppercase" }}>Completion Rates</p>
+              {projects.length > 0 ? (
+                <ResponsiveContainer width="100%" height="90%">
+                  <BarChart data={projects} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis dataKey="name" stroke="#444" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                    <YAxis stroke="#444" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
+                    <Tooltip cursor={{ fill: "rgba(255,255,255,0.02)" }} contentStyle={{ background: "#0c0c0c", border: "1px solid #222", borderRadius: "8px", fontSize: "12px" }} />
+                    <Bar dataKey="progress" fill="#60a5fa" radius={[4, 4, 0, 0]} barSize={40} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: "12px" }}>No active projects.</div>
+              )}
+            </div>
+
+            <div className="erp-card" style={{ padding: "20px" }}>
+              <h3 style={{ margin: "0 0 16px", fontSize: "14px", fontWeight: 700, color: "#fff" }}>Assigned Projects</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {projects.map((p: any) => (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "#fff" }}>{p.name}</h4>
+                      <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#888" }}>Client: {p.client_name || "Internal"} • Deadline: {p.deadline ? new Date(p.deadline).toLocaleDateString() : "N/A"}</p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ margin: "0 0 4px", fontSize: "12px", fontWeight: 700, color: p.progress === 100 ? "#34d399" : "#60a5fa" }}>{p.progress}%</p>
+                      <div style={{ width: "100px", height: "6px", background: "#222", borderRadius: "999px", overflow: "hidden" }}>
+                        <div style={{ width: `${p.progress}%`, height: "100%", background: p.progress === 100 ? "#34d399" : "#60a5fa", borderRadius: "999px" }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {projects.length === 0 && <p style={{ fontSize: "13px", color: "#666" }}>You don't have any projects assigned yet.</p>}
               </div>
             </div>
           </div>
         </div>
       )}
+
 
       <div style={{ display: "grid", gridTemplateColumns: isAdmin ? "1fr 1fr" : "1fr", gap: "20px" }}>
         {/* Recent Tasks */}

@@ -77,6 +77,12 @@ const ReceiptIcon = () => (
   </svg>
 );
 
+const MessageSquareIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+  </svg>
+);
+
 const FolderIcon = () => (
   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
@@ -91,8 +97,10 @@ const navItems: NavItem[] = [
   { label: "Clients", href: "/erp/dashboard/clients", icon: <BriefcaseIcon /> },
   { label: "Invoices", href: "/erp/dashboard/invoices", icon: <DocumentIcon />, permission: "manage_invoices" },
   { label: "Expenses", href: "/erp/dashboard/expenses", icon: <ReceiptIcon />, permission: "manage_payroll" },
+  { label: "Chat", href: "/erp/dashboard/chat", icon: <MessageSquareIcon /> },
   { label: "Profile", href: "/erp/dashboard/profile", icon: <UserIcon /> },
   { label: "Members", href: "/erp/dashboard/members", icon: <UsersIcon />, adminOnly: true, permission: "manage_members" },
+  { label: "Teams Members", href: "/erp/dashboard/team-members", icon: <UsersIcon /> },
   { label: "Payroll", href: "/erp/dashboard/payroll", icon: <BanknotesIcon />, adminOnly: true, permission: "manage_payroll" },
   { label: "Settings", href: "/erp/dashboard/settings", icon: <CogIcon />, adminOnly: true, permission: "manage_org_settings" },
 ];
@@ -119,14 +127,27 @@ export default function ERPSidebar({ notifCount = 0, mobileOpen = false, closeMo
   }, [token]);
 
   const filteredItems = navItems.filter((item) => {
-    if (item.adminOnly && !isAdmin) {
-        // Even if adminOnly, check if they have specific permission
-        if (item.permission && hasPermission(item.permission)) return true;
-        return false;
+    // Admin has access to everything EXCEPT Teams Members (they use the global Members page)
+    if (user?.role === "admin") {
+      if (item.label === "Teams Members") return false;
+      return true;
     }
-    if (item.permission && !hasPermission(item.permission)) return false;
+
+    // Teams Members is specifically for non-Admins to see their colleagues
+    if (item.label === "Teams Members") return true;
+
+    // Check for specific permission if item requires it
+    if (item.permission) {
+        return hasPermission(item.permission);
+    }
+
+    // If adminOnly (and no specific permission matched above), deny access for non-admins
+    if (item.adminOnly) return false;
+
+    // Default: allow access
     return true;
   });
+
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)

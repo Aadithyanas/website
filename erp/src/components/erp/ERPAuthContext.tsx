@@ -130,8 +130,8 @@ export function ERPAuthProvider({ children }: { children: React.ReactNode }) {
     handleInit();
   }, [setTokenAndUser]);
 
-  const isAdmin = ["admin", "hr", "manager"].includes(user?.role || "");
-  const isLeader = isAdmin || user?.team_role === "Team Leader";
+  const isAdmin = user?.role === "admin";
+  const isLeader = isAdmin || ["hr", "manager"].includes(user?.role || "") || user?.team_role === "Team Leader";
 
   return (
     <ERPAuthContext.Provider

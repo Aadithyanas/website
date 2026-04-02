@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useERPAuth, apiClient } from "@/src/components/erp/ERPAuthContext";
-import { Receipt, Plus, Search, Filter, Trash2, Edit3, DollarSign, Calendar as CalendarIcon, Tag, X, Clock } from "lucide-react";
+import { Receipt, Plus, Search, Filter, Trash2, Edit3, DollarSign, Calendar as CalendarIcon, Tag, X, Clock, Upload, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
+import { API } from "@/src/components/erp/ERPAuthContext";
 
 interface Expense {
   id: string;
@@ -14,22 +15,40 @@ interface Expense {
   status: "pending" | "approved" | "rejected";
 }
 
+const getUrl = (path?: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return `${API}${path}`;
+};
+
 export default function ERPExpensesPage() {
+
   const { token, isAdmin, hasPermission } = useERPAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [formData, setFormData] = useState({ title: "", amount: "", category: "Software", date: new Date().toISOString().split('T')[0], description: "" });
+  const [formData, setFormData] = useState({ title: "", amount: "", category: "Infrastructure", date: new Date().toISOString().split('T')[0], description: "" });
+  const [billFile, setBillFile] = useState<File | null>(null);
+
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const [summary, setSummary] = useState({ monthly_total: 0, yearly_total: 0 });
 
   useEffect(() => {
-    if (token) fetchExpenses();
-  }, [token]);
+    if (token) {
+        fetchExpenses();
+        fetchSummary();
+    }
+  }, [token, filterMonth, filterYear]);
 
   const fetchExpenses = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get("/api/erp/expenses", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await apiClient.get(`/api/erp/expenses?month=${filterMonth}&year=${filterYear}`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
       setExpenses(res.data);
     } catch (e) {
       console.error("Failed to fetch expenses", e);
@@ -38,10 +57,22 @@ export default function ERPExpensesPage() {
     }
   };
 
+  const fetchSummary = async () => {
+    try {
+      const res = await apiClient.get("/api/erp/expenses/summary", { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      setSummary(res.data);
+    } catch (e) {
+      console.error("Failed to fetch summary", e);
+    }
+  };
+
   const handleStatusUpdate = async (id: string, status: string) => {
     try {
       await apiClient.put(`/api/erp/expenses/${id}`, { status }, { headers: { Authorization: `Bearer ${token}` } });
       setExpenses(prev => prev.map(e => e.id === id ? { ...e, status: status as any } : e));
+      fetchSummary();
     } catch (e) {
       console.error("Failed to update expense status", e);
       alert("Failed to update status");
@@ -51,7 +82,9 @@ export default function ERPExpensesPage() {
   const handleAddOrUpdateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let expenseId = "";
       if (editingExpense) {
+        expenseId = editingExpense.id;
         const res = await apiClient.put(`/api/erp/expenses/${editingExpense.id}`, { 
           title: formData.title, 
           amount: parseFloat(formData.amount), 
@@ -69,12 +102,36 @@ export default function ERPExpensesPage() {
           description: formData.description,
           status: "pending"
         }, { headers: { Authorization: `Bearer ${token}` } });
+        expenseId = res.data.id;
         setExpenses([res.data, ...expenses]);
       }
+
+      // Handle Bill Upload (Mandatory for new expenses)
+      if (!editingExpense && !billFile) {
+        alert("Please upload a proof of expense (bill image) to continue.");
+        setAdding(false);
+        return;
+      }
+
+      if (billFile && expenseId) {
+        const fd = new FormData();
+        fd.append("file", billFile);
+        await apiClient.post(`/api/erp/expenses/${expenseId}/upload`, fd, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data"
+          }
+        });
+      }
+
       closeModal();
+      fetchExpenses();
+      fetchSummary();
     } catch (e) {
       console.error("Failed to save expense", e);
       alert("Failed to save expense");
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -84,14 +141,16 @@ export default function ERPExpensesPage() {
       setFormData({ title: exp.title, amount: exp.amount.toString(), category: exp.category, date: exp.date, description: exp.description || "" });
     } else {
       setEditingExpense(null);
-      setFormData({ title: "", amount: "", category: "Software", date: new Date().toISOString().split('T')[0], description: "" });
+      setFormData({ title: "", amount: "", category: "Infrastructure", date: new Date().toISOString().split('T')[0], description: "" });
     }
+    setBillFile(null);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditingExpense(null);
+    setBillFile(null);
   };
 
   const deleteExpense = async (id: string) => {
@@ -99,6 +158,7 @@ export default function ERPExpensesPage() {
       try {
         await apiClient.delete(`/api/erp/expenses/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         setExpenses(expenses.filter(e => e.id !== id));
+        fetchSummary();
       } catch (e) {
         console.error("Failed to delete expense", e);
         alert("Failed to delete expense");
@@ -106,7 +166,6 @@ export default function ERPExpensesPage() {
     }
   };
 
-  const totalThisMonth = expenses.reduce((acc, curr) => acc + curr.amount, 0);
   const pendingAmount = expenses.filter(e => e.status === "pending").reduce((acc, curr) => acc + curr.amount, 0);
   const pendingCount = expenses.filter(e => e.status === "pending").length;
   
@@ -116,7 +175,7 @@ export default function ERPExpensesPage() {
   }, {} as Record<string, number>);
   
   const topCategory = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a])[0] || "None";
-  const topCategoryPercent = totalThisMonth > 0 ? Math.round((categoryTotals[topCategory] / totalThisMonth) * 100) : 0;
+  const topCategoryPercent = summary.monthly_total > 0 ? Math.round((categoryTotals[topCategory] / summary.monthly_total) * 100) : 0;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -128,17 +187,40 @@ export default function ERPExpensesPage() {
 
   return (
     <div className="w-full text-white">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-extrabold flex items-center gap-3">
             <Receipt className="text-indigo-500" size={28} />
             Expense Management
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Track and manage company expenditures.</p>
+          <div className="flex items-center gap-3 mt-1">
+             <p className="text-gray-400 text-sm">Track and manage company expenditures.</p>
+             <div className="h-4 w-px bg-gray-800" />
+             <div className="flex items-center gap-2">
+                <select 
+                    className="bg-transparent border-none text-xs font-bold text-indigo-400 focus:outline-none cursor-pointer"
+                    value={filterMonth}
+                    onChange={e => setFilterMonth(parseInt(e.target.value))}
+                >
+                    {Array.from({length: 12}, (_, i) => (
+                        <option key={i+1} value={i+1} className="bg-black">{format(new Date(2000, i, 1), 'MMMM')}</option>
+                    ))}
+                </select>
+                <select 
+                    className="bg-transparent border-none text-xs font-bold text-indigo-400 focus:outline-none cursor-pointer"
+                    value={filterYear}
+                    onChange={e => setFilterYear(parseInt(e.target.value))}
+                >
+                    {[2024, 2025, 2026].map(y => (
+                        <option key={y} value={y} className="bg-black">{y}</option>
+                    ))}
+                </select>
+             </div>
+          </div>
         </div>
         <button 
           onClick={() => openModal()}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
+          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 font-bold transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
         >
           <Plus size={18} /> New Expense
         </button>
@@ -149,12 +231,13 @@ export default function ERPExpensesPage() {
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <DollarSign size={48} />
           </div>
-          <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total This Month</p>
-          <p className="text-2xl font-black text-white">$ {totalThisMonth.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-          <div className="mt-2 text-xs text-emerald-400 flex items-center gap-1 font-bold">
-            <TrendingUp size={12} /> +4% from last month
+          <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Monthly Total ({format(new Date(2000, filterMonth-1, 1), 'MMM')})</p>
+          <p className="text-2xl font-black text-white">$ {expenses.reduce((acc, c) => acc + c.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+          <div className="mt-2 text-xs text-indigo-400 flex items-center gap-1 font-bold">
+            Yearly: $ {summary.yearly_total.toLocaleString()}
           </div>
         </div>
+
         <div className="bg-[#0c0c0c] border border-[#1a1a1a] p-5 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity text-amber-500">
             <Clock size={48} />
@@ -190,8 +273,24 @@ export default function ERPExpensesPage() {
             {expenses.map((exp) => (
               <tr key={exp.id} className="hover:bg-[#0f0f0f] transition-colors group">
                 <td className="px-6 py-4">
-                  <div className="font-bold text-sm">{exp.title}</div>
-                  <div className="text-[10px] text-gray-600 mt-0.5">ID: {exp.id}</div>
+                  <div className="flex items-center gap-3">
+                    <div>
+                        <div className="font-bold text-sm">{exp.title}</div>
+                        <div className="text-[10px] text-gray-600 mt-0.5 uppercase font-bold tracking-tighter">ID: {exp.id.slice(-6)}</div>
+                    </div>
+                    {(exp as any).bill_image && (
+                        <a 
+                            href={getUrl((exp as any).bill_image)} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 bg-indigo-500/10 text-indigo-400 rounded-lg hover:bg-indigo-500/20 transition-colors"
+                            title="View Bill"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <ImageIcon size={14} />
+                        </a>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <span className="text-[10px] font-bold px-2 py-1 bg-[#161616] border border-[#222] rounded-md text-gray-400 uppercase tracking-wider">
@@ -236,6 +335,20 @@ export default function ERPExpensesPage() {
                 </td>
               </tr>
             ))}
+            {loading && (
+              <tr>
+                <td colSpan={6} className="px-6 py-10 text-center text-xs text-gray-500 font-bold uppercase tracking-widest animate-pulse">
+                  Syncing expenses...
+                </td>
+              </tr>
+            )}
+            {!loading && expenses.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-6 py-10 text-center text-xs text-gray-600 italic">
+                  No records found for this period.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -286,9 +399,31 @@ export default function ERPExpensesPage() {
                   <option value="Office">Office</option>
                   <option value="Marketing">Marketing</option>
                   <option value="Hardware">Hardware</option>
+                  <option value="Entertainment">Entertainment</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
+
+               <div>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Proof of Expense (Bill)</label>
+                <div className="relative">
+                    <input 
+                    type="file" 
+                    id="bill_upload"
+                    accept="image/*,.pdf"
+                    hidden
+                    onChange={e => setBillFile(e.target.files?.[0] || null)}
+                    />
+                    <label 
+                        htmlFor="bill_upload"
+                        className={`w-full flex items-center justify-between bg-[#0a0a0a] border ${billFile ? 'border-emerald-500/50 text-emerald-400' : 'border-[#222] text-gray-400'} rounded-xl py-3 px-4 text-sm cursor-pointer hover:bg-white/5 transition-all`}
+                    >
+                        <span className="truncate">{billFile ? billFile.name : "Choose file..."}</span>
+                        <Upload size={16} />
+                    </label>
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={closeModal} className="flex-1 px-4 py-3 rounded-xl border border-[#222] text-sm font-bold text-gray-400 hover:bg-white/5 transition-colors">Cancel</button>
                 <button type="submit" className="flex-1 px-4 py-3 rounded-xl bg-indigo-600 text-white text-sm font-black hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20">
@@ -311,3 +446,4 @@ function TrendingUp({ size, className }: { size: number, className?: string }) {
     </svg>
   );
 }
+

@@ -80,6 +80,9 @@ export default function ERPTasksPage() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  const [filterTeam, setFilterTeam] = useState("");
+  const [filterMember, setFilterMember] = useState("");
+
   const h = { Authorization: `Bearer ${token}` };
 
   useEffect(() => { 
@@ -89,7 +92,7 @@ export default function ERPTasksPage() {
       fetchSettings();
       fetchProjects();
     }
-  }, [token]);
+  }, [token, filterTeam, filterMember]);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -121,11 +124,16 @@ export default function ERPTasksPage() {
 
   const fetchTasks = async () => {
     try {
-      const res = await apiClient.get("/api/erp/tasks", { headers: h });
+      let url = "/api/erp/tasks?";
+      if (filterTeam) url += `team=${encodeURIComponent(filterTeam)}&`;
+      if (filterMember) url += `assigned_to_name=${encodeURIComponent(filterMember)}&`;
+      
+      const res = await apiClient.get(url, { headers: h });
       setTasks(res.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
+
 
   const fetchMembers = async () => {
     try {
@@ -136,25 +144,22 @@ export default function ERPTasksPage() {
 
   const fetchProjects = async () => {
     try {
-      const saved = localStorage.getItem("erp_projects");
-      if (saved) {
-        setProjects(JSON.parse(saved));
-      } else {
-        setProjects([
-          { id: "p1", name: "Website Redesign", status: "active", progress: 65, deadline: "2026-05-15" },
-          { id: "p2", name: "Mobile App Development", status: "active", progress: 30, deadline: "2026-07-01" },
-          { id: "p3", name: "Brand Identity", status: "completed", progress: 100, deadline: "2026-03-20" },
-          { id: "p4", name: "ERP Integration", status: "on_hold", progress: 15, deadline: "2026-12-31" },
-        ]);
-      }
-    } catch (e) { console.error(e); }
+      const res = await apiClient.get("/api/erp/projects", { headers: h });
+      setProjects(res.data);
+    } catch (e) { console.error("Failed to fetch projects", e); }
   };
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     setAdding(true);
     try {
-      await apiClient.post("/api/erp/tasks", newTask, { headers: h });
+      const selectedProject = projects.find(p => p.id === newTask.project_id);
+      const payload = { 
+        ...newTask, 
+        project_name: selectedProject?.name || undefined 
+      };
+      
+      await apiClient.post("/api/erp/tasks", payload, { headers: h });
       setNewTask({ 
         title: "", description: "", status: "todo", sprint: "Backlog", 
         team: "", estimated_time: "", assigned_to: "", priority: "medium", due_date: "",
@@ -411,30 +416,67 @@ export default function ERPTasksPage() {
           </div>
         ) : (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold m-0 mb-2 text-white tracking-tight">Organization Workspace</h1>
-              <div className="flex gap-4 text-xs font-black uppercase tracking-wider text-[#666]">
-                <button 
-                  className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "list" ? "border-indigo-500 text-white" : "border-transparent text-gray-500 hover:text-gray-300"}`} 
-                  onClick={() => setViewMode("list")}
-                >
-                  <ListIcon size={14} /> List View
-                </button>
-                <button 
-                  className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "calendar" ? "border-indigo-500 text-white" : "border-transparent text-gray-500 hover:text-gray-300"}`} 
-                  onClick={() => setViewMode("calendar")}
-                >
-                  <CalendarIcon size={14} /> Calendar
-                </button>
+            <div className="flex flex-col gap-4">
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold m-0 mb-2 text-white tracking-tight">Organization Workspace</h1>
+                <div className="flex gap-4 text-xs font-black uppercase tracking-wider text-[#666]">
+                  <button 
+                    className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "list" ? "border-indigo-500 text-white" : "border-transparent text-gray-500 hover:text-gray-300"}`} 
+                    onClick={() => setViewMode("list")}
+                  >
+                    <ListIcon size={14} /> List View
+                  </button>
+                  <button 
+                    className={`flex items-center gap-1.5 pb-2 border-b-2 transition-colors ${viewMode === "calendar" ? "border-indigo-500 text-white" : "border-transparent text-gray-500 hover:text-gray-300"}`} 
+                    onClick={() => setViewMode("calendar")}
+                  >
+                    <CalendarIcon size={14} /> Calendar
+                  </button>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-[#444] uppercase">Team:</span>
+                    <select 
+                        className="bg-[#111] border-[#222] text-xs text-gray-300 rounded-lg py-1.5 px-3 focus:outline-none border"
+                        value={filterTeam}
+                        onChange={e => setFilterTeam(e.target.value)}
+                    >
+                        <option value="">All Teams</option>
+                        {availableSettings.teams.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-[#444] uppercase">Member:</span>
+                    <input 
+                        className="bg-[#111] border-[#222] text-xs text-gray-300 rounded-lg py-1.5 px-3 focus:outline-none border w-32"
+                        placeholder="Search name..."
+                        value={filterMember}
+                        onChange={e => setFilterMember(e.target.value)}
+                    />
+                </div>
+                {(filterTeam || filterMember) && (
+                    <button 
+                        className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300"
+                        onClick={() => { setFilterTeam(""); setFilterMember(""); }}
+                    >
+                        Clear Filters
+                    </button>
+                )}
               </div>
             </div>
-            <button 
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-[0_4px_20px_rgba(99,102,241,0.2)]" 
-              onClick={() => setShowAdd(true)}
-            >
-              <Plus size={16} /> Create Global Task
-            </button>
+            {(isAdmin || isLeader || (user?.permissions || []).includes("manage_projects")) && (
+              <button 
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-[0_4px_20px_rgba(99,102,241,0.2)]" 
+                onClick={() => setShowAdd(true)}
+              >
+                <Plus size={16} /> Create Task
+              </button>
+            )}
           </div>
+
         )}
       </div>
 
@@ -443,8 +485,8 @@ export default function ERPTasksPage() {
           {STATUSES.map(statusKey => {
             const taskCount = statusGroups[statusKey].length;
             
-            // Only show groups that have tasks OR are "todo" or "inprogress"
-            const showGroup = taskCount > 0 || statusKey === "todo" || statusKey === "inprogress";
+            // Only show groups that have tasks
+            const showGroup = taskCount > 0;
             
             if (!showGroup) return null;
 

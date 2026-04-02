@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useERPAuth, apiClient } from "@/src/components/erp/ERPAuthContext";
 import { useRouter } from "next/navigation";
+import { Filter } from "lucide-react";
 
 interface Member {
   id: string; name: string; email: string; phone?: string;
@@ -14,12 +15,14 @@ interface Member {
 // Removed hardcoded TEAMS
 
 export default function ERPMembersPage() {
-  const { isAdmin, hasPermission, token } = useERPAuth();
+  const { user, isAdmin, hasPermission, token } = useERPAuth();
   const router = useRouter();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editMember, setEditMember] = useState<Member | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState("");
   
   const [form, setForm] = useState({ 
     name: "", email: "", phone: "", position: "", teams: [] as string[], 
@@ -31,13 +34,14 @@ export default function ERPMembersPage() {
   const [msg, setMsg] = useState("");
   const [availableSettings, setAvailableSettings] = useState({ positions: [] as string[], teams: [] as string[], sprints: [] as string[] });
 
+  const canManage = isAdmin || hasPermission("manage_members");
+  // A member can edit their own profile (limited fields)
+  const canEditOwn = (memberId: string) => user?.id === memberId || canManage;
+
   useEffect(() => {
-    if (!isAdmin && !hasPermission("manage_members")) {
-        router.replace("/erp/dashboard"); return;
-    }
     fetchMembers();
     fetchSettings();
-  }, [isAdmin, hasPermission, token]);
+  }, [isAdmin, hasPermission, token, selectedTeam]);
 
   const fetchSettings = async () => {
     try {
@@ -48,7 +52,8 @@ export default function ERPMembersPage() {
 
   const fetchMembers = async () => {
     try {
-      const res = await apiClient.get("/api/erp/members", { headers: { Authorization: `Bearer ${token}` } });
+      const url = selectedTeam ? `/api/erp/members?team=${encodeURIComponent(selectedTeam)}` : "/api/erp/members";
+      const res = await apiClient.get(url, { headers: { Authorization: `Bearer ${token}` } });
       setMembers(res.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -107,6 +112,8 @@ export default function ERPMembersPage() {
     setShowModal(true);
   };
 
+  const isSelfEdit = editMember?.id === user?.id && !canManage;
+
   const toggleTeam = (team: string) => {
     setForm(prev => ({
       ...prev,
@@ -120,14 +127,31 @@ export default function ERPMembersPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "28px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "28px", flexWrap: "wrap", gap: "20px" }}>
         <div>
           <h1 style={{ fontSize: "24px", fontWeight: 800, margin: "0 0 4px", color: "#fff", letterSpacing: "-0.02em" }}>Team Members</h1>
-          <p style={{ color: "#888", margin: 0, fontSize: "14px" }}>{members.length} members total in your organization.</p>
+          <p style={{ color: "#888", margin: "0 0 16px", fontSize: "14px" }}>Manage and view your organization's team.</p>
+          
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-2 bg-[#0c0c0c] border border-[#1a1a1a] rounded-xl px-3 py-1.5">
+                <Filter size={14} className="text-gray-500" />
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Team Filter:</span>
+                <select 
+                    className="bg-transparent border-none text-xs font-bold text-indigo-400 focus:outline-none cursor-pointer min-w-[120px]"
+                    value={selectedTeam}
+                    onChange={e => setSelectedTeam(e.target.value)}
+                >
+                    <option value="" className="bg-black text-white">All Organization ({members.length})</option>
+                    {availableSettings.teams.map(t => <option key={t} value={t} className="bg-black text-white">{t}</option>)}
+                </select>
+             </div>
+          </div>
         </div>
-        <button className="erp-btn erp-btn-primary" onClick={() => { setEditMember(null); setForm({ name: "", email: "", phone: "", position: "", teams: [], team_role: "", sprint: "", role: "member", base_salary: 0, bank_name: "", account_number: "", ifsc_code: "", permissions: [] }); setShowModal(true); setMsg(""); }}>
-          + Invite Member
-        </button>
+        {canManage && (
+            <button className="erp-btn erp-btn-primary" onClick={() => { setEditMember(null); setForm({ name: "", email: "", phone: "", position: "", teams: [], team_role: "", sprint: "", role: "member", base_salary: 0, bank_name: "", account_number: "", ifsc_code: "", permissions: [] }); setShowModal(true); setMsg(""); }}>
+            + Invite Member
+            </button>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px" }}>
@@ -159,24 +183,43 @@ export default function ERPMembersPage() {
 
             {m.position && <p style={{ margin: 0, fontSize: "13px", color: "#a78bfa", padding: "8px 12px", background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: "8px" }}>{m.position}</p>}
             
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#0a0a0a", borderRadius: "8px", border: "1px solid #111" }}>
-              <span style={{ fontSize: "11px", color: "#666", fontWeight: 700 }}>BASE SALARY</span>
-              <span style={{ fontSize: "14px", fontWeight: 800, color: "#34d399" }}>${m.base_salary?.toLocaleString() || "0"}</span>
-            </div>
+            {m.base_salary !== undefined && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#0a0a0a", borderRadius: "8px", border: "1px solid #111" }}>
+                        <span style={{ fontSize: "11px", color: "#666", fontWeight: 700 }}>BASE SALARY</span>
+                        <span style={{ fontSize: "14px", fontWeight: 800, color: "#34d399" }}>${m.base_salary?.toLocaleString() || "0"}</span>
+                    </div>
+                    {m.bank_name && (
+                        <div style={{ padding: "8px 12px", background: "#050505", borderRadius: "8px", border: "1px dashed #222", fontSize: "11px", color: "#555" }}>
+                            {m.bank_name} · {m.account_number}
+                        </div>
+                    )}
+                </div>
+            )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", borderTop: "1px solid #111", paddingTop: "12px", marginTop: "4px" }}>
-              <button onClick={() => openEdit(m)} style={{ background: "#222", border: "1px solid #333", color: "#fff", padding: "4px 10px", borderRadius: "4px", fontSize: "12px", cursor: "pointer" }}>Edit</button>
-              <button onClick={() => handleDelete(m)} style={{ background: "#1a0000", border: "1px solid #4d0000", color: "#ff4d4d", padding: "4px 10px", borderRadius: "4px", fontSize: "12px", cursor: "pointer" }}>Remove</button>
-            </div>
+            {canEditOwn(m.id) && (
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", borderTop: "1px solid #111", paddingTop: "12px", marginTop: "4px" }}>
+                <button onClick={() => openEdit(m)} style={{ background: "#222", border: "1px solid #333", color: "#fff", padding: "4px 10px", borderRadius: "4px", fontSize: "12px", cursor: "pointer" }}>
+                  {user?.id === m.id ? "Edit My Profile" : "Edit"}
+                </button>
+                {canManage && (
+                  <button onClick={() => handleDelete(m)} style={{ background: "#1a0000", border: "1px solid #4d0000", color: "#ff4d4d", padding: "4px 10px", borderRadius: "4px", fontSize: "12px", cursor: "pointer" }}>Remove</button>
+                )}
+                </div>
+            )}
           </div>
         ))}
       </div>
 
+
       {/* Invite/Edit Modal */}
       {showModal && (
         <div className="erp-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="erp-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: "500px" }}>
-            <h2 style={{ margin: "0 0 24px", fontSize: "20px", fontWeight: 800, color: "#fff" }}>{editMember ? "Edit Member" : "Invite Member"}</h2>
+          <div className="erp-modal shadow-2xl" onClick={e => e.stopPropagation()} style={{ maxWidth: "500px", maxHeight: "90vh", overflowY: "auto" }}>
+            <h2 style={{ margin: "0 0 8px", fontSize: "20px", fontWeight: 800, color: "#fff" }}>{editMember ? (isSelfEdit ? "Edit My Profile" : "Edit Member") : "Invite Member"}</h2>
+            {isSelfEdit && (
+              <p style={{ margin: "0 0 20px", fontSize: "12px", color: "#555", padding: "8px 12px", background: "#0a0a0a", borderRadius: "8px", border: "1px dashed #222" }}>You can update your name, phone, and bank information.</p>
+            )}
             {msg && (
               <div style={{
                 padding: "10px 14px", borderRadius: "8px", marginBottom: "16px", fontSize: "14px",
@@ -194,6 +237,8 @@ export default function ERPMembersPage() {
                 <label className="erp-label">Email *</label>
                 <input className="erp-input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="john@example.com" required disabled={!!editMember} />
               </div>
+              {!isSelfEdit && (
+                <>
               <div>
                 <label className="erp-label">Position *</label>
                 <select className="erp-input erp-select" value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} required>
@@ -223,19 +268,14 @@ export default function ERPMembersPage() {
                   ))}
                 </div>
               </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                <div>
-                  <label className="erp-label">Role</label>
-                  <select className="erp-input erp-select" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                    <option value="member">Member</option>
-                    <option value="manager">Manager</option>
-                    <option value="hr">HR</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
+                </>
+              )}
+              <div style={{ display: "none" }}>
+                <input type="hidden" value={form.role} readOnly />
               </div>
 
+              {!isSelfEdit && (
+                <>
               <div>
                 <label className="erp-label">Team Role</label>
                 <select className="erp-input erp-select" value={form.team_role} onChange={e => setForm({ ...form, team_role: e.target.value })}>
@@ -274,12 +314,15 @@ export default function ERPMembersPage() {
                   ))}
                 </div>
               </div>
+                </>
+              )}
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div>
                   <label className="erp-label">Phone Number</label>
                   <input className="erp-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="e.g. +12345678" />
                 </div>
+                {!isSelfEdit && (
                 <div>
                   <label className="erp-label">Assigned Sprint</label>
                   <select className="erp-input erp-select" value={form.sprint} onChange={e => setForm({ ...form, sprint: e.target.value })}>
@@ -287,7 +330,9 @@ export default function ERPMembersPage() {
                     {availableSettings.sprints.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
+                )}
               </div>
+              {!isSelfEdit && (
               <div>
                 <label className="erp-label">Base Salary (Monthly)</label>
                 <div style={{ position: "relative" }}>
@@ -302,6 +347,7 @@ export default function ERPMembersPage() {
                   />
                 </div>
               </div>
+              )}
 
               {/* Banking Section */}
               <div style={{ marginTop: "8px", borderTop: "1px dashed #222", paddingTop: "16px" }}>
