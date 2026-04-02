@@ -47,20 +47,12 @@ class ConnectionManager:
         logger.info(f"User {u_id} disconnected from org {o_id}")
 
     async def send_personal_message(self, message: dict, user_id: str):
-        # 1. Local Delivery Check
-        # If the user is connected to THIS server instance, deliver immediately
-        if user_id in self.active_connections:
-            print(f"--- [WS DEBUG] Delivering message LOCALLY to user {user_id} ---")
-            for connection in self.active_connections[user_id]:
-                try:
-                    await connection.send_json(message)
-                except Exception as e:
-                    print(f"--- [WS DEBUG] FAILED Local delivery to {user_id}: {e} ---")
-        else:
-            print(f"--- [WS DEBUG] User {user_id} NOT on this server. Passing to Redis. ---")
-
-        # 2. Redis Pub/Sub Broadcast
-        # Always broadcast so OTHER server instances can deliver it too
+        """
+        Unified Routing: Always push to Redis Pub/Sub. 
+        The local 'redis_listener' on EACH server instance will 
+        deliver the message to 'active_connections' if the user is there.
+        This prevents duplicate messages and supports multi-instance scaling.
+        """
         try:
             # We wrap the message with extra metadata if needed
             broadcast_payload = {
@@ -129,3 +121,4 @@ class ConnectionManager:
                 retry_delay = min(retry_delay * 2, 30)
 
 manager = ConnectionManager()
+
