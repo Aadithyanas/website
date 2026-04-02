@@ -10,33 +10,40 @@ logger = logging.getLogger("erp_backend")
 class ConnectionManager:
     def __init__(self):
         # Local cache of active WebSockets on THIS worker instance
-        self.active_connections: Dict[str, WebSocket] = {}
+        # Supporting multiple connections (tabs) for the same user
+        self.active_connections: Dict[str, List[WebSocket]] = {}
 
     async def connect(self, user_id: Any, org_id: Any, websocket: WebSocket):
         u_id = str(user_id)
         o_id = str(org_id)
         await websocket.accept()
         
-        # Store local reference
-        self.active_connections[u_id] = websocket
+        # Store local reference as a list
+        if u_id not in self.active_connections:
+            self.active_connections[u_id] = []
+        self.active_connections[u_id].append(websocket)
         
         # Persist online status in Redis (with 1 hour expiry as heartbeat backup)
         await redis.setex(f"user_online:{u_id}", 3600, "1")
         # Track organization members in a Redis Set
         await redis.sadd(f"org_members:{o_id}", u_id)
         
-        logger.info(f"User {u_id} connected to org {o_id}")
+        logger.info(f"User {u_id} connected to org {o_id} (Total connections: {len(self.active_connections[u_id])})")
 
-    async def disconnect(self, user_id: Any, org_id: Any):
+    async def disconnect(self, user_id: Any, org_id: Any, websocket: WebSocket = None):
         u_id = str(user_id)
         o_id = str(org_id)
         
         if u_id in self.active_connections:
-            del self.active_connections[u_id]
+            if websocket in self.active_connections[u_id]:
+                self.active_connections[u_id].remove(websocket)
             
-        await redis.delete(f"user_online:{u_id}")
+            if not self.active_connections[u_id]:
+                del self.active_connections[u_id]
+                # Only remove Redis status if NO MORE tabs are open for this user
+                await redis.delete(f"user_online:{u_id}")
+            
         await redis.srem(f"org_members:{o_id}", u_id)
-        
         logger.info(f"User {u_id} disconnected from org {o_id}")
 
     async def send_personal_message(self, message: dict, user_id: str):

@@ -53,7 +53,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 except json.JSONDecodeError:
                     pass # Ignore non-JSON messages
         except WebSocketDisconnect:
-            await manager.disconnect(user_id, org_id)
+            await manager.disconnect(user_id, org_id, websocket)
             # Broadcast offline status
             await manager.broadcast_to_org({
                 "type": "user_offline",
