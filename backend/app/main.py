@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import asyncio
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -6,6 +7,7 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.redis_client import redis as shared_redis, check_redis_connection
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -58,6 +60,11 @@ app.include_router(erp_ws.router)
 @app.on_event("startup")
 async def on_startup():
     await create_indexes()
+    await check_redis_connection()
+    
+    # Start Redis Pub/Sub listener for WebSockets
+    from app.core.ws_manager import manager
+    asyncio.create_task(manager.redis_listener())
     
     # Initialize Redis Cache with token-aware key builder
     from starlette.requests import Request
@@ -73,5 +80,4 @@ async def on_startup():
             token
         ])
         
-    redis = aioredis.from_url("redis://localhost:6379", encoding="utf8", decode_responses=True)
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache", key_builder=custom_key_builder)
+    FastAPICache.init(RedisBackend(shared_redis), prefix="fastapi-cache", key_builder=custom_key_builder)

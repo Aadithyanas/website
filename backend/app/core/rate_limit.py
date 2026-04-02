@@ -19,8 +19,18 @@ def get_user_or_ip(request: Request) -> str:
             pass
     return get_remote_address(request)
 
-# Global SlowAPI Limiter
-limiter = Limiter(key_func=get_user_or_ip, default_limits=["200/minute"])
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+
+# Global SlowAPI Limiter with Redis storage
+limiter = Limiter(
+    key_func=get_user_or_ip, 
+    default_limits=["200/minute"],
+    storage_uri=REDIS_URL
+)
 
 def rate_limit_exceeded_handler(request: Request, exc: Exception):
     logger.warning(f"Rate limit exceeded for {get_user_or_ip(request)} on {request.url.path}")

@@ -70,7 +70,7 @@ async def list_members(team: str = None, teams_only: bool = False, allow_all: bo
     from app.core.ws_manager import manager
     async for user in cursor:
         member = serialize_user(user, requester=current_user)
-        member["is_online"] = manager.is_user_online(member["id"])
+        member["is_online"] = await manager.is_user_online(member["id"])
         members.append(member)
     return members
 
