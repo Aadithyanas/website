@@ -18,44 +18,36 @@ interface ERPWebSocketContextType {
 const ERPWebSocketContext = createContext<ERPWebSocketContextType | null>(null);
 
 export function ERPWebSocketProvider({ children }: { children: React.ReactNode }) {
-  const { token, user } = useERPAuth();
-  const [isConnected, setIsConnected] = useState(false);
-  const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
-  const ws = useRef<WebSocket | null>(null);
-
-  const sendMessage = (msg: WSMessage) => {
-    if (ws.current && isConnected) {
-      ws.current.send(JSON.stringify(msg));
-    } else {
-      console.warn("WebSocket not connected, cannot send message");
-    }
-  };
-
-  useEffect(() => {
-    if (!token || !user) {
-      if (ws.current) {
-        ws.current.close();
-        ws.current = null;
+    const { token, user, API } = useERPAuth() as any;
+    const [isConnected, setIsConnected] = useState(false);
+    const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
+    const ws = useRef<WebSocket | null>(null);
+  
+    const sendMessage = (msg: WSMessage) => {
+      if (ws.current && isConnected) {
+        ws.current.send(JSON.stringify(msg));
+      } else {
+        console.warn("WebSocket not connected, cannot send message");
       }
-      setIsConnected(false);
-      return;
-    }
-
-    const host = window.location.host;
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    
-    // Improved URL detection: If we're on localhost:3000, we probably need :8000
-    // If we're on a production domain, we use the same host (same-origin WS)
-    let wsUrl = "";
-    if (host.includes("localhost")) {
-      wsUrl = `${protocol}//${host.split(":")[0]}:8000/ws/erp/${token}`;
-    } else {
-      // For production, assume the same host but with ws/wss protocol
-      wsUrl = `${protocol}//${host}/ws/erp/${token}`;
-    }
-    
-    console.log("Connecting to WebSocket:", wsUrl);
-    const socket = new WebSocket(wsUrl);
+    };
+  
+    useEffect(() => {
+      if (!token || !user) {
+        if (ws.current) {
+          ws.current.close();
+          ws.current = null;
+        }
+        setIsConnected(false);
+        return;
+      }
+  
+      // Use the centralized API URL to determine the WebSocket endpoint
+      // Replace http/https with ws/wss
+      const wsBase = API.replace(/^http/, "ws");
+      const wsUrl = `${wsBase}/ws/erp/${token}`;
+      
+      console.log("Connecting to WebSocket:", wsUrl);
+      const socket = new WebSocket(wsUrl);
     ws.current = socket;
 
     socket.onopen = () => {
