@@ -19,7 +19,8 @@ redis = aioredis.from_url(
     decode_responses=True,
     # Standard connection pool settings
     max_connections=20,
-    retry_on_timeout=True
+    retry_on_timeout=True,
+    ssl=True
 )
 
 async def check_redis_connection():
