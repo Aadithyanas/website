@@ -7,7 +7,11 @@ load_dotenv()
 MONGODB_URL = os.getenv("MONGODB_URL")
 DATABASE_NAME = os.getenv("DATABASE_NAME", "erp_db")
 
-client = AsyncIOMotorClient(MONGODB_URL)
+client = AsyncIOMotorClient(
+    MONGODB_URL,
+    serverSelectionTimeoutMS=5000, # 5 seconds max to wait for server
+    connectTimeoutMS=10000,         # 10 seconds max to connect
+)
 db = client[DATABASE_NAME]
 
 # Collections

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import asyncio
+import logging
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -10,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.redis_client import redis as shared_redis, check_redis_connection
 from dotenv import load_dotenv
 load_dotenv()
+
+logger = logging.getLogger("erp_backend")
 
 from app.api.routes import contact
 from app.api.routes import erp_auth, erp_members, erp_tasks, erp_attendance, erp_notifications, erp_settings, erp_salary, erp_payroll, erp_ws, erp_clients, erp_invoices, erp_expenses, erp_projects, erp_chat
@@ -59,7 +62,13 @@ app.include_router(erp_ws.router)
 
 @app.on_event("startup")
 async def on_startup():
-    await create_indexes()
+    # Non-blocking index creation
+    try:
+        await create_indexes()
+        logger.info("Successfully created MongoDB indexes")
+    except Exception as e:
+        logger.warning(f"Warning: Delayed MongoDB index creation/connection: {e}")
+        
     await check_redis_connection()
     
     # Start Redis Pub/Sub listener for WebSockets
