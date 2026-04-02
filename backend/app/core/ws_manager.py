@@ -77,7 +77,8 @@ class ConnectionManager:
         # Get all members of this org across ALL workers
         members = await redis.smembers(f"org_members:{o_id}")
         for u_id in members:
-            await self.send_personal_message(message, u_id.decode('utf-8'))
+            # u_id is already a string because of decode_responses=True
+            await self.send_personal_message(message, u_id)
 
     async def is_user_online(self, user_id: Any) -> bool:
         return await redis.exists(f"user_online:{str(user_id)}") > 0

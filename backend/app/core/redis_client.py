@@ -25,7 +25,8 @@ redis = aioredis.from_url(
     max_connections=20,
     retry_on_timeout=True,
     # Crucial for Upstash/Render SSL issues:
-    ssl_cert_reqs=None if is_ssl else None,
+    # Use ssl_cert_reqs='none' as a STRING for redis-py
+    ssl_cert_reqs="none" if is_ssl else None,
     socket_timeout=5.0,
     socket_connect_timeout=5.0
 )
