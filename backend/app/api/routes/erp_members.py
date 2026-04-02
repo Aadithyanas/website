@@ -1,54 +1,82 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from app.core.database import users_collection, invite_tokens_collection
 from app.core.security import create_invite_jwt
-from app.core.dependencies import get_current_user, require_admin
+from app.core.dependencies import get_current_user, require_admin, require_permission
 from app.schemas.erp_schemas import InviteMemberRequest, MemberUpdate
 from app.services.email_service import send_invite_email
 from bson import ObjectId
 from datetime import datetime
+from fastapi_cache.decorator import cache
 
 router = APIRouter(prefix="/api/erp/members", tags=["ERP Members"])
 
 ADMIN_EMAIL = "adithyanas2694@gmail.com"
 
 
-def serialize_user(user: dict) -> dict:
-    return {
+def serialize_user(user: dict, requester: dict = None) -> dict:
+    """
+    Serializes a user document, hiding sensitive information if the requester is not an admin.
+    """
+    is_admin = requester and requester.get("role") == "admin"
+    
+    data = {
         "id": str(user["_id"]),
         "name": user.get("name", ""),
         "email": user.get("email", ""),
         "phone": user.get("phone"),
         "position": user.get("position"),
         "role": user.get("role", "member"),
-        "team": user.get("team"), # Deprecated
         "teams": user.get("teams") or ([user.get("team")] if user.get("team") else []),
         "team_role": user.get("team_role"),
         "sprint": user.get("sprint"),
         "avatar": user.get("avatar"),
         "org_id": str(user.get("org_id", "")),
         "org_name": user.get("org_name", ""),
-        "base_salary": user.get("base_salary", 0),
-        "bank_name": user.get("bank_name"),
-        "account_number": user.get("account_number"),
-        "ifsc_code": user.get("ifsc_code"),
         "permissions": user.get("permissions") or [],
         "registered": user.get("registered", False),
         "created_at": (user.get("created_at") or datetime.utcnow()).isoformat(),
     }
 
+    # Only admins or the user themselves can see salary/bank info
+    if is_admin or (requester and str(requester["_id"]) == str(user["_id"])):
+        data.update({
+            "base_salary": user.get("base_salary", 0),
+            "bank_name": user.get("bank_name"),
+            "account_number": user.get("account_number"),
+            "ifsc_code": user.get("ifsc_code"),
+        })
+    
+    return data
+
 
 @router.get("/")
-async def list_members(current_user: dict = Depends(get_current_user)):
+@cache(expire=60)
+async def list_members(team: str = None, teams_only: bool = False, allow_all: bool = False, current_user: dict = Depends(get_current_user)):
     org_id = current_user.get("org_id")
-    cursor = users_collection.find({"org_id": org_id})
+    query = {"org_id": org_id}
+    
+    # Scoping for non-admins/hr/managers
+    is_privileged = current_user.get("role") in ["admin", "hr", "manager"]
+    
+    if not allow_all and (teams_only or not is_privileged):
+        user_teams = current_user.get("teams") or []
+        query["teams"] = {"$in": user_teams}
+    
+    if team:
+        query["teams"] = team
+
+    cursor = users_collection.find(query)
     members = []
+    from app.core.ws_manager import manager
     async for user in cursor:
-        members.append(serialize_user(user))
+        member = serialize_user(user, requester=current_user)
+        member["is_online"] = manager.is_user_online(member["id"])
+        members.append(member)
     return members
 
 
 @router.post("/invite")
-async def invite_member(body: InviteMemberRequest, admin: dict = Depends(require_admin)):
+async def invite_member(body: InviteMemberRequest, admin: dict = Depends(require_permission("manage_members"))):
     # Check if already in THIS organization
     org_id = admin.get("org_id")
     existing_in_org = await users_collection.find_one({"email": body.email, "org_id": org_id})
@@ -73,7 +101,7 @@ async def invite_member(body: InviteMemberRequest, admin: dict = Depends(require
             "account_number": body.account_number,
             "ifsc_code": body.ifsc_code,
             "permissions": body.permissions or [],
-            "role": "member",
+            "role": body.role or "member", # Allow setting role during invite
             "org_id": admin.get("org_id"),
             "org_name": admin.get("org_name"),
             "registered": False,
@@ -106,11 +134,11 @@ async def get_member(member_id: str, current_user: dict = Depends(get_current_us
     user = await users_collection.find_one({"_id": oid, "org_id": current_user.get("org_id")})
     if not user:
         raise HTTPException(status_code=404, detail="Member not found or not in your organization")
-    return serialize_user(user)
+    return serialize_user(user, requester=current_user)
 
 
 @router.put("/{member_id}")
-async def update_member(member_id: str, body: MemberUpdate, admin: dict = Depends(require_admin)):
+async def update_member(member_id: str, body: MemberUpdate, admin: dict = Depends(require_permission("manage_members"))):
     try:
         oid = ObjectId(member_id)
     except Exception:
@@ -132,11 +160,11 @@ async def update_member(member_id: str, body: MemberUpdate, admin: dict = Depend
     
     # Return updated user for context sync
     updated = await users_collection.find_one({"_id": oid})
-    return serialize_user(updated)
+    return serialize_user(updated, requester=admin)
 
 
 @router.delete("/{member_id}")
-async def delete_member(member_id: str, admin: dict = Depends(require_admin)):
+async def delete_member(member_id: str, admin: dict = Depends(require_permission("manage_members"))):
     try:
         oid = ObjectId(member_id)
     except Exception:
@@ -150,22 +178,15 @@ async def delete_member(member_id: str, admin: dict = Depends(require_admin)):
     if target.get("org_id") != admin.get("org_id"):
         raise HTTPException(status_code=403, detail="Not authorized to delete member from another organization")
 
-    # Permissions Logic:
-    # 1. Admin can remove anyone.
-    # 2. HR/Manager can remove Admin.
-    # (Requirement: "hr and manger can remoev admin... but admin can remoev the hr and manager and member")
-    
     remover_role = admin.get("role")
     target_role = target.get("role")
     
     can_delete = False
     if remover_role == "admin":
         can_delete = True # Admin can remove everyone
-    elif remover_role in ["hr", "manager"]:
-        if target_role == "admin":
-            can_delete = True # HR/Manager can remove Admin
-        elif target_role in ["hr", "manager", "member"]:
-            can_delete = True # HR/Manager can remove colleagues/members too? Usually yes if they have admin access
+    elif admin.get("permissions") and "manage_members" in admin["permissions"]:
+        if target_role != "admin": # HR/Manager can remove anyone except Admin
+            can_delete = True
     
     if not can_delete:
         raise HTTPException(status_code=403, detail="Insufficient permissions to delete this member")

@@ -20,6 +20,9 @@ orgs_collection = db["erp_orgs"]
 clients_collection = db["erp_clients"]
 invoices_collection = db["erp_invoices"]
 expenses_collection = db["erp_expenses"]
+projects_collection = db.get_collection("erp_projects")
+chat_messages_collection = db.get_collection("erp_chat_messages")
+chat_groups_collection = db.get_collection("erp_chat_groups")
 
 async def create_indexes():
     """Create MongoDB indexes for performance and multi-tenant constraints."""
@@ -37,3 +40,5 @@ async def create_indexes():
     await invoices_collection.create_index([("org_id", 1)])
     await invoices_collection.create_index("client_id")
     await expenses_collection.create_index([("org_id", 1)])
+    await projects_collection.create_index([("org_id", 1)])
+    await projects_collection.create_index([("team", 1)])

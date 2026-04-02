@@ -40,4 +40,7 @@ class ConnectionManager:
                 if u_id in self.active_connections:
                     await self.active_connections[u_id].send_text(json.dumps(message))
 
+    def is_user_online(self, user_id: Any) -> bool:
+        return str(user_id) in self.active_connections
+
 manager = ConnectionManager()

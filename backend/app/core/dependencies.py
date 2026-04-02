@@ -32,9 +32,29 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 
 async def require_admin(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["admin", "hr", "manager"]:
+    if current_user.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Administrative access required",
+            detail="System Administrative access required",
         )
     return current_user
+
+
+def require_permission(permission: str):
+    """
+    Dependency to check if the current user has a specific permission or is an admin.
+    """
+    async def permission_checker(current_user: dict = Depends(get_current_user)):
+        if current_user.get("role") == "admin":
+            return current_user
+        
+        user_permissions = current_user.get("permissions") or []
+        if permission not in user_permissions:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Missing required permission: f{permission}",
+            )
+        return current_user
+    
+    return permission_checker
+

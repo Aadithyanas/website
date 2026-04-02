@@ -32,6 +32,12 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         
         await manager.connect(user_id, org_id, websocket)
         
+        # Broadcast online status
+        await manager.broadcast_to_org({
+            "type": "user_online",
+            "data": {"user_id": user_id}
+        }, org_id)
+
         try:
             while True:
                 # Handle incoming messages
@@ -44,16 +50,15 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                             "type": "pong",
                             "message": "Server received your ping!"
                         }, user_id)
-                    elif action == "broadcast_test":
-                        await manager.broadcast_to_org({
-                            "type": "broadcast_test",
-                            "message": f"User {user.get('name')} sent a broadcast test message!",
-                            "sender": user.get('name')
-                        }, org_id)
                 except json.JSONDecodeError:
                     pass # Ignore non-JSON messages
         except WebSocketDisconnect:
             manager.disconnect(user_id, org_id)
+            # Broadcast offline status
+            await manager.broadcast_to_org({
+                "type": "user_offline",
+                "data": {"user_id": user_id}
+            }, org_id)
             
     except Exception as e:
         print(f"WebSocket error: {e}")

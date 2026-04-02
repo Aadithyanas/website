@@ -49,6 +49,7 @@ class InviteMemberRequest(BaseModel):
     account_number: Optional[str] = None
     ifsc_code: Optional[str] = None
     permissions: List[str] = []
+    role: Optional[str] = "member"
 
 
 class RegisterRequest(BaseModel):
@@ -126,6 +127,8 @@ class TaskCreate(BaseModel):
     due_date: Optional[str] = None
     assigned_to: Optional[str] = None
     images: Optional[List[str]] = []
+    project_id: Optional[str] = None
+    project_name: Optional[str] = None
 
 
 class TaskUpdate(BaseModel):
@@ -138,6 +141,8 @@ class TaskUpdate(BaseModel):
     assigned_to: Optional[str] = None
     priority: Optional[str] = None
     due_date: Optional[str] = None
+    project_id: Optional[str] = None
+    project_name: Optional[str] = None
 
 
 class TaskOut(BaseModel):
@@ -192,7 +197,6 @@ class NotificationOut(BaseModel):
     message: str
     task_id: Optional[str] = None
     read: bool = False
-    created_at: datetime
     created_at: datetime
 
 
@@ -302,6 +306,7 @@ class ExpenseCreate(BaseModel):
     date: str
     description: Optional[str] = None
     status: str = "pending"  # pending, approved, rejected
+    bill_image: Optional[str] = None
 
 class ExpenseUpdate(BaseModel):
     title: Optional[str] = None
@@ -310,6 +315,7 @@ class ExpenseUpdate(BaseModel):
     date: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
+    bill_image: Optional[str] = None
 
 class ExpenseOut(BaseModel):
     id: str
@@ -320,5 +326,95 @@ class ExpenseOut(BaseModel):
     date: str
     description: Optional[str] = None
     status: str
+    bill_image: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
+
+# ─── Projects ─────────────────────────────────────────────────────────────────
+
+class ProjectCreate(BaseModel):
+    name: str
+    client_name: Optional[str] = None
+    team: str
+    deadline: Optional[str] = None
+    status: str = "active" # active, completed, on_hold
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    client_name: Optional[str] = None
+    team: Optional[str] = None
+    deadline: Optional[str] = None
+    status: Optional[str] = None
+
+class ProjectOut(BaseModel):
+    id: str
+    org_id: str
+    name: str
+    client_name: Optional[str] = None
+    team: str
+    deadline: Optional[str] = None
+    status: str
+    progress: int = 0
+    task_stats: Optional[dict] = {"total": 0, "completed": 0}
+    created_at: datetime
+    updated_at: datetime
+
+
+# --- Chat Models ---
+
+class ReplyInfo(BaseModel):
+    id: str
+    content: str
+    sender_name: str
+
+class ChatMessageCreate(BaseModel):
+    recipient_id: str  # Can be a user_id or group_id
+    content: str
+    is_group: bool = False
+    attachments: Optional[List[str]] = []
+    reply_to_id: Optional[str] = None
+    is_forwarded: Optional[bool] = False
+
+class ChatMessageOut(BaseModel):
+    id: str
+    sender_id: str
+    sender_name: str
+    sender_avatar: Optional[str] = None
+    recipient_id: str
+    content: str
+    is_group: bool
+    status: str = "sent"
+    attachments: List[str]
+    created_at: str
+    reply_to: Optional[ReplyInfo] = None
+    is_forwarded: Optional[bool] = False
+
+class ChatGroupCreate(BaseModel):
+    name: str
+    members: List[str]
+    description: Optional[str] = None
+
+class ChatGroupOut(BaseModel):
+    id: str
+    name: str
+    members: List[str]
+    description: Optional[str] = None
+    created_at: str
+    created_by: str
+    admin_id: str
+
+class GroupAdminTransfer(BaseModel):
+    new_admin_id: str
+
+class ChatGroupUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+class GroupAddMembers(BaseModel):
+    new_members: List[str]
+
+class ChatMessageStatusUpdate(BaseModel):
+    message_ids: Optional[List[str]] = None
+    conversation_id: Optional[str] = None
+    status: str = "seen"

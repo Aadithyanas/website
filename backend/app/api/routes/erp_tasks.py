@@ -52,20 +52,32 @@ def serialize_task(task: dict) -> dict:
         "comments": [serialize_comment(c) for c in task.get("comments", [])],
         "org_id": str(task.get("org_id")),
         "images": task.get("images", []),
+        "project_id": task.get("project_id"),
+        "project_name": task.get("project_name"),
     }
 
 
 @router.get("/")
-async def list_tasks(current_user: dict = Depends(get_current_user)):
+async def list_tasks(team: str = None, assigned_to_name: str = None, current_user: dict = Depends(get_current_user)):
     role = current_user.get("role")
-    team_role = current_user.get("team_role")
-    team = current_user.get("team")
+    user_team = current_user.get("team")
+    user_teams = current_user.get("teams") or ([user_team] if user_team else [])
     org_id = current_user.get("org_id")
 
     query = {"org_id": org_id}
 
-    # Requirement: Universal visibility (Anyone in the organization can see all tasks)
-    # This prevents tasks "disappearing" from the list when reassigned.
+    # Scoping: 
+    # Admin/HR/Manager (privileged) can see all.
+    # Team Leader/Member only see their team tasks.
+    is_privileged = role in ["admin", "hr", "manager"]
+    if not is_privileged:
+        query["team"] = {"$in": user_teams}
+    
+    # Apply filters
+    if team:
+        query["team"] = team
+    if assigned_to_name:
+        query["assigned_to_name"] = {"$regex": assigned_to_name, "$options": "i"}
     
     tasks = []
     cursor = tasks_collection.find(query)
@@ -76,15 +88,18 @@ async def list_tasks(current_user: dict = Depends(get_current_user)):
 
 @router.post("/")
 async def create_task(body: TaskCreate, current_user: dict = Depends(get_current_user)):
-    # Auth: Only admin or Team Leader can create tasks
-    # The role check was removed as per instruction.
+    # Auth: Admin, HR/Manager with manage_projects, or Team Leader
+    is_admin = current_user.get("role") == "admin"
+    has_perm = is_admin or (current_user.get("permissions") and "manage_projects" in current_user["permissions"])
+    is_leader = current_user.get("team_role") == "Team Leader"
+    
+    if not (has_perm or is_leader):
+        raise HTTPException(status_code=403, detail="Not authorized to create tasks")
     
     if body.status not in ["todo", "inprogress", "qc", "reviewing", "completed"]:
         raise HTTPException(status_code=400, detail="Invalid status")
     
     now = datetime.utcnow()
-    
-    # If admin/leader provides assigned_to, use it; else self
     assigned_to_id = body.assigned_to or str(current_user["_id"])
     target_user = current_user
     if body.assigned_to and body.assigned_to != str(current_user["_id"]):
@@ -92,6 +107,11 @@ async def create_task(body: TaskCreate, current_user: dict = Depends(get_current
         target_user = await users_collection.find_one({"_id": oid, "org_id": current_user.get("org_id")})
         if not target_user:
             raise HTTPException(status_code=404, detail="Assignee not found or not in your organization")
+
+    # Team Leaders can only assign tasks within their team
+    if is_leader and not is_admin:
+        if target_user.get("team") not in (current_user.get("teams") or []):
+             raise HTTPException(status_code=403, detail="Team Leaders can only assign tasks to their own team members")
 
     task_doc = {
         "title": body.title,
@@ -108,14 +128,14 @@ async def create_task(body: TaskCreate, current_user: dict = Depends(get_current
         "updated_at": now,
         "org_id": current_user.get("org_id"),
         "images": body.images or [],
+        "project_id": body.project_id,
+        "project_name": body.project_name,
     }
     result = await tasks_collection.insert_one(task_doc)
     task_doc["_id"] = result.inserted_id
     
-    # WebSocket Broadcast to Org
     await broadcast_task_update(current_user.get("org_id"), serialize_task(task_doc), action="created")
     
-    # Notify Assignee
     if assigned_to_id != str(current_user["_id"]):
         await create_and_send_notification(
             assigned_to_id, 
@@ -124,6 +144,7 @@ async def create_task(body: TaskCreate, current_user: dict = Depends(get_current
         )
         
     return serialize_task(task_doc)
+
 
 UPLOAD_DIR = "uploads"
 

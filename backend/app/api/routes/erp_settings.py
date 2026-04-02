@@ -3,10 +3,12 @@ from app.core.database import orgs_collection
 from app.core.dependencies import get_current_user, require_admin
 from app.schemas.erp_schemas import OrganizationSettings, OrganizationSettingsUpdate
 from datetime import datetime
+from fastapi_cache.decorator import cache
 
 router = APIRouter(prefix="/api/erp/settings", tags=["ERP Settings"])
 
 @router.get("/", response_model=OrganizationSettings)
+@cache(expire=60)
 async def get_settings(current_user: dict = Depends(get_current_user)):
     org_id = current_user.get("org_id")
     settings = await orgs_collection.find_one({"org_id": org_id})
