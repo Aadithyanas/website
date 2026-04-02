@@ -87,35 +87,45 @@ class ConnectionManager:
         """
         Background task that listens to Redis Pub/Sub and 
         delivers messages to users connected to THIS instance.
+        Includes a self-healing retry loop.
         """
-        pubsub = redis.pubsub()
-        try:
-            await pubsub.subscribe("ws_updates")
-            print("--- [WS DEBUG] Redis Pub/Sub listener STARTED ---")
-        except Exception as e:
-            print(f"--- [WS DEBUG] FAILED to start Pub/Sub listener: {e} ---")
-            return
-
-        try:
-            async for message in pubsub.listen():
-                if message["type"] == "message":
-                    data = json.loads(message["data"])
-                    target_user_id = data.get("user_id")
-                    actual_msg = data.get("message")
-                    
-                    if target_user_id in self.active_connections:
-                        print(f"--- [WS DEBUG] Received via Pub/Sub: Delivering to LOCAL user {target_user_id} ---")
-                        for connection in self.active_connections[target_user_id]:
+        retry_delay = 1
+        while True:
+            try:
+                pubsub = redis.pubsub()
+                await pubsub.subscribe("ws_updates")
+                print("--- [WS DEBUG] Redis Pub/Sub listener STARTED ---")
+                retry_delay = 1 # Reset retry delay on success
+                
+                try:
+                    async for message in pubsub.listen():
+                        if message["type"] == "message":
                             try:
-                                await connection.send_json(actual_msg)
+                                data = json.loads(message["data"])
+                                target_user_id = data.get("user_id")
+                                actual_msg = data.get("message")
+                                
+                                if target_user_id in self.active_connections:
+                                    print(f"--- [WS DEBUG] Received via Pub/Sub: Delivering to LOCAL user {target_user_id} ---")
+                                    for connection in self.active_connections[target_user_id]:
+                                        try:
+                                            await connection.send_json(actual_msg)
+                                        except Exception as e:
+                                            print(f"--- [WS DEBUG] Local WS send error in listener: {e} ---")
                             except Exception as e:
-                                print(f"--- [WS DEBUG] Local WS send error in listener: {e} ---")
-                    else:
-                        # Message is for a user on another server or offline
+                                print(f"--- [WS DEBUG] Format error in Pub/Sub data: {e} ---")
+                except Exception as e:
+                    print(f"--- [WS DEBUG] REDIS SUBSCRIPTION DROPPED: {e} ---")
+                finally:
+                    try:
+                        await pubsub.unsubscribe("ws_updates")
+                        await pubsub.close()
+                    except:
                         pass
-        except Exception as e:
-            print(f"--- [WS DEBUG] REDIS LISTENER CRASHED: {e} ---")
-        finally:
-            await pubsub.unsubscribe("ws_updates")
+            except Exception as e:
+                print(f"--- [WS DEBUG] REDIS LISTENER CRASHED: {e}. Retrying in {retry_delay}s... ---")
+                await asyncio.sleep(retry_delay)
+                # Exponential backoff up to 30 seconds
+                retry_delay = min(retry_delay * 2, 30)
 
 manager = ConnectionManager()

@@ -22,6 +22,8 @@ export function ERPWebSocketProvider({ children }: { children: React.ReactNode }
     const [isConnected, setIsConnected] = useState(false);
     const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
     const ws = useRef<WebSocket | null>(null);
+    const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+    const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   
     const sendMessage = (msg: WSMessage) => {
       if (ws.current && isConnected) {
@@ -30,64 +32,81 @@ export function ERPWebSocketProvider({ children }: { children: React.ReactNode }
         console.warn("WebSocket not connected, cannot send message");
       }
     };
-  
-    useEffect(() => {
-      if (!token || !user) {
-        if (ws.current) {
-          ws.current.close();
-          ws.current = null;
-        }
-        setIsConnected(false);
-        return;
-      }
-  
-      // Use the centralized API URL to determine the WebSocket endpoint
-      // Replace http/https with ws/wss and REMOVE the /api suffix if it exists
-      // The backend WebSocket router is at /ws/erp, while the REST API is often at /api
-      const wsBase = API.replace(/^http/, "ws").replace(/\/api\/?$/, "");
-      const wsUrl = `${wsBase}/ws/erp/${token}`;
+
+    const connect = () => {
+      if (!token || !user) return;
       
-      console.log("Connecting to WebSocket:", wsUrl);
-      const socket = new WebSocket(wsUrl);
-    ws.current = socket;
-
-    socket.onopen = () => {
-      console.log("✅ WebSocket Connected");
-      setIsConnected(true);
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const msg: WSMessage = JSON.parse(event.data);
-        console.log("📩 WS Message:", msg);
-        setLastMessage(msg);
-        
-        // Dispatch global events for specific pages to listen
-        if (msg.type === "task_event") {
-          window.dispatchEvent(new CustomEvent("erp:task_update", { detail: msg }));
-        } else if (msg.type === "leave_event") {
-          window.dispatchEvent(new CustomEvent("erp:leave_update", { detail: msg }));
-        } else if (msg.type === "notification_new") {
-           window.dispatchEvent(new CustomEvent("erp:notification_new", { detail: msg }));
-        }
-      } catch (e) {
-        console.error("Format error in WS message:", e);
-      }
-    };
-
-    socket.onclose = () => {
-      console.log("❌ WebSocket Disconnected");
-      setIsConnected(false);
-      ws.current = null;
-    };
-
-    return () => {
+      // Cleanup previous
       if (ws.current) {
         ws.current.close();
         ws.current = null;
       }
+
+      const wsBase = API.replace(/^http/, "ws").replace(/\/api\/?$/, "");
+      const wsUrl = `${wsBase}/ws/erp/${token}`;
+      
+      console.log("🔄 Connecting to WebSocket:", wsUrl);
+      const socket = new WebSocket(wsUrl);
+      ws.current = socket;
+
+      socket.onopen = () => {
+        console.log("✅ WebSocket Connected");
+        setIsConnected(true);
+        
+        // Start Heartbeat (prevent Render idle timeout)
+        if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = setInterval(() => {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ action: "ping" }));
+          }
+        }, 30000); // 30 seconds
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const msg: WSMessage = JSON.parse(event.data);
+          // Ignore pong responses
+          if (msg.type === "pong") return;
+          
+          console.log("📩 WS Message:", msg);
+          setLastMessage(msg);
+          
+          if (msg.type === "task_event") {
+            window.dispatchEvent(new CustomEvent("erp:task_update", { detail: msg }));
+          } else if (msg.type === "leave_event") {
+            window.dispatchEvent(new CustomEvent("erp:leave_update", { detail: msg }));
+          } else if (msg.type === "notification_new") {
+             window.dispatchEvent(new CustomEvent("erp:notification_new", { detail: msg }));
+          }
+        } catch (e) {
+          console.error("Format error in WS message:", e);
+        }
+      };
+
+      socket.onclose = () => {
+        console.log("❌ WebSocket Disconnected. Reconnecting in 5s...");
+        setIsConnected(false);
+        ws.current = null;
+        if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+        
+        // Auto-reconnect logic
+        if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+        reconnectTimeout.current = setTimeout(connect, 5000);
+      };
     };
-  }, [token, user]);
+  
+    useEffect(() => {
+      connect();
+
+      return () => {
+        if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+        if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+        if (ws.current) {
+          ws.current.close();
+          ws.current = null;
+        }
+      };
+    }, [token, user]);
 
   return (
     <ERPWebSocketContext.Provider value={{ isConnected, lastMessage, sendMessage }}>
