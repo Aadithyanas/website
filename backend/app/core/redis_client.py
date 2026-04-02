@@ -1,5 +1,6 @@
 import os
 import logging
+import asyncio
 from redis import asyncio as aioredis
 from dotenv import load_dotenv
 
@@ -10,24 +11,33 @@ load_dotenv(dotenv_path=env_path, override=True)
 logger = logging.getLogger("erp_backend")
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-print(f"--- [REDIS DEBUG] Using URL: {REDIS_URL} ---")
+print(f"--- [REDIS DEBUG] Connecting to: {REDIS_URL.split('@')[-1]} ---")
+
+# SSL settings for Upstash/Production
+# We use ssl_cert_reqs='none' (or None) if it's a 'rediss://' URL (SSL enabled)
+is_ssl = REDIS_URL.startswith("rediss://")
 
 # Singleton Redis client
 redis = aioredis.from_url(
-    REDIS_URL, 
-    encoding="utf8", 
+    REDIS_URL,
+    encoding="utf8",
     decode_responses=True,
-    # Standard connection pool settings
     max_connections=20,
-    retry_on_timeout=True
-    
+    retry_on_timeout=True,
+    # Crucial for Upstash/Render SSL issues:
+    ssl_cert_reqs=None if is_ssl else None,
+    socket_timeout=5.0,
+    socket_connect_timeout=5.0
 )
 
 async def check_redis_connection():
     try:
-        await redis.ping()
-        logger.info("Successfully connected to Redis")
+        # Extra short timeout for the initial ping
+        await asyncio.wait_for(redis.ping(), timeout=3.0)
+        logger.info("Successfully reached Redis")
+        print("--- [REDIS DEBUG] Connection established! ---")
         return True
     except Exception as e:
-        logger.error(f"Failed to connect to Redis at {REDIS_URL}: {e}")
+        logger.error(f"Failed to connect to Redis: {e}")
+        print(f"--- [REDIS DEBUG] FAILED to connect: {e} ---")
         return False

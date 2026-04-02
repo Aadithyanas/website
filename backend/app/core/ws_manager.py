@@ -39,56 +39,74 @@ class ConnectionManager:
         
         logger.info(f"User {u_id} disconnected from org {o_id}")
 
-    async def send_personal_message(self, message: Any, user_id: Any):
-        u_id = str(user_id)
-        if u_id in self.active_connections:
-            # User is on this instance, send directly
-            try:
-                await self.active_connections[u_id].send_text(json.dumps(message))
-            except Exception as e:
-                logger.error(f"Error sending local message to {u_id}: {e}")
+    async def send_personal_message(self, message: dict, user_id: str):
+        # 1. Local Delivery Check
+        # If the user is connected to THIS server instance, deliver immediately
+        if user_id in self.active_connections:
+            print(f"--- [WS DEBUG] Delivering message LOCALLY to user {user_id} ---")
+            for connection in self.active_connections[user_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    print(f"--- [WS DEBUG] FAILED Local delivery to {user_id}: {e} ---")
         else:
-            # User might be on another instance, publish to Redis
-            payload = {
-                "user_id": u_id,
+            print(f"--- [WS DEBUG] User {user_id} NOT on this server. Passing to Redis. ---")
+
+        # 2. Redis Pub/Sub Broadcast
+        # Always broadcast so OTHER server instances can deliver it too
+        try:
+            # We wrap the message with extra metadata if needed
+            broadcast_payload = {
+                "user_id": user_id,
                 "message": message
             }
-            await redis.publish("ws_updates", json.dumps(payload))
+            res = await redis.publish("ws_updates", json.dumps(broadcast_payload))
+            print(f"--- [WS DEBUG] Published to Redis: {res} recipients notified via Pub/Sub ---")
+        except Exception as e:
+            print(f"--- [WS DEBUG] REDIS PUBLISH ERROR: {e} ---")
 
     async def broadcast_to_org(self, message: Any, org_id: Any):
         o_id = str(org_id)
         # Get all members of this org across ALL workers
         members = await redis.smembers(f"org_members:{o_id}")
         for u_id in members:
-            await self.send_personal_message(message, u_id)
+            await self.send_personal_message(message, u_id.decode('utf-8'))
 
     async def is_user_online(self, user_id: Any) -> bool:
         return await redis.exists(f"user_online:{str(user_id)}") > 0
 
     async def redis_listener(self):
         """
-        Background task that listens for messages published to Redis 
-        and delivers them to local WebSockets.
+        Background task that listens to Redis Pub/Sub and 
+        delivers messages to users connected to THIS instance.
         """
         pubsub = redis.pubsub()
-        await pubsub.subscribe("ws_updates")
-        
-        logger.info("Started Redis Pub/Sub listener for WebSockets")
-        
+        try:
+            await pubsub.subscribe("ws_updates")
+            print("--- [WS DEBUG] Redis Pub/Sub listener STARTED ---")
+        except Exception as e:
+            print(f"--- [WS DEBUG] FAILED to start Pub/Sub listener: {e} ---")
+            return
+
         try:
             async for message in pubsub.listen():
                 if message["type"] == "message":
                     data = json.loads(message["data"])
                     target_user_id = data.get("user_id")
-                    actual_message = data.get("message")
+                    actual_msg = data.get("message")
                     
                     if target_user_id in self.active_connections:
-                        try:
-                            await self.active_connections[target_user_id].send_text(json.dumps(actual_message))
-                        except Exception as e:
-                            logger.error(f"Failed to deliver Pub/Sub message to {target_user_id}: {e}")
+                        print(f"--- [WS DEBUG] Received via Pub/Sub: Delivering to LOCAL user {target_user_id} ---")
+                        for connection in self.active_connections[target_user_id]:
+                            try:
+                                await connection.send_json(actual_msg)
+                            except Exception as e:
+                                print(f"--- [WS DEBUG] Local WS send error in listener: {e} ---")
+                    else:
+                        # Message is for a user on another server or offline
+                        pass
         except Exception as e:
-            logger.error(f"Redis Pub/Sub listener encountered error: {e}")
+            print(f"--- [WS DEBUG] REDIS LISTENER CRASHED: {e} ---")
         finally:
             await pubsub.unsubscribe("ws_updates")
 
