@@ -46,31 +46,34 @@ class ConnectionManager:
         await redis.srem(f"org_members:{o_id}", u_id)
         logger.info(f"User {u_id} disconnected from org {o_id}")
 
-    async def send_personal_message(self, message: dict, user_id: str):
+    async def send_to_users(self, message: dict, user_ids: List[str]):
         """
-        Unified Routing: Always push to Redis Pub/Sub. 
-        The local 'redis_listener' on EACH server instance will 
-        deliver the message to 'active_connections' if the user is there.
-        This prevents duplicate messages and supports multi-instance scaling.
+        Bulk Delivery: Publishes ONE message to Redis for multiple recipients.
+        This drastically improves performance for group chats and large voice notes.
         """
+        if not user_ids:
+            return
         try:
-            # We wrap the message with extra metadata if needed
-            broadcast_payload = {
-                "user_id": user_id,
+            payload = {
+                "user_ids": user_ids,
                 "message": message
             }
-            res = await redis.publish("ws_updates", json.dumps(broadcast_payload))
-            print(f"--- [WS DEBUG] Published to Redis: {res} recipients notified via Pub/Sub ---")
+            res = await redis.publish("ws_updates", json.dumps(payload))
+            # print(f"--- [WS DEBUG] Published to Redis: {res} recipients notified via Pub/Sub ---")
         except Exception as e:
             print(f"--- [WS DEBUG] REDIS PUBLISH ERROR: {e} ---")
+
+    async def send_personal_message(self, message: dict, user_id: str):
+        """LEGACY: Wraps send_to_users for a single user."""
+        await self.send_to_users(message, [user_id])
 
     async def broadcast_to_org(self, message: Any, org_id: Any):
         o_id = str(org_id)
         # Get all members of this org across ALL workers
         members = await redis.smembers(f"org_members:{o_id}")
-        for u_id in members:
-            # u_id is already a string because of decode_responses=True
-            await self.send_personal_message(message, u_id)
+        if members:
+            # members is a set from Redis, convert to list
+            await self.send_to_users(message, list(members))
 
     async def is_user_online(self, user_id: Any) -> bool:
         return await redis.exists(f"user_online:{str(user_id)}") > 0
@@ -94,16 +97,36 @@ class ConnectionManager:
                         if message["type"] == "message":
                             try:
                                 data = json.loads(message["data"])
-                                target_user_id = data.get("user_id")
+                                recipients = data.get("user_ids", [])
+                                # Support legacy single user_id field
+                                if not recipients and data.get("user_id"):
+                                    recipients = [data.get("user_id")]
+                                    
                                 actual_msg = data.get("message")
                                 
-                                if target_user_id in self.active_connections:
-                                    print(f"--- [WS DEBUG] Received via Pub/Sub: Delivering to LOCAL user {target_user_id} ---")
-                                    for connection in self.active_connections[target_user_id]:
-                                        try:
-                                            await connection.send_json(actual_msg)
-                                        except Exception as e:
-                                            print(f"--- [WS DEBUG] Local WS send error in listener: {e} ---")
+                                for target_user_id in recipients:
+                                    if target_user_id in self.active_connections:
+                                        to_remove = []
+                                        for connection in self.active_connections[target_user_id]:
+                                            try:
+                                                await connection.send_json(actual_msg)
+                                                if actual_msg and actual_msg.get("type") == "chat_message":
+                                                    print(f"--- [WS SUCCESS] Delivered {actual_msg['type']} to user {target_user_id} ---")
+                                            except Exception as e:
+                                                print(f"--- [WS ERROR] Failed to send to {target_user_id}: {str(e)} ---")
+                                                to_remove.append(connection)
+                                        
+                                        # Cleanup dead connections
+                                        for conn in to_remove:
+                                            try:
+                                                self.active_connections[target_user_id].remove(conn)
+                                            except: pass
+                                        
+                                        if target_user_id in self.active_connections and not self.active_connections[target_user_id]:
+                                            del self.active_connections[target_user_id]
+                                    else:
+                                        if actual_msg and actual_msg.get("type") == "chat_message":
+                                            print(f"--- [WS SKIP] User {target_user_id} NOT connected on this worker ---")
                             except Exception as e:
                                 print(f"--- [WS DEBUG] Format error in Pub/Sub data: {e} ---")
                 except Exception as e:

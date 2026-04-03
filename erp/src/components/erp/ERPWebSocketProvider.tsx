@@ -1,6 +1,8 @@
 "use client";
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { useERPAuth } from "./ERPAuthContext";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { useERPAuth, apiClient } from "./ERPAuthContext";
 
 interface WSMessage {
   type: string;
@@ -48,10 +50,24 @@ export function ERPWebSocketProvider({ children }: { children: React.ReactNode }
       console.log("🔄 Connecting to WebSocket:", wsUrl);
       const socket = new WebSocket(wsUrl);
       ws.current = socket;
+      
+      const markAsDelivered = async (msgId: string) => {
+        try {
+          await apiClient.patch("/api/erp/chat/messages/status", 
+            { message_ids: [msgId], status: "delivered" },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        } catch (e) {
+          // Silent fail for status updates
+        }
+      };
 
       socket.onopen = () => {
         console.log("✅ WebSocket Connected");
         setIsConnected(true);
+
+        // Sync pending delivery status
+        apiClient.patch("/api/erp/chat/messages/status/sync").catch(() => {});
         
         // Start Heartbeat (prevent Render idle timeout)
         if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
@@ -71,7 +87,24 @@ export function ERPWebSocketProvider({ children }: { children: React.ReactNode }
           console.log("📩 WS Message:", msg);
           setLastMessage(msg);
           
-          if (msg.type === "task_event") {
+          if (msg.type === "chat_message") {
+            const newMsg = msg.data;
+            // 1. Dispatch to UI FIRST (User Experience Priority)
+            window.dispatchEvent(new CustomEvent("erp:chat_message", { detail: msg }));
+            
+            // 2. Mark as delivered in the background
+            if (!newMsg.is_group) {
+              markAsDelivered(newMsg.id).catch(() => {});
+            }
+          } else if (msg.type === "chat_status_update") {
+            window.dispatchEvent(new CustomEvent("erp:chat_status_update", { detail: msg }));
+          } else if (msg.type === "chat_group_created") {
+            window.dispatchEvent(new CustomEvent("erp:chat_group_created", { detail: msg }));
+          } else if (msg.type === "user_online") {
+            window.dispatchEvent(new CustomEvent("erp:user_online", { detail: msg }));
+          } else if (msg.type === "user_offline") {
+            window.dispatchEvent(new CustomEvent("erp:user_offline", { detail: msg }));
+          } else if (msg.type === "task_event") {
             window.dispatchEvent(new CustomEvent("erp:task_update", { detail: msg }));
           } else if (msg.type === "leave_event") {
             window.dispatchEvent(new CustomEvent("erp:leave_update", { detail: msg }));

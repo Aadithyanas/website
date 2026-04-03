@@ -65,8 +65,32 @@ async def get_chat_history(recipient_id: str, is_group: bool = False, current_us
     
     cursor = chat_messages_collection.find(query).sort("created_at", 1).limit(100)
     messages = []
+    messages_to_ack = []
+    
     async for msg in cursor:
-        messages.append(serialize_message(msg))
+        m = serialize_message(msg)
+        messages.append(m)
+        # If I am the recipient and it's only 'sent', we mark it as 'delivered' now
+        if not m["is_group"] and m["recipient_id"] == user_id and m["status"] == "sent":
+            messages_to_ack.append(m["id"])
+
+    if messages_to_ack:
+        # Background fire-and-forget for delivery ack
+        background_query = {
+            "_id": {"$in": [ObjectId(mid) for mid in messages_to_ack]},
+            "recipient_id": user_id,
+            "status": "sent"
+        }
+        await chat_messages_collection.update_many(background_query, {"$set": {"status": "delivered"}})
+        for mid in messages_to_ack:
+            # Re-fetch or find the msg to get sender_id
+            m_obj = next((x for x in messages if x["id"] == mid), None)
+            if m_obj:
+                await manager.send_personal_message({
+                    "type": "chat_status_update",
+                    "data": {"message_id": mid, "status": "delivered", "recipient_id": user_id}
+                }, m_obj["sender_id"])
+
     return messages
 
 @router.post("/messages", response_model=ChatMessageOut)
@@ -115,12 +139,11 @@ async def send_message(body: ChatMessageCreate, current_user: dict = Depends(get
     }
 
     if body.is_group:
-        # Broadcast to all group members who are online
+        # Bulk broadcast to everyone EXCEPT the sender
         group = await chat_groups_collection.find_one({"_id": ObjectId(body.recipient_id)})
         if group:
-            for member_id in group["members"]:
-                if member_id != user_id:
-                    await manager.send_personal_message(ws_payload, member_id)
+            others = [uid for uid in group.get("members", []) if uid != user_id]
+            await manager.send_to_users(ws_payload, others)
     else:
         # Broadcast to specific recipient
         await manager.send_personal_message(ws_payload, body.recipient_id)
@@ -176,6 +199,41 @@ async def update_message_status(
         }, msg["sender_id"])
 
     return {"count": len(messages_to_notify)}
+    
+@router.patch("/status/sync")
+async def sync_message_status(current_user: dict = Depends(get_current_user)):
+    user_id = str(current_user["_id"])
+    org_id = current_user.get("org_id")
+    
+    # Mark all 'sent' messages to ME as 'delivered'
+    query = {
+        "org_id": org_id,
+        "recipient_id": user_id,
+        "status": "sent",
+        "is_group": False
+    }
+    
+    cursor = chat_messages_collection.find(query)
+    messages_to_notify = []
+    async for m in cursor:
+        messages_to_notify.append(serialize_message(m))
+        
+    if not messages_to_notify:
+        return {"count": 0}
+        
+    await chat_messages_collection.update_many(query, {"$set": {"status": "delivered"}})
+    
+    for msg in messages_to_notify:
+        await manager.send_personal_message({
+            "type": "chat_status_update",
+            "data": {
+                "message_id": msg["id"],
+                "status": "delivered",
+                "recipient_id": user_id
+            }
+        }, msg["sender_id"])
+        
+    return {"count": len(messages_to_notify)}
 
 @router.post("/groups", response_model=ChatGroupOut)
 async def create_group(body: ChatGroupCreate, current_user: dict = Depends(get_current_user)):
@@ -198,13 +256,12 @@ async def create_group(body: ChatGroupCreate, current_user: dict = Depends(get_c
     result = await chat_groups_collection.insert_one(group_doc)
     group_doc["_id"] = result.inserted_id
 
-    # Notify members of new group
-    for member_id in members:
-        if member_id != user_id:
-            await manager.send_personal_message({
-                "type": "chat_group_created",
-                "data": serialize_group(group_doc)
-            }, member_id)
+    # Notify members of new group (Bulk)
+    others = [mid for mid in members if mid != user_id]
+    await manager.send_to_users({
+        "type": "chat_group_created",
+        "data": serialize_group(group_doc)
+    }, others)
 
     return serialize_group(group_doc)
 

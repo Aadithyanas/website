@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useERPAuth, apiClient, API } from "@/src/components/erp/ERPAuthContext";
-import { Search, Send, Image as ImageIcon, Users, User, Plus, X, MoreVertical, Check, CheckCheck, Reply, Forward, Smile, Pencil } from "lucide-react";
+import { Search, Send, Image as ImageIcon, Users, User, Plus, X, MoreVertical, Check, CheckCheck, Reply, Forward, Smile, Pencil, Mic, StopCircle, Trash2, Play, Pause, Paperclip, Camera } from "lucide-react";
 import { format } from "date-fns";
 
 interface ReplyInfo {
@@ -49,6 +49,101 @@ const EMOJI_LIST = [
   "💯","🚀","⭐","💡","📌","🎯","💬","📢","🔔","💰","📊","📈","🛡️","⚙️","🔑",
 ];
 
+const formatTime = (seconds: number) => {
+  if (isNaN(seconds)) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const ERPVoicePlayer = ({ src, isMe }: { src: string, isMe?: boolean }) => {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  // Generate 25 vertical bars with pseudo-random heights (based on hash of src)
+  const bars = useMemo(() => {
+    const hash = src.split('').reduce((acc, char) => char.charCodeAt(0) + acc, 0);
+    return Array.from({ length: 28 }, (_, i) => {
+      const h = 5 + Math.abs(Math.sin(hash + i) * 15);
+      return h;
+    });
+  }, [src]);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) audioRef.current.pause();
+      else audioRef.current.play();
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const progress = (currentTime / (duration || 1)) * 100;
+
+  return (
+    <div className={`flex items-center gap-3 w-full sm:max-w-[320px] ${isMe ? 'bg-[#005c4b]' : 'bg-[#202c33]'} p-1.5 px-3 rounded-xl group transition-all my-1`}>
+      <audio 
+        ref={audioRef} 
+        src={src} 
+        onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
+        onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+        className="hidden"
+      />
+      
+      <div className="relative shrink-0">
+        <button 
+          onClick={togglePlay}
+          className="w-10 h-10 flex items-center justify-center text-gray-300 hover:text-white transition-all"
+        >
+          {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
+        </button>
+      </div>
+
+      <div className="flex-1 min-w-0 flex flex-col pt-1">
+        <div className="relative h-6 w-full flex items-center gap-[2px]">
+          {bars.map((h, i) => {
+            const barProgress = (i / bars.length) * 100;
+            const isActive = barProgress <= progress;
+            return (
+              <div 
+                key={i}
+                className="w-0.5 rounded-full transition-colors duration-150"
+                style={{ 
+                  height: `${h}px`, 
+                  backgroundColor: isActive ? '#53bdeb' : (isMe ? '#aebac1' : '#8696a0'),
+                  opacity: isActive ? 1 : 0.5
+                }}
+              />
+            );
+          })}
+          
+          <input 
+            type="range"
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={currentTime}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              if (audioRef.current) audioRef.current.currentTime = val;
+              setCurrentTime(val);
+            }}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+        </div>
+        <div className="flex justify-between items-center text-[10px] text-gray-400 font-medium">
+          <span>{formatTime(currentTime)}</span>
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity">{formatTime(duration)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ERPChatPage() {
   const { user, token } = useERPAuth();
   const [members, setMembers] = useState<Member[]>([]);
@@ -69,9 +164,21 @@ export default function ERPChatPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  // Voice Recording States
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [dragXOffset, setDragXOffset] = useState(0);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const timerRef = useRef<any>(null);
+  const holdTimerRef = useRef<any>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const startTimeRef = useRef<number>(0);
+  const dragStartXRef = useRef<number>(0);
+  const isCancelledRef = useRef<boolean>(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const activeChatRef = useRef(activeChat);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -108,37 +215,32 @@ export default function ERPChatPage() {
   const h = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
-    if (token) { fetchInitialData(); setupWebSocket(); }
-    return () => wsRef.current?.close();
+    if (token) fetchInitialData();
   }, [token]);
 
-  const getUrl = (path: string) => path.startsWith("http") ? path : `${API}${path}`;
-  const markAsSeen = async (convoId: string) => {
-    try { await apiClient.patch(`/api/erp/chat/messages/status`, { conversation_id: convoId, status: "seen" }, { headers: h }); }
-    catch (e) { console.error(e); }
-  };
-  const markAsDelivered = async (msgId: string) => {
-    try { await apiClient.patch(`/api/erp/chat/messages/status`, { message_ids: [msgId], status: "delivered" }, { headers: h }); }
-    catch (e) { console.error(e); }
-  };
-
-  const setupWebSocket = () => {
-    const wsUrl = `${API.replace("http", "ws")}/ws/erp/${token}`;
-    const ws = new WebSocket(wsUrl);
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
+  // Global WebSocket Event Listeners
+  useEffect(() => {
+    const handleWS = (e: any) => {
+      const msg = e.detail;
       if (msg.type === "chat_message") {
         const newMsg: ChatMessage = msg.data;
         const currentChat = activeChatRef.current;
         audioRef.current?.play().catch(() => {});
-        if (newMsg.sender_id !== user?.id && !newMsg.is_group) markAsDelivered(newMsg.id);
+        
         const isCurrentChat = currentChat && (
           (newMsg.is_group && newMsg.recipient_id === currentChat.id) ||
           (!newMsg.is_group && (newMsg.sender_id === currentChat.id || newMsg.recipient_id === currentChat.id))
         );
+        
         if (isCurrentChat) {
-          setMessages(prev => [...prev, newMsg]);
-          if (!newMsg.is_group && newMsg.sender_id === currentChat!.id) markAsSeen(currentChat!.id);
+          setMessages(prev => {
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+          if (!newMsg.is_group && newMsg.sender_id === currentChat!.id) {
+            // Small delay to ensure DB indexing and UI rendering
+            setTimeout(() => markAsSeen(currentChat!.id), 1000);
+          }
         } else {
           const targetId = newMsg.is_group ? newMsg.recipient_id : newMsg.sender_id;
           setUnreadCounts(prev => ({ ...prev, [targetId]: (prev[targetId] || 0) + 1 }));
@@ -153,7 +255,44 @@ export default function ERPChatPage() {
         setMembers(prev => prev.map(m => m.id === msg.data.user_id ? { ...m, is_online: false } : m));
       }
     };
-    wsRef.current = ws;
+
+    window.addEventListener("erp:chat_message" as any, handleWS);
+    window.addEventListener("erp:chat_status_update" as any, handleWS);
+    window.addEventListener("erp:chat_group_created" as any, handleWS);
+    window.addEventListener("erp:user_online" as any, handleWS);
+    window.addEventListener("erp:user_offline" as any, handleWS);
+    
+    return () => {
+      window.removeEventListener("erp:chat_message" as any, handleWS);
+      window.removeEventListener("erp:chat_status_update" as any, handleWS);
+      window.removeEventListener("erp:chat_group_created" as any, handleWS);
+      window.removeEventListener("erp:user_online" as any, handleWS);
+      window.removeEventListener("erp:user_offline" as any, handleWS);
+    };
+  }, [user]);
+
+  // Auto-stop other audios when one starts
+  useEffect(() => {
+    const handlePlay = (e: Event) => {
+      const audios = document.getElementsByTagName('audio');
+      for (let i = 0; i < audios.length; i++) {
+        if (audios[i] !== e.target) {
+          audios[i].pause();
+        }
+      }
+    };
+    document.addEventListener('play', handlePlay, true);
+    return () => document.removeEventListener('play', handlePlay, true);
+  }, []);
+
+  const getUrl = (path: string) => {
+    if (!path) return "";
+    if (path.startsWith("http") || path.startsWith("data:")) return path;
+    return `${API}${path}`;
+  };
+  const markAsSeen = async (convoId: string) => {
+    try { await apiClient.patch(`/api/erp/chat/messages/status`, { conversation_id: convoId, status: "seen" }, { headers: h }); }
+    catch (e) { console.error(e); }
   };
 
   const fetchInitialData = async () => {
@@ -193,6 +332,7 @@ export default function ERPChatPage() {
       attachments,
     };
     if (replyToMsg) payload.reply_to_id = replyToMsg.id;
+    setSubmitting(true);
     try {
       const res = await apiClient.post("/api/erp/chat/messages", payload, { headers: h });
       setMessages(prev => [...prev, res.data]);
@@ -200,6 +340,7 @@ export default function ERPChatPage() {
       setReplyToMsg(null);
       setShowEmojiPicker(false);
     } catch (e) { console.error(e); }
+    finally { setSubmitting(false); }
   };
 
   const handleForwardSend = async (targetId: string, isGroup: boolean) => {
@@ -234,6 +375,143 @@ export default function ERPChatPage() {
       handleSendMessage(undefined, [res.data.url]);
     } catch (e) { console.error(e); }
     finally { setUploading(false); }
+  };
+
+  // Voice Recording Logic
+  const startRecording = (e: React.PointerEvent) => {
+    // Prevent starting if already recording
+    if (isRecording || holdTimerRef.current) return;
+    
+    // Capture the pointer so we get move/up events even if the mouse leaves the button
+    const target = e.currentTarget as HTMLButtonElement;
+    try { target.setPointerCapture(e.pointerId); } catch (err) { console.warn(err); }
+
+    dragStartXRef.current = e.clientX;
+    isCancelledRef.current = false;
+    setDragXOffset(0);
+
+    // Set a small delay (200ms) to distinguish between a tap and a hold
+    holdTimerRef.current = setTimeout(async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        chunksRef.current = [];
+        startTimeRef.current = Date.now();
+   
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunksRef.current.push(e.data);
+        };
+   
+        recorderRef.current = recorder;
+        recorder.start();
+        setIsRecording(true);
+        setRecordingTime(0);
+        
+        timerRef.current = setInterval(() => {
+          setRecordingTime(prev => prev + 1);
+        }, 1000);
+      } catch (err) {
+        console.error("Audio recording error:", err);
+        alert("Microphone access denied or error occurred.");
+        holdTimerRef.current = null;
+        try { target.releasePointerCapture(e.pointerId); } catch (e) {}
+      }
+    }, 200);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isRecording && !holdTimerRef.current) return;
+    
+    const currentX = e.clientX;
+    const diff = currentX - dragStartXRef.current;
+    
+    // We only care about sliding LEFT (negative diff)
+    if (diff < 0) {
+      setDragXOffset(diff);
+      
+      // If slid more than 120px, cancel
+      if (Math.abs(diff) > 120) {
+        if (isRecording) {
+            cancelRecording();
+            isCancelledRef.current = true;
+        } else if (holdTimerRef.current) {
+            // Cancelled before it even started
+            clearTimeout(holdTimerRef.current);
+            holdTimerRef.current = null;
+            isCancelledRef.current = true;
+        }
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    // Clear any pending hold timer
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+
+    if (recorderRef.current && isRecording) {
+      const durationSeconds = (Date.now() - startTimeRef.current) / 1000;
+      const recorder = recorderRef.current;
+      
+      recorder.onstop = async () => {
+        if (isCancelledRef.current || chunksRef.current.length === 0) {
+            setDragXOffset(0);
+            return;
+        }
+        
+        if (durationSeconds < 1) {
+          console.warn("Recording too short, ignored.");
+          setDragXOffset(0);
+          return;
+        }
+
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        setUploading(true);
+        try {
+          const fd = new FormData();
+          fd.append("file", audioBlob, "recording.webm");
+          const res = await apiClient.post("/api/erp/chat/upload", fd, {
+            headers: { ...h, "Content-Type": "multipart/form-data" }
+          });
+          handleSendMessage(undefined, [res.data.url]);
+        } catch (e) {
+          console.error("Voice upload failed:", e);
+        } finally {
+          setUploading(false);
+          setDragXOffset(0);
+        }
+      };
+      
+      recorder.stop();
+      recorder.stream.getTracks().forEach(track => {
+        track.stop();
+        track.enabled = false;
+      });
+      recorderRef.current = null;
+    }
+    setIsRecording(false);
+    setDragXOffset(0);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const cancelRecording = () => {
+    if (recorderRef.current) {
+      const recorder = recorderRef.current;
+      recorder.onstop = null; 
+      recorder.stop();
+      recorder.stream.getTracks().forEach(track => track.stop());
+      recorderRef.current = null;
+    }
+    setIsRecording(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
   const createGroup = async () => {
@@ -315,11 +593,11 @@ export default function ERPChatPage() {
   const initials = (name: string) => name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
-    <div className="flex h-[calc(100vh-140px)] bg-black rounded-3xl border border-[#1a1a1a] overflow-hidden shadow-2xl">
+    <div className="flex h-[calc(100vh-140px)] bg-[#0b141a] rounded-3xl border border-[#202c33]/50 overflow-hidden shadow-2xl">
 
       {/* Sidebar */}
-      <div className={`w-full md:w-80 border-r border-[#1a1a1a] flex-col bg-[#050505] shrink-0 ${activeChat ? 'hidden md:flex' : 'flex'}`}>
-        <div className="p-4 border-b border-[#1a1a1a]">
+      <div className={`w-full md:w-80 border-r border-[#202c33]/50 flex-col bg-[#111b21] shrink-0 ${activeChat ? 'hidden md:flex' : 'flex'}`}>
+        <div className="p-4 border-b border-[#202c33]/50">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-black text-white">Chat</h2>
             <button onClick={() => setShowGroupModal(true)} className="p-2 hover:bg-[#111] rounded-lg text-indigo-400 transition-colors" title="Create Group">
@@ -408,11 +686,11 @@ export default function ERPChatPage() {
       </div>
 
       {/* Main Chat Area */}
-      <div className={`flex-1 flex-col bg-[#020202] min-w-0 ${!activeChat ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 flex-col bg-[#0b141a] min-w-0 ${!activeChat ? 'hidden md:flex' : 'flex'}`}>
         {activeChat ? (
           <>
             {/* Header */}
-            <div className="p-4 border-b border-[#1a1a1a] flex items-center justify-between bg-[#050505]">
+            <div className="p-4 border-b border-[#202c33]/50 flex items-center justify-between bg-[#111b21]">
               <div 
                 className={`flex items-center gap-3 ${activeChat.isGroup ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}
                 onClick={() => {
@@ -472,20 +750,25 @@ export default function ERPChatPage() {
                     onMouseLeave={() => setHoveredMsgId(null)}
                   >
                     {/* Avatar */}
-                    <div className="w-8 shrink-0">
-                      {showAvatar && !isMe && (
-                        msg.sender_avatar ? (
-                          <img src={getUrl(msg.sender_avatar)} className="w-8 h-8 rounded-lg object-cover" alt="" />
+                    {!isMe && (
+                      <div className="relative shrink-0 mt-auto mb-1">
+                        {msg.sender_avatar ? (
+                          <img src={getUrl(msg.sender_avatar)} className="w-8 h-8 rounded-full object-cover border border-[#202c33]" alt="" />
                         ) : (
-                          <div className="w-8 h-8 rounded-lg bg-[#111] flex items-center justify-center text-[10px] font-bold text-gray-500">
+                          <div className="w-8 h-8 rounded-full bg-[#202c33] flex items-center justify-center text-[10px] text-gray-400 font-bold border border-[#202c33]">
                             {initials(msg.sender_name)}
                           </div>
-                        )
-                      )}
-                    </div>
+                        )}
+                        {(msg.attachments?.some(url => url.match(/\.(webm|mp3|wav|ogg)$/i) || url.startsWith("data:audio"))) && (
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#0b141a] rounded-full flex items-center justify-center border border-[#202c33]">
+                            <Mic size={10} className="text-[#53bdeb]" />
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Bubble + Hover Actions */}
-                    <div className={`flex items-center gap-2 max-w-[70%] ${!isMe ? "flex-row-reverse" : ""}`}>
+                    <div className={`flex items-center gap-2 max-w-[75%] ${!isMe ? "flex-row-reverse" : ""}`}>
                       {/* Hover action bar — always left of bubble */}
                       <div className={`flex items-center gap-1 transition-all duration-150 ${isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"} bg-[#111] border border-[#222] rounded-xl px-1 py-1 shadow-xl shrink-0`}>
                         <button
@@ -505,9 +788,9 @@ export default function ERPChatPage() {
                       </div>
 
                       <div className={`flex flex-col ${isMe ? "items-end" : ""}`}>
-                        {showAvatar && (
+                        {showAvatar && !isMe && (
                           <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1 px-1">
-                            {isMe ? "You" : msg.sender_name} • {format(new Date(msg.created_at), 'HH:mm')}
+                            {msg.sender_name}
                           </span>
                         )}
 
@@ -520,27 +803,65 @@ export default function ERPChatPage() {
                         )}
 
                         {/* Message bubble */}
-                        <div className={`relative px-4 py-2.5 rounded-2xl text-sm ${isMe ? "bg-indigo-600 text-white rounded-tr-none shadow-lg shadow-indigo-600/10" : "bg-[#111] text-gray-200 rounded-tl-none border border-[#1a1a1a]"}`}>
+                        <div className={`relative px-3 py-2 rounded-2xl text-sm w-fit max-w-full ${isMe ? "bg-[#005c4b] text-white rounded-tr-none shadow-sm" : "bg-[#202c33] text-gray-100 rounded-tl-none shadow-sm"}`}>
                           {/* Forwarded label */}
                           {msg.is_forwarded && (
-                            <div className={`flex items-center gap-1 mb-1 ${isMe ? "text-indigo-200/70" : "text-gray-500"}`}>
+                            <div className="flex items-center gap-1 mb-1 opacity-60">
                               <Forward size={11} />
                               <span className="text-[10px] font-semibold italic">Forwarded</span>
                             </div>
                           )}
-                          {msg.content}
-                          {msg.attachments?.map((url, i) => (
-                            <img key={i} src={getUrl(url)} className="mt-2 max-w-full rounded-xl border border-white/5" alt="Attachment" />
-                          ))}
-                          {isMe && !msg.is_group && (
-                            <div className="flex justify-end mt-1 -mr-1">
-                              {msg.status === "sent" && <Check size={12} className="text-gray-400/50" />}
-                              {msg.status === "delivered" && <CheckCheck size={12} className="text-gray-400" />}
-                              {msg.status === "seen" && <CheckCheck size={12} style={{ color: '#10b981' }} />}
+                          
+                          <div className={`relative flex flex-col ${msg.attachments?.some(url => url.match(/\.(webm|mp3|wav|ogg)$/i) || url.startsWith("data:audio")) ? "" : "pb-1"}`}>
+                            {msg.content?.trim() && (
+                              <div className="inline-block break-all pr-4 min-w-[60px] whitespace-pre-wrap leading-relaxed pb-1 relative">
+                                {msg.content}
+                                <span className="inline-block w-12" /> {/* Layout spacer for timestamp */}
+                              </div>
+                            )}
+                            
+                            {msg.attachments?.map((url, i) => (
+                              <div key={i} className="mt-1">
+                                {(url.match(/\.(webm|mp3|wav|ogg)$/i) || url.startsWith("data:audio")) ? (
+                                  <ERPVoicePlayer src={getUrl(url)} isMe={isMe} />
+                                ) : (
+                                  <img src={getUrl(url)} className="max-w-full rounded-lg border border-white/5" alt="Attachment" />
+                                )}
+                              </div>
+                            ))}
+
+                            {/* Time + Ticks (Bottom Right) */}
+                            <div className="absolute -bottom-1 -right-0.5 flex items-center gap-1 opacity-70 select-none pr-1 pb-1">
+                              <span className="text-[9px] font-medium whitespace-nowrap">{format(new Date(msg.created_at), 'HH:mm')}</span>
+                              {isMe && !msg.is_group && (
+                                <div className="flex items-center">
+                                  {msg.status === "sent" && <Check size={11} className="text-gray-300" />}
+                                  {msg.status === "delivered" && <CheckCheck size={11} className="text-gray-300" />}
+                                  {msg.status === "seen" && <CheckCheck size={12} className="text-[#53bdeb] drop-shadow-[0_0_1px_rgba(83,189,235,0.4)]" />}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Sender Avatar (Right side) */}
+                      {isMe && (
+                        <div className="relative shrink-0 mt-auto mb-1 ml-2">
+                          {user?.avatar ? (
+                            <img src={getUrl(user.avatar)} className="w-8 h-8 rounded-full object-cover border border-[#005c4b]" alt="" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-[#005c4b] flex items-center justify-center text-[10px] text-white/50 font-bold border border-[#005c4b]">
+                              {initials(user?.name || "Me")}
+                            </div>
+                          )}
+                          {(msg.attachments?.some(url => url.match(/\.(webm|mp3|wav|ogg)$/i) || url.startsWith("data:audio"))) && (
+                            <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-[#0b141a] rounded-full flex items-center justify-center border border-[#202c33]">
+                              <Mic size={10} className="text-[#53bdeb]" />
                             </div>
                           )}
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -548,16 +869,15 @@ export default function ERPChatPage() {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-[#1a1a1a] bg-[#050505]">
+            <div className="p-2 bg-[#111b21] border-t border-white/5">
               {/* Reply Preview */}
               {replyToMsg && (
-                <div className="flex items-center gap-3 mb-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-                  <div className="w-1 h-8 bg-indigo-500 rounded-full shrink-0" />
+                <div className="flex items-center gap-3 mb-2 px-4 py-2 bg-[#202c33] border-l-4 border-[#00a884] rounded-lg">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Replying to {replyToMsg.sender_name}</p>
-                    <p className="text-xs text-gray-500 truncate">{replyToMsg.content}</p>
+                    <p className="text-[10px] font-bold text-[#00a884] uppercase">Replying to {replyToMsg.sender_name}</p>
+                    <p className="text-xs text-gray-400 truncate">{replyToMsg.content}</p>
                   </div>
-                  <button onClick={() => setReplyToMsg(null)} className="text-gray-600 hover:text-white transition-colors">
+                  <button onClick={() => setReplyToMsg(null)} className="text-gray-500 hover:text-white transition-colors">
                     <X size={14} />
                   </button>
                 </div>
@@ -565,67 +885,126 @@ export default function ERPChatPage() {
 
               <form
                 onSubmit={handleSendMessage}
-                className="relative flex items-end gap-2 bg-[#0c0c0c] border border-[#222] focus-within:border-indigo-500/50 rounded-2xl p-2 transition-all"
+                className="flex items-end gap-2 transition-all"
               >
-                <label className="p-2.5 text-gray-500 hover:text-white cursor-pointer transition-colors">
-                  <ImageIcon size={20} />
-                  <input type="file" hidden accept="image/*" onChange={handleFileUpload} disabled={uploading} />
-                </label>
+                {/* Input Pill */}
+                <div className="flex-1 relative flex items-end gap-2 bg-[#202c33] rounded-full p-1 shadow-none border-none ring-0">
+                  <div className="flex items-center h-9 px-1 gap-0.5">
+                    {/* Emoji Picker */}
+                    <div className="relative" ref={emojiPickerRef}>
+                      <button
+                        type="button"
+                        onClick={() => setShowEmojiPicker(p => !p)}
+                        className="p-2 text-gray-400 hover:text-white transition-colors"
+                        title="Emoji"
+                      >
+                        <Smile size={24} />
+                      </button>
+                      {showEmojiPicker && (
+                        <div className="absolute bottom-14 left-0 z-50 bg-[#233138] border border-[#3b4a54] rounded-2xl p-3 shadow-2xl w-72 animate-in slide-in-from-bottom-2">
+                          <div className="grid grid-cols-10 gap-1">
+                            {EMOJI_LIST.map(emoji => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => insertEmoji(emoji)}
+                                className="text-xl p-1 hover:bg-white/10 rounded-lg transition-colors leading-none"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {/* Attachment (Pin) */}
+                    <label className="p-2 text-gray-400 hover:text-white cursor-pointer transition-colors">
+                      <Paperclip size={22} className="rotate-[225deg]" />
+                      <input type="file" hidden accept="image/*" onChange={handleFileUpload} disabled={uploading} />
+                    </label>
+                  </div>
 
-                {/* Emoji Picker */}
-                <div className="relative" ref={emojiPickerRef}>
-                  <button
-                    type="button"
-                    onClick={() => setShowEmojiPicker(p => !p)}
-                    className="p-2.5 text-gray-500 hover:text-yellow-400 transition-colors"
-                    title="Emoji"
-                  >
-                    <Smile size={20} />
-                  </button>
-                  {showEmojiPicker && (
-                    <div className="absolute bottom-12 left-0 z-50 bg-[#0f0f0f] border border-[#222] rounded-2xl p-3 shadow-2xl w-72 animate-in slide-in-from-bottom-2">
-                      <div className="grid grid-cols-10 gap-1">
-                        {EMOJI_LIST.map(emoji => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => insertEmoji(emoji)}
-                            className="text-xl p-1 hover:bg-white/10 rounded-lg transition-colors leading-none"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
+                  <div className="flex-1 bg-transparent min-h-[44px] flex items-center">
+                    <textarea
+                      ref={textareaRef}
+                      value={inputText}
+                      onChange={e => setInputText(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="Type a message"
+                      className="w-full bg-transparent border-none py-3 px-1 text-[16px] text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-0 resize-none custom-scrollbar max-h-32 leading-tight ring-0 outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center h-10 px-1 pr-3">
+                    <button type="button" className="p-2 text-gray-400 hover:text-white transition-colors">
+                      <Camera size={24} />
+                    </button>
+                  </div>
+
+                  {/* Recording Overlay */}
+                  {isRecording && (
+                    <div className="absolute inset-0 bg-[#202c33] z-20 rounded-full flex items-center justify-between px-4 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2.5 h-2.5 bg-[#f15c6d] rounded-full animate-pulse shadow-[0_0_10px_rgba(241,92,109,0.5)]" />
+                        <span className="text-white font-mono text-base font-bold">{formatTime(recordingTime)}</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest animate-pulse">Recording...</span>
                       </div>
+                      <div 
+                        className="flex items-center gap-1 transition-all duration-75"
+                        style={{ 
+                          transform: `translateX(${dragXOffset}px)`,
+                          opacity: Math.max(0, 1 - Math.abs(dragXOffset) / 100)
+                        }}
+                      >
+                        <span className="text-xs text-gray-500 px-2 pointer-events-none">Slide to cancel</span>
+                        <Trash2 size={18} className="text-gray-600 animate-pulse" />
+                      </div>
+                    </div>
+                  )}
+
+                  {uploading && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center z-30">
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest animate-pulse">Sending...</span>
                     </div>
                   )}
                 </div>
 
-                <textarea
-                  ref={textareaRef}
-                  className="flex-1 bg-transparent border-none outline-none text-sm text-white py-2.5 px-2 resize-none no-scrollbar max-h-32"
-                  placeholder={uploading ? "Uploading image..." : `Message ${activeChat.name}`}
-                  rows={1}
-                  value={inputText}
-                  onChange={e => setInputText(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                />
-                <button
-                  type="submit"
-                  className="p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all active:scale-95 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
-                  disabled={!inputText.trim() && !uploading}
-                >
-                  <Send size={18} />
-                </button>
-                {uploading && (
-                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest animate-pulse">Processing Media...</span>
-                  </div>
-                )}
+                {/* Circular Action Button */}
+                <div className="mb-0.5">
+                  {!inputText.trim() && !uploading ? (
+                    <button
+                      type="button"
+                      onPointerDown={e => { e.preventDefault(); startRecording(e); }}
+                      onPointerUp={e => { 
+                        e.preventDefault(); 
+                        try { (e.currentTarget as HTMLButtonElement).releasePointerCapture(e.pointerId); } catch (err) {}
+                        stopRecording(); 
+                      }}
+                      onPointerMove={handlePointerMove}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isRecording ? "bg-red-500 text-white scale-110 shadow-lg shadow-red-500/20" : "bg-[#00a884] text-white hover:bg-[#008f72] shadow-md"}`}
+                      title="Voice Message"
+                    >
+                      {isRecording ? <StopCircle size={24} /> : <Mic size={24} />}
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={(!inputText.trim() && !uploading) || submitting}
+                      className="w-12 h-12 rounded-full bg-[#00a884] flex items-center justify-center text-white hover:bg-[#008f72] shadow-md transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {submitting || uploading ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Send size={22} className="translate-x-0.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
           </>
@@ -699,7 +1078,7 @@ export default function ERPChatPage() {
             {/* Preview */}
             <div className="mb-6 px-4 py-3 bg-[#111] border border-[#222] rounded-xl">
               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Message Preview</p>
-              <p className="text-sm text-gray-300 line-clamp-3">{forwardMsg.content}</p>
+              <p className="text-sm text-gray-300 line-clamp-3">{forwardMsg?.content}</p>
             </div>
             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Forward To</p>
             <div className="max-h-72 overflow-y-auto space-y-1 custom-scrollbar pr-1">
@@ -766,6 +1145,19 @@ export default function ERPChatPage() {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        textarea {
+          border: none !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
+
+        textarea:focus {
+          border: none !important;
+          outline: none !important;
+          box-shadow: none !important;
+          --tw-ring-color: transparent !important;
+        }
       `}</style>
     </div>
   );
@@ -799,8 +1191,8 @@ function GroupSettingsSidebar({ activeChat, groups, members, onClose, currentUse
   const [selectedNewMembers, setSelectedNewMembers] = useState<string[]>([]);
 
   return (
-    <div className="fixed inset-0 md:static md:w-[320px] bg-[#050505] md:border-l border-[#1a1a1a] flex flex-col h-full overflow-y-auto no-scrollbar shadow-2xl z-50 shrink-0">
-      <div className="p-5 border-b border-[#1a1a1a] flex items-center justify-between sticky top-0 bg-[#050505]/90 backdrop-blur-md z-10">
+    <div className="fixed inset-0 md:static md:w-[320px] bg-[#111b21] md:border-l border-[#202c33]/50 flex flex-col h-full overflow-y-auto no-scrollbar shadow-2xl z-50 shrink-0">
+      <div className="p-5 border-b border-[#202c33]/50 flex items-center justify-between sticky top-0 bg-[#111b21]/90 backdrop-blur-md z-10">
         <h2 className="text-sm font-bold text-white">Group Info</h2>
         <button onClick={onClose} className="p-2 text-gray-500 hover:text-white transition-colors bg-[#111] rounded-lg">
           <X size={16} />
