@@ -281,49 +281,53 @@ async def add_comment(task_id: str, body: CommentCreate, current_user: dict = De
         {"$push": {"comments": comment}, "$set": {"updated_at": datetime.utcnow()}},
     )
 
-    # 1. Parse Mentions and Send Emails
-    # Find all @Name in content
-    mentions = re.findall(r"@([a-zA-Z0-9\s]+?)(?=\s|$|@)", body.content)
-    sent_emails = set()
-    
-    for name_part in mentions:
-        # Search for user in the same org with this name
-        mentioned_user = await users_collection.find_one({
-            "org_id": current_user.get("org_id"),
-            "name": {"$regex": f"^{name_part.strip()}$", "$options": "i"}
-        })
-        if mentioned_user and mentioned_user.get("email"):
-            email = mentioned_user["email"]
-            if email != current_user.get("email") and email not in sent_emails:
-                await send_comment_notification_email(
-                    to_email=email,
-                    sender_name=current_user.get("name", "Someone"),
-                    task_title=task.get("title", "Task"),
-                    content=body.content,
-                    is_mention=True
-                )
-                sent_emails.add(email)
+    # Notifications (Wrapped in try-except to prevent SMTP failures from blocking comment creation)
+    try:
+        # 1. Parse Mentions and Send Emails
+        # Find all @Name in content
+        mentions = re.findall(r"@([a-zA-Z0-9\s]+?)(?=\s|$|@)", body.content)
+        sent_emails = set()
+        
+        for name_part in mentions:
+            # Search for user in the same org with this name
+            mentioned_user = await users_collection.find_one({
+                "org_id": current_user.get("org_id"),
+                "name": {"$regex": f"^{name_part.strip()}$", "$options": "i"}
+            })
+            if mentioned_user and mentioned_user.get("email"):
+                email = mentioned_user["email"]
+                if email != current_user.get("email") and email not in sent_emails:
+                    await send_comment_notification_email(
+                        to_email=email,
+                        sender_name=current_user.get("name", "Someone"),
+                        task_title=task.get("title", "Task"),
+                        content=body.content,
+                        is_mention=True
+                    )
+                    sent_emails.add(email)
 
-    # 2. Notify Assignee if not already notified and not the sender
-    assignee_id = task.get("assigned_to")
-    if assignee_id and assignee_id != str(current_user["_id"]):
-        # Assignee ID might be str or ObjectId
-        try:
-            a_oid = ObjectId(assignee_id)
-        except:
-            a_oid = None
-        assignee = await users_collection.find_one({"_id": a_oid or assignee_id})
-        if assignee and assignee.get("email"):
-            email = assignee["email"]
-            if email not in sent_emails:
-                await send_comment_notification_email(
-                    to_email=email,
-                    sender_name=current_user.get("name", "Someone"),
-                    task_title=task.get("title", "Task"),
-                    content=body.content,
-                    is_mention=False
-                )
-                sent_emails.add(email)
+        # 2. Notify Assignee if not already notified and not the sender
+        assignee_id = task.get("assigned_to")
+        if assignee_id and assignee_id != str(current_user["_id"]):
+            # Assignee ID might be str or ObjectId
+            try:
+                a_oid = ObjectId(assignee_id)
+            except:
+                a_oid = None
+            assignee = await users_collection.find_one({"_id": a_oid or assignee_id})
+            if assignee and assignee.get("email"):
+                email = assignee["email"]
+                if email not in sent_emails:
+                    await send_comment_notification_email(
+                        to_email=email,
+                        sender_name=current_user.get("name", "Someone"),
+                        task_title=task.get("title", "Task"),
+                        content=body.content,
+                        is_mention=False
+                    )
+                    sent_emails.add(email)
+    except Exception as email_err:
+        print(f"Error sending comment notification emails: {email_err}")
 
     # 3. Legacy Notification (Internal)
     is_admin = current_user.get("role") == "admin"

@@ -354,9 +354,9 @@ export default function ERPTasksPage() {
     setSubmittingComment(prev => ({ ...prev, [taskId]: true }));
     try {
       await apiClient.post(`/api/erp/tasks/${taskId}/comments`, { content: text || "", image }, { headers: h });
-      setCommentText({ ...commentText, [taskId]: "" });
-      setCommentImage({ ...commentImage, [taskId]: "" });
-      setShowMentions({ ...showMentions, [taskId]: false });
+      setCommentText(prev => ({ ...prev, [taskId]: "" }));
+      setCommentImage(prev => ({ ...prev, [taskId]: "" }));
+      setShowMentions(prev => ({ ...prev, [taskId]: false }));
       fetchTasks();
     } catch (e) { 
       console.error(e);
@@ -1107,6 +1107,14 @@ export default function ERPTasksPage() {
                             setCommentText((prev: Record<string, string>) => ({ ...prev, [currentTask.id]: val }));
                             if (val.endsWith("@")) setShowMentions({ ...showMentions, [currentTask.id]: true });
                             else if (showMentions[currentTask.id] && !val.includes("@")) setShowMentions({ ...showMentions, [currentTask.id]: false });
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              if (!submittingComment[currentTask.id] && (commentText[currentTask.id]?.trim() || commentImage[currentTask.id])) {
+                                handleAddComment(currentTask.id);
+                              }
+                            }
                           }}
                         />
 

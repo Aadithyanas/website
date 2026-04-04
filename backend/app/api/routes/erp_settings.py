@@ -15,6 +15,11 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
     if not settings:
         # Return defaults if not set
         return OrganizationSettings()
+    
+    # Remove _id to prevent serialization errors in cache (ObjectId is not JSON serializable)
+    if "_id" in settings:
+        settings.pop("_id")
+        
     return settings
 
 @router.put("/")

@@ -20,18 +20,10 @@ from app.core.database import create_indexes
 
 app = FastAPI(title="Portfolio + ERP API")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+# Security Middlewares
 from app.core.middleware import SecurityHeadersMiddleware, RequestProtectionMiddleware
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 
-# Security Middlewares
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestProtectionMiddleware)
 
@@ -39,6 +31,15 @@ app.add_middleware(RequestProtectionMiddleware)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# CORS (Critical: Add last to be the outermost layer)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Existing routes
 app.include_router(contact.router)
