@@ -124,41 +124,6 @@ export default function GameRegisterForm() {
     );
   }
 
-  const InputWrapper = ({ label, children, icon: Icon }: any) => (
-    <div className="space-y-3">
-      <label className="text-zinc-500 text-[10px] font-black uppercase tracking-widest ml-1">{label}</label>
-      <div className="relative group">
-        {Icon && <Icon className="absolute left-5 top-5 w-5 h-5 text-zinc-600 group-focus-within:text-indigo-400 transition-colors pointer-events-none" />}
-        {children}
-      </div>
-    </div>
-  );
-
-  const Dropdown = ({ value, onChange, options, placeholder, icon: Icon, disabled = false }: any) => (
-    <div className="relative group">
-      {Icon && <Icon className="absolute left-5 top-5 w-5 h-5 text-zinc-600 group-focus-within:text-indigo-400 transition-colors pointer-events-none" />}
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        className={`w-full ${Icon ? "pl-14" : "pl-6"} pr-12 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white appearance-none focus:outline-none focus:border-indigo-500/50 transition-all font-medium disabled:opacity-20`}
-      >
-        <option value="" disabled className="bg-zinc-900">{placeholder}</option>
-        {options.map((opt: any) => {
-          const isFull = typeof opt === 'object' ? opt.disabled : false;
-          const label = typeof opt === 'object' ? opt.label : opt;
-          const val = typeof opt === 'object' ? opt.value : opt;
-          return (
-            <option key={val} value={val} disabled={isFull} className="bg-zinc-900 py-2">
-              {label}
-            </option>
-          );
-        })}
-      </select>
-      <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none group-hover:text-zinc-400 transition-colors" />
-    </div>
-  );
-
   return (
     <div className="relative w-full max-w-4xl flex flex-col items-center gap-12 py-8 lg:py-12 mt-8 lg:mt-0">
       <motion.form
@@ -318,3 +283,38 @@ export default function GameRegisterForm() {
     </div>
   );
 }
+
+const InputWrapper = ({ label, children, icon: Icon }: any) => (
+  <div className="space-y-3">
+    <label className="text-zinc-500 text-[10px] font-black uppercase tracking-widest ml-1">{label}</label>
+    <div className="relative group">
+      {Icon && <Icon className="absolute left-5 top-5 w-5 h-5 text-zinc-600 group-focus-within:text-indigo-400 transition-colors pointer-events-none" />}
+      {children}
+    </div>
+  </div>
+);
+
+const Dropdown = ({ value, onChange, options, placeholder, icon: Icon, disabled = false }: any) => (
+  <div className="relative group">
+    {Icon && <Icon className="absolute left-5 top-5 w-5 h-5 text-zinc-600 group-focus-within:text-indigo-400 transition-colors pointer-events-none" />}
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className={`w-full ${Icon ? "pl-14" : "pl-6"} pr-12 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white appearance-none focus:outline-none focus:border-indigo-500/50 transition-all font-medium disabled:opacity-20`}
+    >
+      <option value="" disabled className="bg-zinc-900">{placeholder}</option>
+      {options.map((opt: any) => {
+        const isFull = typeof opt === 'object' ? opt.disabled : false;
+        const label = typeof opt === 'object' ? opt.label : opt;
+        const val = typeof opt === 'object' ? opt.value : opt;
+        return (
+          <option key={val} value={val} disabled={isFull} className="bg-zinc-900 py-2">
+            {label}
+          </option>
+        );
+      })}
+    </select>
+    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none group-hover:text-zinc-400 transition-colors" />
+  </div>
+);
