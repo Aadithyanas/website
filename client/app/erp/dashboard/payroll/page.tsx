@@ -23,7 +23,7 @@ interface PayrollMember {
 }
 
 export default function ERPPayrollPage() {
-  const { isAdmin, token, user: currentUser } = useERPAuth();
+  const { isAdmin, hasPermission, token, user: currentUser } = useERPAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [payrollData, setPayrollData] = useState<PayrollMember[]>([]);
@@ -51,12 +51,12 @@ export default function ERPPayrollPage() {
   }, []);
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAdmin && !hasPermission("manage_payroll")) {
       router.replace("/erp/dashboard");
       return;
     }
     fetchPayroll();
-  }, [isAdmin, token, month, year]);
+  }, [isAdmin, hasPermission, token, month, year]);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -96,9 +96,6 @@ export default function ERPPayrollPage() {
     }
   };
 
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successPaymentData, setSuccessPaymentData] = useState<any>(null);
-
   const handleRazorpayPayment = async (member: PayrollMember) => {
     if (!window.Razorpay) {
       alert("Razorpay SDK not loaded. Please wait.");
@@ -131,18 +128,7 @@ export default function ERPPayrollPage() {
               year
             }, { headers: { Authorization: `Bearer ${token}` } });
             
-            // Set success data for modal
-            const reportRes = await apiClient.get(`/api/erp/salary/report/${member.member_id}?month=${month}&year=${year}`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            
-            setSuccessPaymentData({
-              member,
-              report: reportRes.data,
-              payment_id: response.razorpay_payment_id
-            });
-            
-            setShowSuccessModal(true);
+            alert("Payment successful!");
             fetchPayroll();
             setShowModal(false);
           } catch (err) {
@@ -201,7 +187,7 @@ export default function ERPPayrollPage() {
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const years = [2024, 2025, 2026, 2027];
 
-  if (!isAdmin) return null;
+  if (!isAdmin && !hasPermission("manage_payroll")) return null;
 
   return (
     <div className="w-full text-white">
@@ -494,64 +480,6 @@ export default function ERPPayrollPage() {
                    )}
                  </button>
                )}
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Payment Success Modal */}
-      {showSuccessModal && successPaymentData && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[60] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowSuccessModal(false)}>
-          <div className="bg-[#050505] border border-emerald-500/30 rounded-[2.5rem] w-full max-w-2xl shadow-[0_0_50px_rgba(16,185,129,0.15)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-            
-            <div className="p-8 text-center bg-emerald-500/5 border-b border-emerald-500/10">
-              <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
-                <CheckCircle2 size={40} className="text-black" />
-              </div>
-              <h2 className="text-3xl font-black text-white tracking-tight mb-2 uppercase">Payment Successful</h2>
-              <p className="text-emerald-400 font-bold text-sm tracking-widest uppercase">Transaction ID: {successPaymentData.payment_id}</p>
-            </div>
-
-            <div className="p-10 flex flex-col gap-6">
-              <div className="flex justify-between items-center p-6 bg-[#0a0a0a] rounded-3xl border border-white/5">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Generated Invoice For</span>
-                  <span className="text-xl font-bold text-white tracking-tight">{successPaymentData.member.member_name}</span>
-                  <span className="text-xs text-gray-400">{successPaymentData.member.member_email}</span>
-                </div>
-                <div className="text-right flex flex-col">
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Amount Paid</span>
-                  <span className="text-2xl font-black text-emerald-400">₹{successPaymentData.report.net_salary.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-                    <Receipt size={20} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-white">Invoice Auto-Generated</span>
-                    <span className="text-xs text-gray-500">The payslip for {months[month-1]} {year} is now available in records.</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                    <HelpCircle size={20} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-emerald-400">Sent to Gmail</span>
-                    <span className="text-xs text-emerald-500/70">A copy of this invoice has been sent to {successPaymentData.member.member_email} via Gmail.</span>
-                  </div>
-                </div>
-              </div>
-
-              <button 
-                onClick={() => setShowSuccessModal(false)}
-                className="w-full py-4 rounded-2xl bg-white text-black font-black text-sm tracking-widest uppercase hover:bg-gray-200 transition-colors shadow-2xl active:scale-[0.98]"
-              >
-                Close & Continue
-              </button>
             </div>
           </div>
         </div>

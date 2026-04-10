@@ -138,7 +138,7 @@ export const Footer = () => (
                     }}
                   >
                     <img
-                      src="/images/logo.png"
+                      src="/images/logo2.png"
                       alt="AJU ED SOLUTIONS"
                       className="w-7 h-7 object-contain"
                       onError={(e) => {

@@ -14,7 +14,7 @@ interface Client {
 }
 
 export default function ERPClientsPage() {
-  const { token } = useERPAuth();
+  const { token, isAdmin, hasPermission } = useERPAuth();
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,9 +96,11 @@ export default function ERPClientsPage() {
           <h1 style={{ fontSize: "24px", fontWeight: 800, margin: "0 0 4px", color: "#fff", letterSpacing: "-0.02em" }}>Clients Directory</h1>
           <p style={{ color: "#888", margin: 0, fontSize: "14px" }}>Manage your external clients and contacts.</p>
         </div>
-        <button className="erp-btn erp-btn-primary" onClick={() => setShowModal(true)}>
-          + Add Client
-        </button>
+        {(isAdmin || hasPermission("manage_invoices")) && (
+          <button className="erp-btn erp-btn-primary" onClick={() => setShowModal(true)}>
+            + Add Client
+          </button>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "20px" }}>
@@ -127,10 +129,12 @@ export default function ERPClientsPage() {
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "auto", paddingTop: "12px", borderTop: "1px solid #111" }}>
-              <button onClick={() => openEdit(c)} className="erp-btn erp-btn-ghost" style={{ padding: "6px 12px", fontSize: "12px" }}>Edit</button>
-              <button onClick={() => handleDelete(c.id)} className="erp-btn" style={{ padding: "6px 12px", fontSize: "12px", background: "#330000", color: "#ff4d4d", border: "1px solid #4d0000" }}>Delete</button>
-            </div>
+            {(isAdmin || hasPermission("manage_invoices")) && (
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "auto", paddingTop: "12px", borderTop: "1px solid #111" }}>
+                <button onClick={() => openEdit(c)} className="erp-btn erp-btn-ghost" style={{ padding: "6px 12px", fontSize: "12px" }}>Edit</button>
+                <button onClick={() => handleDelete(c.id)} className="erp-btn" style={{ padding: "6px 12px", fontSize: "12px", background: "#330000", color: "#ff4d4d", border: "1px solid #4d0000" }}>Delete</button>
+              </div>
+            )}
           </div>
         ))}
       </div>

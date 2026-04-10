@@ -12,10 +12,10 @@ export default function ERPCreateInvoicePage() {
   const { token } = useERPAuth();
   const router = useRouter();
 
-  const [members, setMembers] = useState<any[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
 
-  const [memberId, setMemberId] = useState("");
+  const [clientId, setClientId] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
   const [dueDate, setDueDate] = useState("");
   const [taxRate, setTaxRate] = useState(0);
@@ -27,19 +27,16 @@ export default function ERPCreateInvoicePage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (token) fetchMembers();
+    if (token) fetchClients();
   }, [token]);
 
-  const fetchMembers = async () => {
+  const fetchClients = async () => {
     try {
-      const res = await apiClient.get("/api/erp/members", { headers: { Authorization: `Bearer ${token}` } });
-      setMembers(res.data);
-      if (res.data.length > 0) setMemberId(res.data[0].id);
-    } catch (e) { 
-      console.error(e); 
-    } finally { 
-      setLoadingMembers(false); 
-    }
+      const res = await apiClient.get("/api/erp/clients", { headers: { Authorization: `Bearer ${token}` } });
+      setClients(res.data);
+      if (res.data.length > 0) setClientId(res.data[0].id);
+    } catch (e) { console.error(e); }
+    finally { setLoadingClients(false); }
   };
 
   const addItem = () => {
@@ -63,13 +60,13 @@ export default function ERPCreateInvoicePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!memberId) return alert("Please select a member.");
+    if (!clientId) return alert("Please select a client.");
     if (items.some(i => !i.description.trim())) return alert("All items must have a description.");
 
     setSubmitting(true);
     try {
       const payload = {
-        client_id: memberId,
+        client_id: clientId,
         invoice_number: invoiceNumber,
         due_date: dueDate || undefined,
         status: "draft",
@@ -90,7 +87,7 @@ export default function ERPCreateInvoicePage() {
     }
   };
 
-  if (loadingMembers) return <div style={{ color: "#888", padding: "40px" }}>Loading data...</div>;
+  if (loadingClients) return <div style={{ color: "#888", padding: "40px" }}>Loading data...</div>;
 
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto" }}>
@@ -101,8 +98,8 @@ export default function ERPCreateInvoicePage() {
           </svg>
         </Link>
         <div>
-          <h1 style={{ fontSize: "24px", fontWeight: 800, margin: "0 0 4px", color: "#fff" }}>Create Member Invoice</h1>
-          <p style={{ color: "#888", margin: 0, fontSize: "14px" }}>Build a new invoice for an organization member.</p>
+          <h1 style={{ fontSize: "24px", fontWeight: 800, margin: "0 0 4px", color: "#fff" }}>Create Invoice</h1>
+          <p style={{ color: "#888", margin: 0, fontSize: "14px" }}>Build a new invoice for a client.</p>
         </div>
       </div>
 
@@ -111,15 +108,15 @@ export default function ERPCreateInvoicePage() {
         {/* Top Header Information */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
           <div>
-            <label className="erp-label">Select Member *</label>
-            {members.length === 0 ? (
+            <label className="erp-label">Select Client *</label>
+            {clients.length === 0 ? (
               <div style={{ color: "#f87171", fontSize: "13px", padding: "8px", background: "rgba(239,68,68,0.1)", borderRadius: "8px" }}>
-                No members found in organization.
+                You have no clients! Please <Link href="/erp/dashboard/clients" style={{ textDecoration: "underline", color: "#fff" }}>add a client</Link> first.
               </div>
             ) : (
-              <select className="erp-input erp-select" value={memberId} onChange={e => setMemberId(e.target.value)} required>
-                {members.map((m: any) => (
-                  <option key={m.id} value={m.id}>{m.name} {m.position ? `(${m.position})` : ""}</option>
+              <select className="erp-input erp-select" value={clientId} onChange={e => setClientId(e.target.value)} required>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name} {c.company ? `(${c.company})` : ""}</option>
                 ))}
               </select>
             )}
@@ -242,7 +239,7 @@ export default function ERPCreateInvoicePage() {
           <button 
             type="submit" 
             className="erp-btn erp-btn-primary" 
-            disabled={submitting || members.length === 0}
+            disabled={submitting || clients.length === 0}
             style={{ width: "100%", maxWidth: "300px", fontSize: "16px", padding: "14px" }}
           >
             {submitting ? "Saving Invoice..." : "Save Invoice"}

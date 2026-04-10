@@ -34,6 +34,7 @@ interface ERPAuthContextType {
   isAdmin: boolean;
   isLeader: boolean;
   hasPermission: (perm: string) => boolean;
+  API: string;
 }
 
 const ERPAuthContext = createContext<ERPAuthContextType | null>(null);
@@ -130,8 +131,8 @@ export function ERPAuthProvider({ children }: { children: React.ReactNode }) {
     handleInit();
   }, [setTokenAndUser]);
 
-  const isAdmin = ["admin", "hr", "manager"].includes(user?.role || "");
-  const isLeader = isAdmin || user?.team_role === "Team Leader";
+  const isAdmin = user?.role === "admin";
+  const isLeader = isAdmin || ["hr", "manager"].includes(user?.role || "") || user?.team_role === "Team Leader";
 
   return (
     <ERPAuthContext.Provider
@@ -150,6 +151,7 @@ export function ERPAuthProvider({ children }: { children: React.ReactNode }) {
           if (user?.role === "admin") return true;
           return user?.permissions?.includes(perm) || false;
         },
+        API,
       }}
     >
       {children}

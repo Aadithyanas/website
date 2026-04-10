@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { Menu, X } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 
 gsap.registerPlugin(ScrollToPlugin);
 
@@ -16,6 +17,7 @@ const NAV_LINKS = [
   { name: "About", id: "#about" },
   { name: "Companies", id: "#companies" },
   { name: "Services", id: "#services" },
+  { name: "Register", id: "/game-register" },
   { name: "Testimonials", id: "#testimonials" },
 ];
 
@@ -24,6 +26,7 @@ function useActiveSection(ids: string[]) {
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
     ids.forEach((id) => {
+      if (!id.startsWith("#")) return;
       const el = document.querySelector(id);
       if (!el) return;
       const obs = new IntersectionObserver(
@@ -43,6 +46,8 @@ const Nav = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrollPct, setScrollPct] = useState(0);
   const navRef = useRef<HTMLElement>(null);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const sectionIds = NAV_LINKS.map((l) => l.id);
   const active = useActiveSection(sectionIds);
@@ -72,8 +77,22 @@ const Nav = () => {
 
   const scrollTo = useCallback((id: string) => {
     setMenuOpen(false);
+    
+    // If it's a direct page link (starts with /)
+    if (id.startsWith("/")) {
+      router.push(id);
+      return;
+    }
+
+    // If we are NOT on the home page, go home first then scroll
+    if (pathname !== "/") {
+      router.push("/" + id);
+      return;
+    }
+
+    // Smooth scroll for anchors
     gsap.to(window, { duration: 1, scrollTo: id, ease: "power3.inOut" });
-  }, []);
+  }, [router, pathname]);
 
   return (
     <>

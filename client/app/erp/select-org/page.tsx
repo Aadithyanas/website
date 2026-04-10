@@ -58,7 +58,7 @@ function SelectOrgPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px" }}>
-      <img src="/logo.png" alt="ERP" style={{ width: "48px", marginBottom: "40px", filter: "invert(1)" }} onError={e => e.currentTarget.style.display='none'} />
+      <img src="/images/logo2.png" alt="ERP" style={{ width: "48px", marginBottom: "40px", filter: "invert(1)" }} onError={e => e.currentTarget.style.display='none'} />
       <h1 style={{ color: "#fff", fontSize: "32px", fontWeight: 800, marginBottom: "8px" }}>Who's using ERP?</h1>
       <p style={{ color: "#666", marginBottom: "48px" }}>Choose an organization to continue</p>
       

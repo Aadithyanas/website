@@ -4,7 +4,7 @@ import { useERPAuth, apiClient } from "@/src/components/erp/ERPAuthContext";
 import { useRouter } from "next/navigation";
 
 export default function ERPSettingsPage() {
-  const { isAdmin, token } = useERPAuth();
+  const { isAdmin, hasPermission, token } = useERPAuth();
   const router = useRouter();
   const [settings, setSettings] = useState({ 
     positions: [], teams: [], sprints: [],
@@ -31,10 +31,12 @@ export default function ERPSettingsPage() {
   ];
 
   useEffect(() => {
-    if (!isAdmin) { router.replace("/erp/dashboard"); return; }
+    if (!isAdmin && !hasPermission("manage_org_settings")) { 
+        router.replace("/erp/dashboard"); return; 
+    }
     fetchSettings();
     fetchMembers();
-  }, [isAdmin]);
+  }, [isAdmin, hasPermission]);
 
   const fetchMembers = async () => {
     try {
