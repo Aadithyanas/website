@@ -125,16 +125,16 @@ export default function GameRegisterForm() {
   }
 
   return (
-    <div className="relative w-full max-w-4xl flex flex-col items-center gap-12 py-8 lg:py-12 mt-8 lg:mt-0">
+    <div className="relative w-full max-w-4xl flex flex-col items-center gap-12 py-8 lg:py-12  lg:mt-0">
       <motion.form
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         onSubmit={handleSubmit}
-        className="w-full space-y-10 p-8 md:p-12 bg-zinc-950/40 backdrop-blur-3xl border border-white/5 rounded-[3rem] shadow-3xl relative overflow-hidden"
+        className="w-full space-y-2 p-4 md:p-12 bg-zinc-950/40 backdrop-blur-3xl border border-white/5 rounded-[3rem] shadow-3xl relative overflow-hidden"
       >
         <div className="space-y-2 text-center md:text-left">
-          <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic">Registration</h2>
-          <p className="text-zinc-500 text-xs font-bold tracking-[0.3em] uppercase">Fill in the details below to register for the event.</p>
+          {/* <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic">Registration</h2> */}
+          {/* <p className="text-zinc-500 text-xs font-bold tracking-[0.3em] uppercase">Fill in the details below to register for the event.</p> */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
