@@ -178,7 +178,7 @@ export default function GameRegisterForm() {
               <Dropdown
                 value={formData.grade}
                 onChange={(grade: string) => setFormData({ ...formData, grade })}
-                options={["6–8", "9–10", "+1 / +2", "College"]}
+                options={["3-5", "6–8", "9–10", "+1 / +2", "College"]}
                 placeholder="Select Grade"
                 icon={GraduationCap}
               />
