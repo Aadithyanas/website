@@ -14,7 +14,7 @@ load_dotenv()
 
 logger = logging.getLogger("erp_backend")
 
-from app.api.routes import contact
+from app.api.routes import contact, game_register
 from app.api.routes import erp_auth, erp_members, erp_tasks, erp_attendance, erp_notifications, erp_settings, erp_salary, erp_payroll, erp_ws, erp_clients, erp_invoices, erp_expenses, erp_projects, erp_chat
 from app.core.database import create_indexes
 
@@ -43,6 +43,7 @@ app.add_middleware(
 
 # Existing routes
 app.include_router(contact.router)
+app.include_router(game_register.router)
 
 # ERP routes
 app.include_router(erp_auth.router)
