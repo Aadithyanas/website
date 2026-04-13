@@ -353,9 +353,7 @@ export const Footer = () => (
               className="text-[11px] font-mono tracking-wide flex items-center gap-1.5"
               style={{ color: "rgba(110,130,168,0.5)" }}
             >
-              © {new Date().getFullYear()} AJU ED SOLUTIONS LLP · All Rights Reserved · Made with
-              <Heart size={10} style={{ color: "#f472b6", fill: "#f472b6" }} />
-              in Kerala
+              © {new Date().getFullYear()} AJU ED SOLUTIONS LLP · All Rights Reserved.
             </p>
             <div className="flex gap-5">
               {["PRIVACY POLICY", "TERMS OF SERVICE"].map((label) => (
