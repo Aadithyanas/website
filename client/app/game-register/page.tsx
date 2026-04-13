@@ -100,6 +100,7 @@ export default function InternshipApplicationForm() {
   }
 
   return (
+<<<<<<< HEAD
     <div className="relative w-full max-w-4xl flex flex-col items-center gap-12 py-8 lg:py-12 lg:mt-0">
       <motion.form
         initial={{ opacity: 0, scale: 0.95 }}
@@ -110,6 +111,18 @@ export default function InternshipApplicationForm() {
         <div className="space-y-2 text-center md:text-left mb-8">
           <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic">Internship Application</h2>
           <p className="text-zinc-500 text-xs font-bold tracking-[0.3em] uppercase">Complete the form to apply for our internship program</p>
+=======
+    <main className="min-h-screen flex flex-col" style={{ background: "#000", color: "#eef2ff" }}>
+      <Nav />
+      {/* Added pt-32 to clear fixed navbar, reduced mb-6 for tighter layout */}
+      <div className="flex-1 flex flex-col items-center justify-start pt-32 lg:pt-40 p-6 bg-[radial-gradient(circle_at_50%_50%,rgba(67,56,202,0.1),transparent_50%)]">
+        <div className="max-w-4xl w-full text-center space-y-4 lg:space-y-2 mb-8 ">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight">
+            Level Up Your <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500">Journey</span>
+          </h1>
+          <p className="text-zinc-500 text-xs font-bold tracking-[0.3em] uppercase">Complete the form to book your free workshop seat</p>
+
+>>>>>>> bfd22b0 (add intenship form)
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
