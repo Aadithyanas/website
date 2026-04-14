@@ -77,7 +77,7 @@ const Nav = () => {
 
   const scrollTo = useCallback((id: string) => {
     setMenuOpen(false);
-    
+
     // If it's a direct page link (starts with /)
     if (id.startsWith("/")) {
       router.push(id);

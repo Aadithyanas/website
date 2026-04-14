@@ -10,16 +10,53 @@ import {
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXMteA6m8P43KS0_7yGYyWCr3v1AZ9ktMOkjvq66EbVi_qgiiJ2ABYlc5hP2Rq8NiVmA/exec";
 
+const COLLEGE_COURSES: Record<string, string[]> = {
+  "B.Tech": [
+    "Computer Science",
+    "Information Technology",
+    "Electronics & Communication",
+    "Mechanical Engineering",
+    "Electrical Engineering",
+    "Civil Engineering",
+    "Other Engineering"
+  ],
+  "Diploma": [
+    "Computer Engineering",
+    "Information Technology",
+    "Electronics",
+    "Mechanical",
+    "Electrical",
+    "Civil",
+    "Other"
+  ],
+  "Degree": [
+    "BCA (Computer Applications)",
+    "BSc (Computer Science)",
+    "BSc (IT)",
+    "B.Com",
+    "B.A",
+    "BSc (Other)",
+    "Other"
+  ]
+};
+
+const SCHOOL_COURSES: Record<string, string[]> = {
+  "10th Standard": ["SSLC", "ICSE", "CBSE", "Other"],
+  "+2": ["Biology Science", "Computer Science", "Commerce", "Arts", "Other"]
+};
+
 export default function InternshipApplicationForm() {
   const [formData, setFormData] = useState({
     name: "",
     educationLevel: "College",
     institutionName: "",
     course: "",
+    stream: "",
     currentYear: "",
     phone: "",
     whatsapp: "",
     internshipTrack: "",
+    internshipPeriod: "",
     startDate: "",
     endDate: "",
     source: "",
@@ -30,10 +67,15 @@ export default function InternshipApplicationForm() {
   const [message, setMessage] = useState("");
 
   const isValid = () => {
-    return formData.name && formData.educationLevel && formData.institutionName &&
-      formData.course && formData.currentYear && formData.phone &&
-      formData.whatsapp && formData.internshipTrack && formData.startDate &&
-      formData.endDate && formData.source && formData.whyInternship;
+    const baseValid = formData.name && formData.educationLevel && formData.institutionName &&
+      formData.course && formData.stream && formData.phone &&
+      formData.whatsapp && formData.internshipTrack && formData.internshipPeriod &&
+      formData.startDate && formData.endDate && formData.source && formData.whyInternship;
+
+    if (formData.educationLevel === "College") {
+      return baseValid && formData.currentYear;
+    }
+    return baseValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,10 +98,12 @@ export default function InternshipApplicationForm() {
         educationLevel: "College",
         institutionName: "",
         course: "",
+        stream: "",
         currentYear: "",
         phone: "",
         whatsapp: "",
         internshipTrack: "",
+        internshipPeriod: "",
         startDate: "",
         endDate: "",
         source: "",
@@ -124,7 +168,13 @@ export default function InternshipApplicationForm() {
             <InputWrapper label="Education Level">
               <Dropdown
                 value={formData.educationLevel}
-                onChange={(level: string) => setFormData({ ...formData, educationLevel: level })}
+                onChange={(level: string) => setFormData({
+                  ...formData,
+                  educationLevel: level,
+                  course: "",
+                  stream: "",
+                  currentYear: ""
+                })}
                 options={["School", "College"]}
                 placeholder="Select Level"
                 icon={GraduationCap}
@@ -133,46 +183,52 @@ export default function InternshipApplicationForm() {
 
             <InputWrapper label="Institution Name" icon={Building2}>
               <input
-                type="text" required placeholder="School/College Name"
+                type="text" required placeholder={formData.educationLevel === "School" ? "School Name" : "College Name"}
                 value={formData.institutionName}
                 onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
                 className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
               />
             </InputWrapper>
 
-            <InputWrapper label="Course/Stream">
+            <InputWrapper label="Select Course">
               <Dropdown
                 value={formData.course}
-                onChange={(course: string) => setFormData({ ...formData, course })}
-                options={[
-                  "Computer Science",
-                  "Information Technology",
-                  "Electronics",
-                  "Mechanical",
-                  "Electrical",
-                  "Science Stream",
-                  "Commerce Stream",
-                  "Other Engineering",
-                  "Other"
-                ]}
-                placeholder="Select Course/Stream"
+                onChange={(course: string) => setFormData({ ...formData, course, stream: "" })}
+                options={Object.keys(formData.educationLevel === "School" ? SCHOOL_COURSES : COLLEGE_COURSES)}
+                placeholder="Select Course"
                 icon={BookOpen}
               />
             </InputWrapper>
 
-            <InputWrapper label="Current Year/Class">
+            <InputWrapper label="Select Stream/Board">
               <Dropdown
-                value={formData.currentYear}
-                onChange={(year: string) => setFormData({ ...formData, currentYear: year })}
+                value={formData.stream}
+                onChange={(stream: string) => setFormData({ ...formData, stream })}
                 options={
-                  formData.educationLevel === "School"
-                    ? ["8th", "9th", "10th", "11th", "12th"]
-                    : ["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year"]
+                  formData.course
+                    ? (formData.educationLevel === "School" ? SCHOOL_COURSES[formData.course] : COLLEGE_COURSES[formData.course])
+                    : []
                 }
-                placeholder="Select Year/Class"
-                icon={Calendar}
+                placeholder="Select Stream"
+                icon={Target}
+                disabled={!formData.course}
               />
             </InputWrapper>
+
+            {formData.educationLevel === "College" && (
+              <InputWrapper label="Current Semester">
+                <Dropdown
+                  value={formData.currentYear}
+                  onChange={(year: string) => setFormData({ ...formData, currentYear: year })}
+                  options={[
+                    "1st Semester", "2nd Semester", "3rd Semester", "4th Semester",
+                    "5th Semester", "6th Semester", "7th Semester", "8th Semester"
+                  ]}
+                  placeholder="Select Semester"
+                  icon={Calendar}
+                />
+              </InputWrapper>
+            )}
 
             <div className="space-y-8">
               <InputWrapper label="Phone Number" icon={Phone}>
@@ -211,6 +267,26 @@ export default function InternshipApplicationForm() {
               />
             </InputWrapper>
 
+            <InputWrapper label="Internship Duration">
+              <Dropdown
+                value={formData.internshipPeriod}
+                onChange={(period: string) => setFormData({ ...formData, internshipPeriod: period })}
+                options={[
+                  "1 Week",
+                  "2 Weeks",
+                  "3 Weeks",
+                  "1 Month",
+                  "2 Months",
+                  "3 Months",
+                  "4 Months",
+                  "6 Months",
+                  "Other"
+                ]}
+                placeholder="Select Duration"
+                icon={Calendar}
+              />
+            </InputWrapper>
+
             <InputWrapper label="Why Do You Want This Internship?" icon={Target}>
               <textarea
                 required
@@ -228,6 +304,8 @@ export default function InternshipApplicationForm() {
                 required
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                onClick={(e) => e.currentTarget.showPicker()}
+                style={{ colorScheme: 'dark' }}
                 className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
               />
             </InputWrapper>
@@ -238,6 +316,8 @@ export default function InternshipApplicationForm() {
                 required
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                onClick={(e) => e.currentTarget.showPicker()}
+                style={{ colorScheme: 'dark' }}
                 min={formData.startDate}
                 className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
               />
@@ -248,11 +328,11 @@ export default function InternshipApplicationForm() {
                 value={formData.source}
                 onChange={(source: string) => setFormData({ ...formData, source })}
                 options={[
-                  "College/School Notice",
-                  "Instagram",
-                  "Friend Referral",
+                  "University / College Communication",
+                  "Social Media (Instagram)",
+                  "Employee or Personal Referral",
                   "LinkedIn",
-                  "Walk-in",
+                  "Walk-in / On-site Inquiry",
                   "Other"
                 ]}
                 placeholder="Select Source"
