@@ -6,10 +6,10 @@ import { Cpu, Palette, Building, CheckCircle2 } from "lucide-react";
 import { useCompany, CompanyId } from "./CompanyContext";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const VP   = { once: true, amount: 0.15 };
+const VP = { once: true, amount: 0.15 };
 
 const fadeUp = (delay = 0, distance = 28) => ({
-  hidden:  { opacity: 0, y: distance, filter: "blur(5px)" },
+  hidden: { opacity: 0, y: distance, filter: "blur(5px)" },
   visible: {
     opacity: 1, y: 0, filter: "blur(0px)",
     transition: { duration: 0.75, delay, ease: EASE },
@@ -28,43 +28,43 @@ const COMPANIES: {
   glow: string;
   services: string[];
 }[] = [
-  {
-    id: "techzora",
-    icon: <Cpu size={30} />,
-    title: "AJU TECHZORA",
-    tagline: "Tech & Innovation",
-    desc: "Web and mobile development, IoT, Robotics, AI/ML & Tech Solutions at low cost for customers and enterprises.",
-    color: "#818cf8",
-    accent: "rgba(99,102,241,0.10)",
-    border: "rgba(99,102,241,0.38)",
-    glow:   "rgba(99,102,241,0.18)",
-    services: ["Web & App", "AI / ML", "IoT", "Robotics", "ERP"],
-  },
-  {
-    id: "brandify",
-    icon: <Palette size={30} />,
-    title: "AJU Brandify",
-    tagline: "Branding & Growth",
-    desc: "Branding, Digital Marketing & Web Solutions to help businesses grow and shine online.",
-    color: "#06d6a0",
-    accent: "rgba(6,214,160,0.10)",
-    border: "rgba(6,214,160,0.35)",
-    glow:   "rgba(6,214,160,0.16)",
-    services: ["Branding", "Marketing"],
-  },
-  {
-    id: "scrumspace",
-    icon: <Building size={30} />,
-    title: "ScrumSpace CoWorks",
-    tagline: "Community & Workspace",
-    desc: "Modern coworking spaces with community-driven initiatives for startups and creators.",
-    color: "#f472b6",
-    accent: "rgba(244,114,182,0.10)",
-    border: "rgba(244,114,182,0.32)",
-    glow:   "rgba(244,114,182,0.15)",
-    services: ["Co-working"],
-  },
-];
+    {
+      id: "techzora",
+      icon: <Cpu size={30} />,
+      title: "AJU TECHZORA",
+      tagline: "Tech & Innovation",
+      desc: "Web and mobile development, IoT, Robotics, AI/ML & Tech Solutions at low cost for customers and enterprises.",
+      color: "#818cf8",
+      accent: "rgba(99,102,241,0.10)",
+      border: "rgba(99,102,241,0.38)",
+      glow: "rgba(99,102,241,0.18)",
+      services: ["Web & App", "AI / ML", "IoT", "Robotics", "ERP"],
+    },
+    {
+      id: "brandify",
+      icon: <Palette size={30} />,
+      title: "AJU Brandify",
+      tagline: "Branding & Growth",
+      desc: "Branding, Digital Marketing & Web Solutions to help businesses grow and shine online.",
+      color: "#06d6a0",
+      accent: "rgba(6,214,160,0.10)",
+      border: "rgba(6,214,160,0.35)",
+      glow: "rgba(6,214,160,0.16)",
+      services: ["Branding", "Marketing"],
+    },
+    {
+      id: "scrumspace",
+      icon: <Building size={30} />,
+      title: "ScrumSpace CoWorks",
+      tagline: "Community & Workspace",
+      desc: "Modern coworking spaces with community-driven initiatives for startups and creators.",
+      color: "#f472b6",
+      accent: "rgba(244,114,182,0.10)",
+      border: "rgba(244,114,182,0.32)",
+      glow: "rgba(244,114,182,0.15)",
+      services: ["Co-working"],
+    },
+  ];
 
 export const CompaniesSection = () => {
   const { activeCompany, setActiveCompany } = useCompany();
@@ -119,7 +119,7 @@ export const CompaniesSection = () => {
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             }}
           >
-            Our Companies
+            Our Branches
           </motion.h3>
           <motion.p
             variants={fadeUp(0.18, 16)} initial="hidden" whileInView="visible" viewport={VP}
