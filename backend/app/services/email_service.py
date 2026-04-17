@@ -3,6 +3,7 @@ import os
 from email.message import EmailMessage
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,6 +15,109 @@ except ImportError:
     EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+QR_CODE_PATH = r"c:\Dev\Github repo\website\client\public\images\paymentqr.png"
+
+async def send_internship_pending_email(to_email: str, student_name: str, registration_id: str, amount: float):
+    msg = MIMEMultipart("related")
+    msg["Subject"] = f"Action Required: Complete your Payment - {registration_id}"
+    msg["From"] = EMAIL_ADDRESS
+    msg["To"] = to_email
+
+    html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 40px;">
+        <div style="max-width: 500px; margin: auto; background: #111; border-radius: 12px; padding: 32px; border: 1px solid #222;">
+          <h2 style="color: #a78bfa;">Application Submitted! 🚀</h2>
+          <p>Hi <strong>{student_name}</strong>,</p>
+          <p>Your internship application has been received, but your <strong>payment is currently pending</strong>.</p>
+          
+          <div style="background: #1a1a1a; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #333;">
+            <p style="margin: 0 0 8px;"><strong>Registration ID:</strong> {registration_id}</p>
+            <p style="margin: 0 0 8px;"><strong>Amount to Pay:</strong> ₹{amount:,.2f}</p>
+          </div>
+
+          <h3 style="color: #facc15;">How to complete your registration:</h3>
+          <ol style="color: #ccc; line-height: 1.6;">
+            <li>Scan the QR code below to pay via GPay/PhonePe/Any UPI.</li>
+            <li>Take a screenshot of the successful payment.</li>
+            <li>Send the screenshot to our WhatsApp: <a href="https://wa.me/918848673615" style="color: #a78bfa; font-weight: bold;">8848673615</a> along with your Reg ID.</li>
+          </ol>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <img src="cid:paymentqr" alt="Payment QR Code" style="width: 250px; height: auto; border-radius: 12px; border: 4px solid #fff;" />
+          </div>
+
+          <p style="color: #888; font-size: 13px;">Once we verify your payment (usually within 24 hours), your registration will be fully completed and you will receive a confirmation email.</p>
+        </div>
+      </body>
+    </html>
+    """
+    
+    msg.attach(MIMEText(html, "html"))
+
+    # Attach QR Code
+    if os.path.exists(QR_CODE_PATH):
+        try:
+            with open(QR_CODE_PATH, 'rb') as f:
+                img_data = f.read()
+                image = MIMEImage(img_data)
+                image.add_header('Content-ID', '<paymentqr>')
+                image.add_header('Content-Disposition', 'inline', filename="paymentqr.png")
+                msg.attach(image)
+        except Exception as e:
+            print(f"Error attaching QR code: {e}")
+
+    await aiosmtplib.send(
+        msg,
+        hostname="smtp.gmail.com",
+        port=587,
+        start_tls=True,
+        username=EMAIL_ADDRESS,
+        password=EMAIL_PASSWORD,
+    )
+
+async def send_internship_complete_email(to_email: str, student_name: str, registration_id: str):
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"Registration Confirmed! - {registration_id}"
+    msg["From"] = EMAIL_ADDRESS
+    msg["To"] = to_email
+
+    html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 40px;">
+        <div style="max-width: 500px; margin: auto; background: #111; border-radius: 12px; padding: 32px; border: 1px solid #222;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 50px;">🏆</div>
+          </div>
+          <h2 style="color: #10b981; text-align: center;">Registration Complete!</h2>
+          <p>Hi <strong>{student_name}</strong>,</p>
+          <p>We have successfully verified your payment for the internship program.</p>
+          
+          <div style="background: #064e3b; padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #065f46; text-align: center;">
+            <p style="margin: 0; font-size: 14px; color: #a7f3d0;">REGISTRATION ID</p>
+            <p style="margin: 5px 0 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; color: #fff;">{registration_id}</p>
+          </div>
+
+          <p>Your seat is now officially reserved. You will receive further instructions regarding the onboarding process shortly.</p>
+          
+          <p style="margin-top:32px; border-top: 1px solid #222; pt: 20px; color:#888; font-size:12px; text-align: center;">
+            Welcome to the team! If you have any questions, reply to this email.
+          </p>
+        </div>
+      </body>
+    </html>
+    """
+
+    msg.attach(MIMEText(html, "html"))
+
+    await aiosmtplib.send(
+        msg,
+        hostname="smtp.gmail.com",
+        port=587,
+        start_tls=True,
+        username=EMAIL_ADDRESS,
+        password=EMAIL_PASSWORD,
+    )
 
 async def send_email(name: str, email: str, message: str):
     print("🚀 send_email function called")
@@ -336,6 +440,36 @@ async def send_client_invoice_email(to_email: str, client_name: str, invoice_dat
 
     msg.attach(MIMEText(html, "html"))
 
+async def send_internship_invoice_email(to_email: str, student_name: str, amount: float, registration_id: str):
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"Internship Registration Invoice - {student_name}"
+    msg["From"] = EMAIL_ADDRESS
+    msg["To"] = to_email
+
+    html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 40px;">
+        <div style="max-width: 500px; margin: auto; background: #111; border-radius: 12px; padding: 32px; border: 1px solid #222;">
+          <h2 style="color: #a78bfa;">Internship Registration Successful! 🎉</h2>
+          <p>Hi <strong>{student_name}</strong>,</p>
+          <p>Thank you for registering for our internship program. Your payment has been confirmed.</p>
+          
+          <div style="background: #1a1a1a; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #333;">
+            <p style="margin: 0 0 8px;"><strong>Registration ID:</strong> {registration_id}</p>
+            <p style="margin: 0 0 8px;"><strong>Amount Paid:</strong> ₹{amount:,.2f}</p>
+            <p style="margin: 0;"><strong>Status:</strong> <span style="color: #10b981;">PAID</span></p>
+          </div>
+
+          <p>Our team will review your application and contact you with further details soon.</p>
+          
+          <p style="margin-top:24px;color:#888;font-size:12px;">This is an automated invoice. If you have any questions, please contact our support team.</p>
+        </div>
+      </body>
+    </html>
+    """
+
+    msg.attach(MIMEText(html, "html"))
+
     await aiosmtplib.send(
         msg,
         hostname="smtp.gmail.com",
@@ -343,4 +477,5 @@ async def send_client_invoice_email(to_email: str, client_name: str, invoice_dat
         start_tls=True,
         username=EMAIL_ADDRESS,
         password=EMAIL_PASSWORD,
-    )
+    )
+

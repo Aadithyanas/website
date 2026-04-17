@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, User, Phone, CheckCircle2, MessageCircle,
   GraduationCap, Calendar, Info, Code,
-  Target, ChevronDown, Building2, BookOpen
+  Target, ChevronDown, Building2, BookOpen, Mail
 } from "lucide-react";
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXMteA6m8P43KS0_7yGYyWCr3v1AZ9ktMOkjvq66EbVi_qgiiJ2ABYlc5hP2Rq8NiVmA/exec";
@@ -49,6 +49,7 @@ export default function InternshipApplicationForm() {
   const [registrationType, setRegistrationType] = useState<"student" | "institution" | "workshop">("student");
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     educationLevel: "College",
     institutionName: "",
     course: "",
@@ -71,12 +72,12 @@ export default function InternshipApplicationForm() {
 
   const isValid = () => {
     const contactValid = formData.phone && formData.whatsapp;
-    
+
     if (registrationType === "student") {
-      const baseValid = formData.name && formData.educationLevel && formData.institutionName &&
-        formData.course && formData.stream && contactValid && 
+      const baseValid = formData.name && formData.email && formData.educationLevel && formData.institutionName &&
+        formData.course && formData.stream && contactValid &&
         formData.internshipTrack && formData.internshipPeriod &&
-        formData.startDate && formData.endDate && formData.source && formData.whyInternship;
+        formData.startDate && formData.endDate && formData.source && customAmount;
 
       if (formData.educationLevel === "College") {
         return baseValid && formData.currentYear;
@@ -85,22 +86,78 @@ export default function InternshipApplicationForm() {
     }
 
     if (registrationType === "institution") {
-      return formData.name && formData.institutionName && formData.internshipTrack && 
-        formData.internshipPeriod && formData.whyInternship && contactValid;
+      return formData.name && formData.institutionName && formData.internshipTrack &&
+        formData.internshipPeriod && contactValid;
     }
 
     if (registrationType === "workshop") {
-      return formData.name && formData.institutionName && formData.workshopCourse && 
-        formData.durationDays && formData.whyInternship && contactValid;
+      return formData.name && formData.institutionName && formData.workshopCourse &&
+        formData.durationDays && contactValid;
     }
 
     return false;
   };
 
+
+  const [customAmount, setCustomAmount] = useState<string>("");
+
+  const calculateBreakdown = () => {
+    const base = parseFloat(customAmount) || 0;
+    if (base === 0) return { base: 0, service: 0, gateway: 0, total: 0 };
+
+    const serviceCharge = 0;
+    const gatewayFee = 0;
+    const total = base + serviceCharge + gatewayFee;
+
+    return { base, service: serviceCharge, gateway: gatewayFee, total };
+  };
+
+  const submitManual = async () => {
+    setStatus("loading");
+    try {
+      const { total } = calculateBreakdown();
+      if (total === 0) {
+        alert("Please enter a valid amount");
+        return;
+      }
+
+      const res = await fetch("/api/internships/submit-manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, amount: total })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Submission failed");
+      }
+
+      setStatus("success");
+      setMessage("Application submitted successfully! Please check your email for payment instructions.");
+
+      // Also sync to Google Sheets as secondary record
+      fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ ...formData, registrationType, status: "pending" }),
+      });
+
+    } catch (error: any) {
+      setStatus("error");
+      setMessage(error.message || "Submission failed.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus("loading");
 
+    if (registrationType === "student") {
+      await submitManual();
+      return;
+    }
+
+    setStatus("loading");
     try {
       await fetch(APPS_SCRIPT_URL, {
         method: "POST",
@@ -114,6 +171,7 @@ export default function InternshipApplicationForm() {
 
       setFormData({
         name: "",
+        email: "",
         educationLevel: "College",
         institutionName: "",
         course: "",
@@ -151,8 +209,8 @@ export default function InternshipApplicationForm() {
         <div className="space-y-4">
           <h3 className="text-4xl font-black text-white tracking-tight">✅ {registrationType === "student" ? "APPLICATION RECEIVED" : "REQUEST RECEIVED"}</h3>
           <p className="text-xl text-zinc-400 max-w-md mx-auto leading-relaxed">
-            {registrationType === "student" 
-              ? "Your internship application has been submitted. Our team will review and send an invite link to your email to access your dashboard."
+            {registrationType === "student"
+              ? "Your internship application has been submitted.Check the mail and complete the payment"
               : "Thank you for reaching out! Our team will contact you within 24 hours to discuss the collaboration."}
           </p>
         </div>
@@ -187,11 +245,10 @@ export default function InternshipApplicationForm() {
               key={type.id}
               type="button"
               onClick={() => setRegistrationType(type.id as any)}
-              className={`flex items-center justify-center gap-3 p-5 rounded-[1.5rem] border transition-all font-bold text-sm ${
-                registrationType === type.id
-                  ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]"
-                  : "bg-black/40 text-zinc-500 border-white/5 hover:border-white/20"
-              }`}
+              className={`flex items-center justify-center gap-3 p-5 rounded-[1.5rem] border transition-all font-bold text-sm ${registrationType === type.id
+                ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                : "bg-black/40 text-zinc-500 border-white/5 hover:border-white/20"
+                }`}
             >
               <type.icon className={`w-5 h-5 ${registrationType === type.id ? "text-indigo-600" : "text-zinc-600"}`} />
               {type.label.toUpperCase()}
@@ -213,11 +270,20 @@ export default function InternshipApplicationForm() {
 
             {registrationType === "student" && (
               <>
+                <InputWrapper label="Email Address" icon={Mail}>
+                  <input
+                    type="email" required placeholder="Enter Email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
+                  />
+                </InputWrapper>
+
                 <InputWrapper label="Education Level">
                   <Dropdown
                     value={formData.educationLevel}
-                    onChange={(level: string) => setFormData({ 
-                      ...formData, 
+                    onChange={(level: string) => setFormData({
+                      ...formData,
                       educationLevel: level,
                       course: "",
                       stream: "",
@@ -253,8 +319,8 @@ export default function InternshipApplicationForm() {
                     value={formData.stream}
                     onChange={(stream: string) => setFormData({ ...formData, stream })}
                     options={
-                      formData.course 
-                        ? (formData.educationLevel === "School" ? SCHOOL_COURSES[formData.course] : COLLEGE_COURSES[formData.course]) 
+                      formData.course
+                        ? (formData.educationLevel === "School" ? SCHOOL_COURSES[formData.course] : COLLEGE_COURSES[formData.course])
                         : []
                     }
                     placeholder="Select Stream"
@@ -319,7 +385,7 @@ export default function InternshipApplicationForm() {
                   <Dropdown
                     value={formData.internshipTrack}
                     onChange={(track: string) => setFormData({ ...formData, internshipTrack: track })}
-                    options={["Robotics", "Python Programming", "Java Development", "MERN Stack"]}
+                    options={["Robotics", "Python Programming", "MERN Stack"]}
                     placeholder="Choose Internship Course"
                     icon={Code}
                   />
@@ -335,9 +401,9 @@ export default function InternshipApplicationForm() {
                   />
                 </InputWrapper>
 
-                <InputWrapper label="Why Do You Want This Internship?" icon={Target}>
+                <InputWrapper label="Why Do You Want This Internship? (Optional)" icon={Target}>
                   <textarea
-                    required
+
                     placeholder="Tell us about your interest and goals..."
                     value={formData.whyInternship}
                     onChange={(e) => setFormData({ ...formData, whyInternship: e.target.value })}
@@ -459,13 +525,43 @@ export default function InternshipApplicationForm() {
 
         </div>
 
+        {registrationType === "student" && (
+          <div className="space-y-6 mb-8">
+            <InputWrapper label="Internship Fee (Base)" icon={CheckCircle2}>
+              <input
+                type="number" required placeholder="Enter amount to pay (e.g. 2500)"
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
+              />
+            </InputWrapper>
+
+            {calculateBreakdown().base > 0 && (
+              <div className="p-8 bg-indigo-500/5 border border-white/5 rounded-[2rem] space-y-4 shadow-inner">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Total Payable</div>
+                    <div className="text-3xl font-black text-white leading-none">₹{calculateBreakdown().base.toLocaleString()}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Method</div>
+                    <div className="text-[10px] font-black text-emerald-400 bg-emerald-400/5 px-3 py-1 rounded-full border border-emerald-400/10">MANUAL QR PAYMENT</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="pt-6">
           <button
             type="submit"
             disabled={status === "loading" || !isValid()}
             className="w-full py-5 bg-white hover:bg-zinc-200 disabled:opacity-10 text-black font-black text-sm flex items-center justify-center gap-4 transition-all shadow-xl rounded-[1.5rem]"
           >
-            {status === "loading" ? "SUBMITTING APPLICATION..." : "SUBMIT APPLICATION"}
+            {status === "loading"
+              ? "PROCESSING..."
+              : (registrationType === "student" ? "PAY & SUBMIT APPLICATION" : "SUBMIT APPLICATION")}
             <Send className="w-5 h-5" />
           </button>
         </div>
