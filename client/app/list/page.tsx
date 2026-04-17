@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import axios from "axios";
 import { 
   CheckCircle2, User, Mail, Phone, Calendar, 
   BookOpen, ExternalLink, Search, Filter, 
   Trash2, Pencil, X, Info, Send 
 } from "lucide-react";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function InternshipListPage() {
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -17,12 +20,10 @@ export default function InternshipListPage() {
 
   const fetchRegistrations = async () => {
     try {
-      const res = await fetch("/api/internships/list");
-      if (!res.ok) throw new Error("Failed to fetch registrations");
-      const data = await res.json();
-      setRegistrations(data);
+      const res = await axios.get(`${API_BASE}/api/internships/list`);
+      setRegistrations(res.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.detail || err.message || "Failed to fetch registrations");
     } finally {
       setLoading(false);
     }
@@ -35,27 +36,21 @@ export default function InternshipListPage() {
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete registration for ${name}?`)) return;
     try {
-      const res = await fetch(`/api/internships/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
+      await axios.delete(`${API_BASE}/api/internships/${id}`);
       setRegistrations(prev => prev.filter(r => r.id !== id));
     } catch (err: any) {
-      alert(err.message);
+      alert(err.response?.data?.detail || err.message);
     }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`/api/internships/${editingReg.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingReg),
-      });
-      if (!res.ok) throw new Error("Failed to update");
+      await axios.patch(`${API_BASE}/api/internships/${editingReg.id}`, editingReg);
       setRegistrations(prev => prev.map(r => r.id === editingReg.id ? editingReg : r));
       setEditingReg(null);
     } catch (err: any) {
-      alert(err.message);
+      alert(err.response?.data?.detail || err.message);
     }
   };
 
@@ -63,15 +58,10 @@ export default function InternshipListPage() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      const res = await fetch(`/api/internships/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) throw new Error("Failed to update status");
+      await axios.patch(`${API_BASE}/api/internships/${id}`, { status: newStatus });
       setRegistrations(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
     } catch (err: any) {
-      alert(err.message);
+      alert(err.response?.data?.detail || err.message);
     }
   };
 
@@ -80,15 +70,11 @@ export default function InternshipListPage() {
   const handleSendEmail = async (id: string) => {
     setSendingEmailId(id);
     try {
-      const res = await fetch(`/api/internships/${id}/send-success-email`, { method: "POST" });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Failed to send email");
-      }
+      await axios.post(`${API_BASE}/api/internships/${id}/send-success-email`);
       alert("Success email sent to student!");
       setRegistrations(prev => prev.map(r => r.id === id ? { ...r, status: "paid" } : r));
     } catch (err: any) {
-      alert(err.message);
+      alert(err.response?.data?.detail || err.message || "Failed to send email");
     } finally {
       setSendingEmailId(null);
     }

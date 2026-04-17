@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, User, Phone, CheckCircle2, MessageCircle,
@@ -8,6 +9,7 @@ import {
   Target, ChevronDown, Building2, BookOpen, Mail
 } from "lucide-react";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXMteA6m8P43KS0_7yGYyWCr3v1AZ9ktMOkjvq66EbVi_qgiiJ2ABYlc5hP2Rq8NiVmA/exec";
 
 const COLLEGE_COURSES: Record<string, string[]> = {
@@ -121,31 +123,26 @@ export default function InternshipApplicationForm() {
         return;
       }
 
-      const res = await fetch("/api/internships/submit-manual", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, amount: total })
+      const res = await axios.post(`${API_BASE}/api/internships/submit-manual`, {
+        ...formData,
+        amount: total
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Submission failed");
-      }
 
       setStatus("success");
       setMessage("Application submitted successfully! Please check your email for payment instructions.");
-
+      
       // Also sync to Google Sheets as secondary record
-      fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ ...formData, registrationType, status: "pending" }),
-      });
+      axios.post(APPS_SCRIPT_URL, {
+        ...formData,
+        registrationType,
+        status: "pending"
+      }, {
+        headers: { "Content-Type": "text/plain" }
+      }).catch(err => console.error("Sheet sync failed:", err));
 
-    } catch (error: any) {
+    } catch (err: any) {
       setStatus("error");
-      setMessage(error.message || "Submission failed.");
+      setMessage(err.response?.data?.detail || err.message || "Submission failed");
     }
   };
 
