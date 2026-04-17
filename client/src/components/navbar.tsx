@@ -17,7 +17,7 @@ const NAV_LINKS = [
   { name: "About", id: "#about" },
   { name: "Companies", id: "#companies" },
   { name: "Services", id: "#services" },
-  { name: "Register", id: "/game-register" },
+  { name: "Register", id: "/register" },
   { name: "Testimonials", id: "#testimonials" },
 ];
 
