@@ -81,11 +81,14 @@ async def verify_payment(data: PaymentVerification):
 
 @router.get("/list", response_model=List[dict])
 async def list_internships():
-    cursor = internships_collection.find().sort("created_at", -1)
-    results = []
-    async for doc in cursor:
-        results.append(serialize_internship(doc))
-    return results
+    try:
+        cursor = internships_collection.find().sort("created_at", -1)
+        results = []
+        async for doc in cursor:
+            results.append(serialize_internship(doc))
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database or Serialization error: {str(e)}")
 
 @router.delete("/{internship_id}")
 async def delete_internship(internship_id: str):
