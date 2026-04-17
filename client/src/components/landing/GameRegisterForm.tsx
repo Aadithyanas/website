@@ -130,7 +130,7 @@ export default function InternshipApplicationForm() {
 
       setStatus("success");
       setMessage("Application submitted successfully! Please check your email for payment instructions.");
-      
+
       // Also sync to Google Sheets as secondary record
       axios.post(APPS_SCRIPT_URL, {
         ...formData,
@@ -382,7 +382,7 @@ export default function InternshipApplicationForm() {
                   <Dropdown
                     value={formData.internshipTrack}
                     onChange={(track: string) => setFormData({ ...formData, internshipTrack: track })}
-                    options={["Robotics", "Python Programming", "MERN Stack"]}
+                    options={["Robotics", "Python Django", "MERN Stack"]}
                     placeholder="Choose Internship Course"
                     icon={Code}
                   />
