@@ -21,6 +21,8 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 QR_CODE_PATH = os.path.join(BASE_DIR, "static", "images", "paymentqr.png")
 
+LOGO2_PATH = os.path.join(BASE_DIR, "static", "images", "logo2.png")
+
 async def send_internship_pending_email(to_email: str, student_name: str, registration_id: str, amount: float):
     msg = MIMEMultipart("related")
     msg["Subject"] = f"Action Required: Complete your Payment - {registration_id}"
@@ -31,7 +33,12 @@ async def send_internship_pending_email(to_email: str, student_name: str, regist
     <html>
       <body style="font-family: Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 40px;">
         <div style="max-width: 500px; margin: auto; background: #111; border-radius: 12px; padding: 32px; border: 1px solid #222;">
-          <h2 style="color: #a78bfa;">Application Submitted! 🚀</h2>
+          <div style="text-align: center; margin-bottom: 24px;">
+            <img src="cid:logo2" alt="AJU ED Solutions" style="width: 120px; height: auto;" />
+          </div>
+          
+          <h2 style="color: #a78bfa; text-align: center; font-size: 28px; margin-bottom: 20px;">Application Submitted!</h2>
+          
           <p>Hi <strong>{student_name}</strong>,</p>
           <p>Your internship application has been received, but your <strong>payment is currently pending</strong>.</p>
           
@@ -51,13 +58,25 @@ async def send_internship_pending_email(to_email: str, student_name: str, regist
             <img src="cid:paymentqr" alt="Payment QR Code" style="width: 250px; height: auto; border-radius: 12px; border: 4px solid #fff;" />
           </div>
 
-          <p style="color: #888; font-size: 13px;">Once we verify your payment (usually within 24 hours), your registration will be fully completed and you will receive a confirmation email.</p>
+          <p style="color: #888; font-size: 13px; text-align: center;">Once we verify your payment (usually within 24 hours), your registration will be fully completed and you will receive a confirmation email.</p>
         </div>
       </body>
     </html>
     """
     
     msg.attach(MIMEText(html, "html"))
+
+    # Attach Logo
+    if os.path.exists(LOGO2_PATH):
+        try:
+            with open(LOGO2_PATH, 'rb') as f:
+                img_data = f.read()
+                image = MIMEImage(img_data)
+                image.add_header('Content-ID', '<logo2>')
+                image.add_header('Content-Disposition', 'inline', filename="logo2.png")
+                msg.attach(image)
+        except Exception as e:
+            print(f"Error attaching logo: {e}")
 
     # Attach QR Code
     if os.path.exists(QR_CODE_PATH):
@@ -81,22 +100,21 @@ async def send_internship_pending_email(to_email: str, student_name: str, regist
     )
 
 async def send_internship_complete_email(to_email: str, student_name: str, registration_id: str, attachment: BytesIO = None):
-    msg = MIMEMultipart("mixed")
+    msg = MIMEMultipart("related")
     msg["Subject"] = f"Registration Confirmed! - {registration_id}"
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = to_email
-
-    msg_alt = MIMEMultipart("alternative")
-    msg.attach(msg_alt)
 
     html = f"""
     <html>
       <body style="font-family: Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 40px;">
         <div style="max-width: 500px; margin: auto; background: #111; border-radius: 12px; padding: 32px; border: 1px solid #222;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 50px;">🏆</div>
+          <div style="text-align: center; margin-bottom: 24px;">
+            <img src="cid:logo2" alt="AJU ED Solutions" style="width: 120px; height: auto;" />
           </div>
-          <h2 style="color: #10b981; text-align: center;">Registration Complete!</h2>
+          
+          <h2 style="color: #10b981; text-align: center; font-size: 28px; margin-bottom: 20px;">Registration Complete!</h2>
+          
           <p>Hi <strong>{student_name}</strong>,</p>
           <p>We have successfully verified your payment for the internship program.</p>
           
@@ -107,15 +125,27 @@ async def send_internship_complete_email(to_email: str, student_name: str, regis
 
           <p>Your seat is now officially reserved. You will receive further instructions regarding the onboarding process shortly.</p>
           
-          <p style="margin-top:32px; border-top: 1px solid #222; pt: 20px; color:#888; font-size:12px; text-align: center;">
+          <p style="margin-top:32px; border-top: 1px solid #222; padding-top: 20px; color:#888; font-size:12px; text-align: center;">
             Welcome to the team! If you have any questions, reply to this email.
           </p>
         </div>
       </body>
     </html>
     """
+    
+    msg.attach(MIMEText(html, "html"))
 
-    msg_alt.attach(MIMEText(html, "html"))
+    # Attach Logo
+    if os.path.exists(LOGO2_PATH):
+        try:
+            with open(LOGO2_PATH, 'rb') as f:
+                img_data = f.read()
+                image = MIMEImage(img_data)
+                image.add_header('Content-ID', '<logo2>')
+                image.add_header('Content-Disposition', 'inline', filename="logo2.png")
+                msg.attach(image)
+        except Exception as e:
+            print(f"Error attaching logo: {e}")
 
     if attachment:
         try:

@@ -71,6 +71,7 @@ export default function InternshipApplicationForm() {
 
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [regId, setRegId] = useState("");
   const [showErrors, setShowErrors] = useState(false);
   const [sameAsPhone, setSameAsPhone] = useState(false);
 
@@ -137,6 +138,7 @@ export default function InternshipApplicationForm() {
         amount: total
       });
 
+      setRegId(res.data.registration_id);
       setStatus("success");
       setMessage("Application submitted successfully! Please check your email for payment instructions.");
 
@@ -228,15 +230,23 @@ export default function InternshipApplicationForm() {
           <h3 className="text-4xl font-black text-white tracking-tight">{registrationType === "student" ? "APPLICATION RECEIVED" : "REQUEST RECEIVED"}</h3>
           <p className="text-xl text-zinc-400 max-w-md mx-auto leading-relaxed">
             {registrationType === "student"
-              ? "Your internship application has been submitted.Check the mail and complete the payment"
+              ? "Your internship application has been submitted. Check your email for payment instructions."
               : "Thank you for reaching out! Our team will contact you within 24 hours to discuss the collaboration."}
           </p>
         </div>
+
+        {regId && (
+          <div className="text-center space-y-2">
+            <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Registration ID</div>
+            <div className="text-2xl font-black text-indigo-400 font-mono tracking-wider">{regId}</div>
+          </div>
+        )}
+
         <button
-          onClick={() => { setStatus("idle"); }}
+          onClick={() => { setStatus("idle"); setRegId(""); }}
           className="px-10 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-full transition-all border border-white/5 shadow-xl"
         >
-          Submit Another Request
+          Home
         </button>
       </motion.div>
     );
@@ -440,7 +450,7 @@ export default function InternshipApplicationForm() {
                     <Dropdown
                       value={formData.internshipTrack}
                       onChange={(track: string) => setFormData({ ...formData, internshipTrack: track })}
-                      options={["Robotics", "Python Django", "MERN Stack"]}
+                      options={["Robotics", "Python Django", "MERN Stack", "UI/UX Design", "Flutter", "Data Science"]}
                       placeholder="Choose Internship Course"
                       icon={Code}
                       error={showErrors && !formData.internshipTrack}

@@ -35,11 +35,33 @@ async def create_order(amount: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Razorpay order creation failed: {str(e)}")
 
-async def generate_reg_id():
+async def generate_reg_id(track: str):
     count = await internships_collection.count_documents({})
     year = datetime.now().strftime("%y")
     month = datetime.now().strftime("%m")
-    return f"ITN-{year}{month}-{1001 + count}"
+    
+    # Course specific prefixes
+    prefixes = {
+        "MERN STACK": "MER",
+        "ROBOTICS": "ROB",
+        "PYTHON": "PY",
+        "PYTHON DJANGO": "PY",
+        "UI/UX DESIGN": "UX",
+        "FLUTTER": "FLU",
+        "DATA SCIENCE": "DS"
+    }
+    
+    # Clean track name and get prefix
+    clean_track = track.strip().upper()
+    track_code = prefixes.get(clean_track)
+    
+    seq = 1012 + count
+    
+    if track_code:
+        return f"ITN-{track_code}-{year}{month}-{seq}"
+    else:
+        # Default to just ITN if no track-specific code is found
+        return f"ITN-{year}{month}-{seq}"
 
 @router.post("/verify-payment")
 async def verify_payment(data: PaymentVerification):
@@ -60,7 +82,7 @@ async def verify_payment(data: PaymentVerification):
     internship_doc["order_id"] = data.razorpay_order_id
     internship_doc["created_at"] = datetime.utcnow()
     
-    reg_id = await generate_reg_id()
+    reg_id = await generate_reg_id(internship_doc.get("internshipTrack", ""))
     internship_doc["registration_id"] = reg_id
     
     # Amount is now passed directly from frontend
@@ -124,7 +146,7 @@ async def submit_manual(data: InternshipCreate):
     internship_doc["status"] = "pending"
     internship_doc["created_at"] = datetime.utcnow()
     
-    reg_id = await generate_reg_id()
+    reg_id = await generate_reg_id(internship_doc.get("internshipTrack", ""))
     internship_doc["registration_id"] = reg_id
     
     # 2. Save to Database
