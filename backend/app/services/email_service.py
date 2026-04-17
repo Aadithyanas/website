@@ -42,7 +42,7 @@ async def send_internship_pending_email(to_email: str, student_name: str, regist
           <ol style="color: #ccc; line-height: 1.6;">
             <li>Scan the QR code below to pay via GPay/PhonePe/Any UPI.</li>
             <li>Take a screenshot of the successful payment.</li>
-            <li>Send the screenshot to our WhatsApp: <a href="https://wa.me/918848673615" style="color: #a78bfa; font-weight: bold;">8848673615</a> along with your Reg ID.</li>
+            <li>Send the screenshot to our WhatsApp: <a href="https://wa.me/919895600610" style="color: #a78bfa; font-weight: bold;">9895600610</a> along with your Reg ID.</li>
           </ol>
 
           <div style="text-align: center; margin: 30px 0;">
@@ -480,4 +480,4 @@ async def send_internship_invoice_email(to_email: str, student_name: str, amount
         username=EMAIL_ADDRESS,
         password=EMAIL_PASSWORD,
     )
-
+
