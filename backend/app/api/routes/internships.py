@@ -35,9 +35,7 @@ async def create_order(amount: int):
 
 async def generate_reg_id():
     count = await internships_collection.count_documents({})
-    year = datetime.now().strftime("%y")
-    month = datetime.now().strftime("%m")
-    return f"ITN-{year}{month}-{1001 + count}"
+    return f"aju_inten_id_{1001 + count}"
 
 @router.post("/verify-payment")
 async def verify_payment(data: PaymentVerification):
