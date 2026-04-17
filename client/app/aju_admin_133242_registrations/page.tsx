@@ -5,7 +5,7 @@ import axios from "axios";
 import { 
   CheckCircle2, User, Mail, Phone, Calendar, 
   BookOpen, ExternalLink, Search, Filter, 
-  Trash2, Pencil, X, Info, Send 
+  Trash2, Pencil, X, Info, Send, FileText 
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -77,6 +77,15 @@ export default function InternshipListPage() {
       alert(err.response?.data?.detail || err.message || "Failed to send email");
     } finally {
       setSendingEmailId(null);
+    }
+  };
+
+  const handleDownloadInvoice = async (id: string, regId: string) => {
+    try {
+      // Use window.open for direct download from the browser if it's a direct GET
+      window.open(`${API_BASE}/api/internships/${id}/invoice`, '_blank');
+    } catch (err: any) {
+      alert("Failed to download invoice");
     }
   };
 
@@ -212,6 +221,13 @@ export default function InternshipListPage() {
                       >
                         <Send className="w-3.5 h-3.5" />
                       </button>
+                      <button 
+                        onClick={() => handleDownloadInvoice(reg.id, reg.registration_id)}
+                        title="Download Invoice"
+                        className="p-2 bg-zinc-900 border border-white/5 rounded-lg text-zinc-500 hover:text-indigo-400 transition-all"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                      </button>
                       <button onClick={() => setEditingReg(reg)} className="p-2 bg-zinc-900 border border-white/5 rounded-lg text-zinc-500 hover:text-indigo-400">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -314,6 +330,13 @@ export default function InternshipListPage() {
                               }`}
                             >
                               <Send className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDownloadInvoice(reg.id, reg.registration_id)}
+                              title="Download Invoice"
+                              className="p-2.5 bg-zinc-900 border border-white/5 rounded-xl text-zinc-500 hover:text-indigo-400 hover:border-indigo-500/30 transition-all shadow-lg"
+                            >
+                              <FileText className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => setEditingReg(reg)}

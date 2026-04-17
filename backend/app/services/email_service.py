@@ -4,6 +4,8 @@ from email.message import EmailMessage
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
+from email.mime.application import MIMEApplication
+from io import BytesIO
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -78,11 +80,14 @@ async def send_internship_pending_email(to_email: str, student_name: str, regist
         password=EMAIL_PASSWORD,
     )
 
-async def send_internship_complete_email(to_email: str, student_name: str, registration_id: str):
-    msg = MIMEMultipart("alternative")
+async def send_internship_complete_email(to_email: str, student_name: str, registration_id: str, attachment: BytesIO = None):
+    msg = MIMEMultipart("mixed")
     msg["Subject"] = f"Registration Confirmed! - {registration_id}"
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = to_email
+
+    msg_alt = MIMEMultipart("alternative")
+    msg.attach(msg_alt)
 
     html = f"""
     <html>
@@ -110,7 +115,16 @@ async def send_internship_complete_email(to_email: str, student_name: str, regis
     </html>
     """
 
-    msg.attach(MIMEText(html, "html"))
+    msg_alt.attach(MIMEText(html, "html"))
+
+    if attachment:
+        try:
+            attachment.seek(0)
+            pdf_part = MIMEApplication(attachment.read(), _subtype="pdf")
+            pdf_part.add_header('Content-Disposition', 'attachment', filename=f"Registration_Invoice_{registration_id}.pdf")
+            msg.attach(pdf_part)
+        except Exception as e:
+            print(f"Error attaching PDF: {e}")
 
     await aiosmtplib.send(
         msg,
@@ -442,11 +456,14 @@ async def send_client_invoice_email(to_email: str, client_name: str, invoice_dat
 
     msg.attach(MIMEText(html, "html"))
 
-async def send_internship_invoice_email(to_email: str, student_name: str, amount: float, registration_id: str):
-    msg = MIMEMultipart("alternative")
+async def send_internship_invoice_email(to_email: str, student_name: str, amount: float, registration_id: str, attachment: BytesIO = None):
+    msg = MIMEMultipart("mixed")
     msg["Subject"] = f"Internship Registration Invoice - {student_name}"
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = to_email
+
+    msg_alt = MIMEMultipart("alternative")
+    msg.attach(msg_alt)
 
     html = f"""
     <html>
@@ -470,7 +487,16 @@ async def send_internship_invoice_email(to_email: str, student_name: str, amount
     </html>
     """
 
-    msg.attach(MIMEText(html, "html"))
+    msg_alt.attach(MIMEText(html, "html"))
+
+    if attachment:
+        try:
+            attachment.seek(0)
+            pdf_part = MIMEApplication(attachment.read(), _subtype="pdf")
+            pdf_part.add_header('Content-Disposition', 'attachment', filename=f"Invoice_{registration_id}.pdf")
+            msg.attach(pdf_part)
+        except Exception as e:
+            print(f"Error attaching PDF: {e}")
 
     await aiosmtplib.send(
         msg,

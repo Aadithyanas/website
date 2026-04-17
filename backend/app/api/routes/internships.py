@@ -6,6 +6,8 @@ from app.services.email_service import (
     send_internship_pending_email, 
     send_internship_complete_email
 )
+from app.services.invoice_service import generate_invoice_pdf
+from fastapi.responses import StreamingResponse
 from app.core.database import internships_collection
 from bson import ObjectId
 from datetime import datetime
@@ -68,11 +70,15 @@ async def verify_payment(data: PaymentVerification):
     
     # 3. Send Email Invoice
     try:
+        # Generate Invoice PDF
+        pdf_buffer = generate_invoice_pdf(internship_doc)
+        
         await send_internship_invoice_email(
             to_email=data.internship_data.email,
             student_name=data.internship_data.name,
             amount=amount_paid,
-            registration_id=reg_id
+            registration_id=reg_id,
+            attachment=pdf_buffer
         )
     except Exception as e:
         print(f"Failed to send email: {e}")
@@ -152,12 +158,36 @@ async def send_success_email(id: str):
     
     # 3. Send Completion Email
     try:
+        # Generate Invoice PDF
+        pdf_buffer = generate_invoice_pdf(reg)
+        
         await send_internship_complete_email(
             to_email=reg["email"],
             student_name=reg["name"],
-            registration_id=reg.get("registration_id", "ID-PENDING")
+            registration_id=reg.get("registration_id", "ID-PENDING"),
+            attachment=pdf_buffer
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+        print(f"Failed to send email: {e}")
         
     return {"status": "success", "message": "Confirmation email sent"}
+
+@router.get("/{id}/invoice")
+async def get_invoice(id: str):
+    # 1. Fetch registration
+    reg = await internships_collection.find_one({"_id": ObjectId(id)})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registration not found")
+        
+    # 2. Generate PDF
+    try:
+        pdf_buffer = generate_invoice_pdf(reg)
+        filename = f"Invoice_{reg.get('registration_id', 'RECIPET')}.pdf"
+        
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate invoice: {str(e)}")

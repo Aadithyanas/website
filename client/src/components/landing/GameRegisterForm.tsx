@@ -71,33 +71,47 @@ export default function InternshipApplicationForm() {
 
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [showErrors, setShowErrors] = useState(false);
+  const [sameAsPhone, setSameAsPhone] = useState(false);
 
-  const isValid = () => {
+  const validateForm = () => {
     const contactValid = formData.phone && formData.whatsapp;
+    let baseValid = false;
 
     if (registrationType === "student") {
-      const baseValid = formData.name && formData.email && formData.educationLevel && formData.institutionName &&
+      baseValid = !!(formData.name && formData.email && formData.educationLevel && formData.institutionName &&
         formData.course && formData.stream && contactValid &&
         formData.internshipTrack && formData.internshipPeriod &&
-        formData.startDate && formData.endDate && formData.source && customAmount;
+        formData.startDate && formData.endDate && formData.source && customAmount);
 
       if (formData.educationLevel === "College") {
-        return baseValid && formData.currentYear;
+        baseValid = baseValid && !!formData.currentYear;
       }
-      return baseValid;
+    } else if (registrationType === "institution") {
+      baseValid = !!(formData.name && formData.institutionName && formData.internshipTrack &&
+        formData.internshipPeriod && contactValid);
+    } else if (registrationType === "workshop") {
+      baseValid = !!(formData.name && formData.institutionName && formData.workshopCourse &&
+        formData.durationDays && contactValid);
     }
 
-    if (registrationType === "institution") {
-      return formData.name && formData.institutionName && formData.internshipTrack &&
-        formData.internshipPeriod && contactValid;
+    if (!baseValid) return false;
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert("Please enter a valid email address.");
+      return false;
     }
 
-    if (registrationType === "workshop") {
-      return formData.name && formData.institutionName && formData.workshopCourse &&
-        formData.durationDays && contactValid;
+    // Phone validation
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      alert("Phone number must be exactly 10 digits.");
+      return false;
     }
 
-    return false;
+    return baseValid;
   };
 
 
@@ -105,13 +119,8 @@ export default function InternshipApplicationForm() {
 
   const calculateBreakdown = () => {
     const base = parseFloat(customAmount) || 0;
-    if (base === 0) return { base: 0, service: 0, gateway: 0, total: 0 };
-
-    const serviceCharge = 0;
-    const gatewayFee = 0;
-    const total = base + serviceCharge + gatewayFee;
-
-    return { base, service: serviceCharge, gateway: gatewayFee, total };
+    // Explicitly zero out all charges to ensure no overrides
+    return { base, service: 0, gateway: 0, total: base };
   };
 
   const submitManual = async () => {
@@ -148,6 +157,14 @@ export default function InternshipApplicationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowErrors(false);
+
+    if (!validateForm()) {
+      setShowErrors(true);
+      setStatus("error");
+      setMessage("Please fill in all mandatory fields marked with *");
+      return;
+    }
 
     if (registrationType === "student") {
       await submitManual();
@@ -200,11 +217,15 @@ export default function InternshipApplicationForm() {
         className="w-full max-w-2xl flex flex-col items-center justify-center space-y-8 p-12 bg-zinc-900/50 backdrop-blur-3xl border border-white/5 rounded-[3rem] text-center shadow-2xl relative"
       >
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-indigo-500/20 blur-[100px] pointer-events-none" />
-        <div className="w-24 h-24 bg-gradient-to-tr from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center border border-green-500/30">
-          <CheckCircle2 className="w-12 h-12 text-green-500" />
+        <div className="w-32 h-32 relative flex items-center justify-center">
+          <img 
+            src="/images/logo 3.png" 
+            alt="Logo" 
+            className="w-full h-full object-contain"
+          />
         </div>
         <div className="space-y-4">
-          <h3 className="text-4xl font-black text-white tracking-tight">✅ {registrationType === "student" ? "APPLICATION RECEIVED" : "REQUEST RECEIVED"}</h3>
+          <h3 className="text-4xl font-black text-white tracking-tight">{registrationType === "student" ? "APPLICATION RECEIVED" : "REQUEST RECEIVED"}</h3>
           <p className="text-xl text-zinc-400 max-w-md mx-auto leading-relaxed">
             {registrationType === "student"
               ? "Your internship application has been submitted.Check the mail and complete the payment"
@@ -223,6 +244,9 @@ export default function InternshipApplicationForm() {
 
   return (
     <div className="relative w-full max-w-4xl flex flex-col items-center gap-12 py-8 lg:py-12 lg:mt-0">
+      <div className="text-center mb-10">
+        <h2 className="text-5xl font-black text-white tracking-tight">Register Here</h2>
+      </div>
       <motion.form
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -256,27 +280,27 @@ export default function InternshipApplicationForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Column 1 */}
           <div className="space-y-8">
-            <InputWrapper label={registrationType === "student" ? "Full Name" : "Your Name / Authority Name"} icon={User}>
+            <InputWrapper label={registrationType === "student" ? "Full Name" : "Your Name / Authority Name"} icon={User} required error={showErrors && !formData.name}>
               <input
                 type="text" required placeholder="Enter Name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
+                className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.name ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
               />
             </InputWrapper>
 
             {registrationType === "student" && (
               <>
-                <InputWrapper label="Email Address" icon={Mail}>
+                <InputWrapper label="Email Address" icon={Mail} required error={showErrors && !formData.email}>
                   <input
                     type="email" required placeholder="Enter Email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
+                    className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.email ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
                   />
                 </InputWrapper>
 
-                <InputWrapper label="Education Level">
+                <InputWrapper label="Education Level" required error={showErrors && !formData.educationLevel}>
                   <Dropdown
                     value={formData.educationLevel}
                     onChange={(level: string) => setFormData({
@@ -289,29 +313,31 @@ export default function InternshipApplicationForm() {
                     options={["School", "College"]}
                     placeholder="Select Level"
                     icon={GraduationCap}
+                    error={showErrors && !formData.educationLevel}
                   />
                 </InputWrapper>
 
-                <InputWrapper label="Institution Name" icon={Building2}>
+                <InputWrapper label="Institution Name" icon={Building2} required error={showErrors && !formData.institutionName}>
                   <input
                     type="text" required placeholder={formData.educationLevel === "School" ? "School Name" : "College Name"}
                     value={formData.institutionName}
                     onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
-                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
+                    className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.institutionName ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
                   />
                 </InputWrapper>
 
-                <InputWrapper label="Select Course">
+                <InputWrapper label="Select Course" required error={showErrors && !formData.course}>
                   <Dropdown
                     value={formData.course}
                     onChange={(course: string) => setFormData({ ...formData, course, stream: "" })}
                     options={Object.keys(formData.educationLevel === "School" ? SCHOOL_COURSES : COLLEGE_COURSES)}
                     placeholder="Select Course"
                     icon={BookOpen}
+                    error={showErrors && !formData.course}
                   />
                 </InputWrapper>
 
-                <InputWrapper label="Select Stream/Board">
+                <InputWrapper label="Select Stream/Board" required error={showErrors && !formData.stream}>
                   <Dropdown
                     value={formData.stream}
                     onChange={(stream: string) => setFormData({ ...formData, stream })}
@@ -323,11 +349,12 @@ export default function InternshipApplicationForm() {
                     placeholder="Select Stream"
                     icon={Target}
                     disabled={!formData.course}
+                    error={showErrors && !formData.stream}
                   />
                 </InputWrapper>
 
                 {formData.educationLevel === "College" && (
-                  <InputWrapper label="Current Semester">
+                  <InputWrapper label="Current Semester" required error={showErrors && !formData.currentYear}>
                     <Dropdown
                       value={formData.currentYear}
                       onChange={(year: string) => setFormData({ ...formData, currentYear: year })}
@@ -337,6 +364,7 @@ export default function InternshipApplicationForm() {
                       ]}
                       placeholder="Select Semester"
                       icon={Calendar}
+                      error={showErrors && !formData.currentYear}
                     />
                   </InputWrapper>
                 )}
@@ -344,216 +372,238 @@ export default function InternshipApplicationForm() {
             )}
 
             {(registrationType === "institution" || registrationType === "workshop") && (
-              <InputWrapper label={registrationType === "institution" ? "College/School Name" : "Name of Institute"} icon={Building2}>
+              <InputWrapper label={registrationType === "institution" ? "College/School Name" : "Name of Institute"} icon={Building2} required error={showErrors && !formData.institutionName}>
                 <input
                   type="text" required placeholder="Institution Name"
                   value={formData.institutionName}
                   onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
-                  className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
+                  className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.institutionName ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
                 />
               </InputWrapper>
             )}
 
             <div className="space-y-8">
-              <InputWrapper label="Phone Number" icon={Phone}>
+              <InputWrapper label="Phone Number" icon={Phone} required error={showErrors && !formData.phone}>
                 <input
                   type="tel" required placeholder="Phone Number"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      phone: val,
+                      whatsapp: sameAsPhone ? val : prev.whatsapp 
+                    }));
+                  }}
+                  className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.phone ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
                 />
               </InputWrapper>
-              <InputWrapper label="WhatsApp Number" icon={MessageCircle}>
-                <input
-                  type="tel" required placeholder="WhatsApp Number"
-                  value={formData.whatsapp}
-                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                  className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
-                />
-              </InputWrapper>
+              
+              <div className="space-y-4">
+                <InputWrapper label="WhatsApp Number" icon={MessageCircle} required error={showErrors && !formData.whatsapp}>
+                  <input
+                    type="tel" required placeholder="WhatsApp Number"
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                    disabled={sameAsPhone}
+                    className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.whatsapp ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium disabled:opacity-50`}
+                  />
+                </InputWrapper>
+                <label className="flex items-center gap-3 cursor-pointer group ml-1">
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={sameAsPhone}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setSameAsPhone(checked);
+                        if (checked) {
+                          setFormData(prev => ({ ...prev, whatsapp: prev.phone }));
+                        }
+                      }}
+                      className="peer sr-only"
+                    />
+                    <div className="w-5 h-5 border-2 border-white/10 rounded-md bg-black/40 peer-checked:bg-indigo-500 peer-checked:border-indigo-500 transition-all" />
+                    <CheckCircle2 className="absolute w-3.5 h-3.5 text-white scale-0 peer-checked:scale-100 transition-transform left-[3px]" />
+                  </div>
+                  <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest group-hover:text-zinc-400 transition-colors">Same as Phone Number</span>
+                </label>
+              </div>
             </div>
           </div>
 
           {/* Column 2 */}
-          <div className="space-y-8">
-            {registrationType === "student" && (
-              <>
-                <InputWrapper label="Internship Course">
-                  <Dropdown
-                    value={formData.internshipTrack}
-                    onChange={(track: string) => setFormData({ ...formData, internshipTrack: track })}
-                    options={["Robotics", "Python Django", "MERN Stack"]}
-                    placeholder="Choose Internship Course"
-                    icon={Code}
-                  />
-                </InputWrapper>
+            <div className="space-y-8">
+              {registrationType === "student" && (
+                <>
+                  <InputWrapper label="Internship Course" required error={showErrors && !formData.internshipTrack}>
+                    <Dropdown
+                      value={formData.internshipTrack}
+                      onChange={(track: string) => setFormData({ ...formData, internshipTrack: track })}
+                      options={["Robotics", "Python Django", "MERN Stack"]}
+                      placeholder="Choose Internship Course"
+                      icon={Code}
+                      error={showErrors && !formData.internshipTrack}
+                    />
+                  </InputWrapper>
 
-                <InputWrapper label="Internship Duration">
-                  <Dropdown
-                    value={formData.internshipPeriod}
-                    onChange={(period: string) => setFormData({ ...formData, internshipPeriod: period })}
-                    options={["1 Week", "2 Weeks", "3 Weeks", "1 Month", "2 Months", "3 Months", "4 Months", "6 Months", "Other"]}
-                    placeholder="Select Duration"
-                    icon={Calendar}
-                  />
-                </InputWrapper>
+                  <InputWrapper label="Internship Duration" required error={showErrors && !formData.internshipPeriod}>
+                    <Dropdown
+                      value={formData.internshipPeriod}
+                      onChange={(period: string) => setFormData({ ...formData, internshipPeriod: period })}
+                      options={["1 Week", "2 Weeks", "3 Weeks", "1 Month", "2 Months", "3 Months", "4 Months", "6 Months", "Other"]}
+                      placeholder="Select Duration"
+                      icon={Calendar}
+                      error={showErrors && !formData.internshipPeriod}
+                    />
+                  </InputWrapper>
 
-                <InputWrapper label="Why Do You Want This Internship? (Optional)" icon={Target}>
-                  <textarea
+                  <InputWrapper label="Why Do You Want This Internship? (Optional)" icon={Target}>
+                    <textarea
 
-                    placeholder="Tell us about your interest and goals..."
-                    value={formData.whyInternship}
-                    onChange={(e) => setFormData({ ...formData, whyInternship: e.target.value })}
-                    rows={4}
-                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium resize-none"
-                  />
-                </InputWrapper>
+                      placeholder="Tell us about your interest and goals..."
+                      value={formData.whyInternship}
+                      onChange={(e) => setFormData({ ...formData, whyInternship: e.target.value })}
+                      rows={4}
+                      className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium resize-none"
+                    />
+                  </InputWrapper>
 
-                <InputWrapper label="Internship Start Date" icon={Calendar}>
-                  <input
-                    type="date" required
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    onClick={(e) => e.currentTarget.showPicker()}
-                    style={{ colorScheme: 'dark' }}
-                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
-                  />
-                </InputWrapper>
+                  <InputWrapper label="When would you like to start your internship" icon={Calendar} required error={showErrors && !formData.startDate}>
+                    <input
+                      type="date" required
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      onClick={(e) => e.currentTarget.showPicker()}
+                      style={{ colorScheme: 'dark' }}
+                      className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.startDate ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
+                    />
+                  </InputWrapper>
 
-                <InputWrapper label="Internship End Date" icon={Calendar}>
-                  <input
-                    type="date" required
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    onClick={(e) => e.currentTarget.showPicker()}
-                    style={{ colorScheme: 'dark' }}
-                    min={formData.startDate}
-                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
-                  />
-                </InputWrapper>
+                  <InputWrapper label="When would you like to end your internship" icon={Calendar} required error={showErrors && !formData.endDate}>
+                    <input
+                      type="date" required
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      onClick={(e) => e.currentTarget.showPicker()}
+                      style={{ colorScheme: 'dark' }}
+                      min={formData.startDate}
+                      className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.endDate ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
+                    />
+                  </InputWrapper>
 
-                <InputWrapper label="How Did You Hear About Us?">
-                  <Dropdown
-                    value={formData.source}
-                    onChange={(source: string) => setFormData({ ...formData, source })}
-                    options={[
-                      "University / College Communication",
-                      "Social Media (Instagram)",
-                      "Employee or Personal Referral",
-                      "LinkedIn",
-                      "Walk-in / On-site Inquiry",
-                      "Other"
-                    ]}
-                    placeholder="Select Source"
-                    icon={Info}
-                  />
-                </InputWrapper>
-              </>
-            )}
+                  <InputWrapper label="How Did You Hear About Us?" required error={showErrors && !formData.source}>
+                    <Dropdown
+                      value={formData.source}
+                      onChange={(source: string) => setFormData({ ...formData, source })}
+                      options={[
+                        "University / College Communication",
+                        "Social Media (Instagram)",
+                        "Employee or Personal Referral",
+                        "LinkedIn",
+                        "Walk-in / On-site Inquiry",
+                        "Other"
+                      ]}
+                      placeholder="Select Source"
+                      icon={Info}
+                      error={showErrors && !formData.source}
+                    />
+                  </InputWrapper>
+                </>
+              )}
 
-            {registrationType === "institution" && (
-              <>
-                <InputWrapper label="Choose Internship Track(s)">
-                  <Dropdown
-                    value={formData.internshipTrack}
-                    onChange={(track: string) => setFormData({ ...formData, internshipTrack: track })}
-                    options={["Robotics", "Python Django", "MERN Stack", "Custom/All"]}
-                    placeholder="Choose Course"
-                    icon={Code}
-                  />
-                </InputWrapper>
+              {registrationType === "institution" && (
+                <>
+                  <InputWrapper label="Choose Internship Track(s)" required error={showErrors && !formData.internshipTrack}>
+                    <Dropdown
+                      value={formData.internshipTrack}
+                      onChange={(track: string) => setFormData({ ...formData, internshipTrack: track })}
+                      options={["Robotics", "Python Django", "MERN Stack", "Custom/All"]}
+                      placeholder="Choose Course"
+                      icon={Code}
+                      error={showErrors && !formData.internshipTrack}
+                    />
+                  </InputWrapper>
 
-                <InputWrapper label="Contract Period" icon={Calendar}>
-                  <input
-                    type="text" required placeholder="e.g., 1 Year, 6 Months"
-                    value={formData.internshipPeriod}
-                    onChange={(e) => setFormData({ ...formData, internshipPeriod: e.target.value })}
-                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
-                  />
-                </InputWrapper>
+                  <InputWrapper label="Contract Period" icon={Calendar} required error={showErrors && !formData.internshipPeriod}>
+                    <input
+                      type="text" required placeholder="e.g., 1 Year, 6 Months"
+                      value={formData.internshipPeriod}
+                      onChange={(e) => setFormData({ ...formData, internshipPeriod: e.target.value })}
+                      className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.internshipPeriod ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
+                    />
+                  </InputWrapper>
 
-                <InputWrapper label="Brief About Your Idea / Collaboration" icon={Target}>
-                  <textarea
-                    required
-                    placeholder="Tell us about your requirements or collaboration ideas..."
-                    value={formData.whyInternship}
-                    onChange={(e) => setFormData({ ...formData, whyInternship: e.target.value })}
-                    rows={6}
-                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium resize-none"
-                  />
-                </InputWrapper>
-              </>
-            )}
+                  <InputWrapper label="Brief About Your Idea / Collaboration" icon={Target} required error={showErrors && !formData.whyInternship}>
+                    <textarea
+                      required
+                      placeholder="Tell us about your requirements or collaboration ideas..."
+                      value={formData.whyInternship}
+                      onChange={(e) => setFormData({ ...formData, whyInternship: e.target.value })}
+                      rows={6}
+                      className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.whyInternship ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium resize-none`}
+                    />
+                  </InputWrapper>
+                </>
+              )}
 
-            {registrationType === "workshop" && (
-              <>
-                <InputWrapper label="Choose Workshop Subject">
-                  <Dropdown
-                    value={formData.workshopCourse}
-                    onChange={(course: string) => setFormData({ ...formData, workshopCourse: course })}
-                    options={["Robotics Workshop", "coding Workshop", "AI & ML Workshop", "IoT Workshop", "Other"]}
-                    placeholder="Choose Workshop"
-                    icon={BookOpen}
-                  />
-                </InputWrapper>
+              {registrationType === "workshop" && (
+                <>
+                  <InputWrapper label="Choose Workshop Subject" required error={showErrors && !formData.workshopCourse}>
+                    <Dropdown
+                      value={formData.workshopCourse}
+                      onChange={(course: string) => setFormData({ ...formData, workshopCourse: course })}
+                      options={["Robotics Workshop", "coding Workshop", "AI & ML Workshop", "IoT Workshop", "Other"]}
+                      placeholder="Choose Workshop"
+                      icon={BookOpen}
+                      error={showErrors && !formData.workshopCourse}
+                    />
+                  </InputWrapper>
 
-                <InputWrapper label="How many days you want?" icon={Calendar}>
-                  <input
-                    type="text" required placeholder="e.g., 2 Days, 3 Days"
-                    value={formData.durationDays}
-                    onChange={(e) => setFormData({ ...formData, durationDays: e.target.value })}
-                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
-                  />
-                </InputWrapper>
+                  <InputWrapper label="How many days you want?" icon={Calendar} required error={showErrors && !formData.durationDays}>
+                    <input
+                      type="text" required placeholder="e.g., 2 Days, 3 Days"
+                      value={formData.durationDays}
+                      onChange={(e) => setFormData({ ...formData, durationDays: e.target.value })}
+                      className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.durationDays ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
+                    />
+                  </InputWrapper>
 
-                <InputWrapper label="Brief Requirements" icon={Target}>
-                  <textarea
-                    required
-                    placeholder="Tell us about the target audience and specific topics..."
-                    value={formData.whyInternship}
-                    onChange={(e) => setFormData({ ...formData, whyInternship: e.target.value })}
-                    rows={6}
-                    className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium resize-none"
-                  />
-                </InputWrapper>
-              </>
-            )}
-          </div>
+                  <InputWrapper label="Brief Requirements" icon={Target} required error={showErrors && !formData.whyInternship}>
+                    <textarea
+                      required
+                      placeholder="Tell us about the target audience and specific topics..."
+                      value={formData.whyInternship}
+                      onChange={(e) => setFormData({ ...formData, whyInternship: e.target.value })}
+                      rows={6}
+                      className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !formData.whyInternship ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium resize-none`}
+                    />
+                  </InputWrapper>
+                </>
+              )}
+            </div>
 
         </div>
 
         {registrationType === "student" && (
           <div className="space-y-6 mb-8">
-            <InputWrapper label="Internship Fee (Base)" icon={CheckCircle2}>
+            <InputWrapper label="Internship Fee (Base)" icon={CheckCircle2} required error={showErrors && !customAmount}>
               <input
                 type="number" required placeholder="Enter amount to pay (e.g. 2500)"
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
-                className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
+                className={`w-full pl-14 pr-6 py-5 bg-black/40 border ${showErrors && !customAmount ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-all font-medium`}
               />
             </InputWrapper>
 
-            {calculateBreakdown().base > 0 && (
-              <div className="p-8 bg-indigo-500/5 border border-white/5 rounded-[2rem] space-y-4 shadow-inner">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Total Payable</div>
-                    <div className="text-3xl font-black text-white leading-none">₹{calculateBreakdown().base.toLocaleString()}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Method</div>
-                    <div className="text-[10px] font-black text-emerald-400 bg-emerald-400/5 px-3 py-1 rounded-full border border-emerald-400/10">MANUAL QR PAYMENT</div>
-                  </div>
-                </div>
-              </div>
-            )}
+          
           </div>
         )}
 
         <div className="pt-6">
           <button
             type="submit"
-            disabled={status === "loading" || !isValid()}
+            disabled={status === "loading"}
             className="w-full py-5 bg-white hover:bg-zinc-200 disabled:opacity-10 text-black font-black text-sm flex items-center justify-center gap-4 transition-all shadow-xl rounded-[1.5rem]"
           >
             {status === "loading"
@@ -571,24 +621,26 @@ export default function InternshipApplicationForm() {
   );
 }
 
-const InputWrapper = ({ label, children, icon: Icon }: any) => (
+const InputWrapper = ({ label, children, icon: Icon, required, error }: any) => (
   <div className="space-y-3">
-    <label className="text-zinc-500 text-[10px] font-black uppercase tracking-widest ml-1">{label}</label>
+    <label className={`text-[10px] font-black uppercase tracking-widest ml-1 transition-colors ${error ? 'text-red-500' : 'text-zinc-500'}`}>
+      {label} {required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
     <div className="relative group">
-      {Icon && <Icon className="absolute left-5 top-5 w-5 h-5 text-zinc-600 group-focus-within:text-indigo-400 transition-colors pointer-events-none" />}
+      {Icon && <Icon className={`absolute left-5 top-5 w-5 h-5 transition-colors pointer-events-none ${error ? 'text-red-500/50' : 'text-zinc-600 group-focus-within:text-indigo-400'}`} />}
       {children}
     </div>
   </div>
 );
 
-const Dropdown = ({ value, onChange, options, placeholder, icon: Icon, disabled = false }: any) => (
+const Dropdown = ({ value, onChange, options, placeholder, icon: Icon, disabled = false, error }: any) => (
   <div className="relative group">
-    {Icon && <Icon className="absolute left-5 top-5 w-5 h-5 text-zinc-600 group-focus-within:text-indigo-400 transition-colors pointer-events-none z-10" />}
+    {Icon && <Icon className={`absolute left-5 top-5 w-5 h-5 transition-colors pointer-events-none z-10 ${error ? 'text-red-500/50' : 'text-zinc-600 group-focus-within:text-indigo-400'}`} />}
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className={`w-full ${Icon ? "pl-14" : "pl-6"} pr-12 py-5 bg-black/40 border border-white/5 rounded-[1.5rem] text-white appearance-none focus:outline-none focus:border-indigo-500/50 transition-all font-medium disabled:opacity-20`}
+      className={`w-full ${Icon ? "pl-14" : "pl-6"} pr-12 py-5 bg-black/40 border ${error ? 'border-red-500/50' : 'border-white/5'} rounded-[1.5rem] text-white appearance-none focus:outline-none focus:border-indigo-500/50 transition-all font-medium disabled:opacity-20`}
     >
       <option value="" disabled className="bg-zinc-900">{placeholder}</option>
       {options.map((opt: any) => {
