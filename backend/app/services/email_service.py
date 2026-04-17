@@ -15,7 +15,9 @@ except ImportError:
     EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
-QR_CODE_PATH = r"c:\Dev\Github repo\website\client\public\images\paymentqr.png"
+# Get absolute path to the static images folder within backend/app
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+QR_CODE_PATH = os.path.join(BASE_DIR, "static", "images", "paymentqr.png")
 
 async def send_internship_pending_email(to_email: str, student_name: str, registration_id: str, amount: float):
     msg = MIMEMultipart("related")
