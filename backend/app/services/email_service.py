@@ -113,12 +113,12 @@ async def send_internship_complete_email(to_email: str, student_name: str, regis
             <img src="cid:logo2" alt="AJU ED Solutions" style="width: 120px; height: auto;" />
           </div>
           
-          <h2 style="color: #10b981; text-align: center; font-size: 28px; margin-bottom: 20px;">Registration Complete!</h2>
+          <h2 style="color: #a78bfa; text-align: center; font-size: 28px; margin-bottom: 20px;">Registration Completed</h2>
           
           <p>Hi <strong>{student_name}</strong>,</p>
           <p>We have successfully verified your payment for the internship program.</p>
           
-          <div style="background: #064e3b; padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #065f46; text-align: center;">
+          <div style="background:#a78bfa ; padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #065f46; text-align: center;">
             <p style="margin: 0; font-size: 14px; color: #a7f3d0;">REGISTRATION ID</p>
             <p style="margin: 5px 0 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; color: #fff;">{registration_id}</p>
           </div>

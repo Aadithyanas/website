@@ -24,6 +24,7 @@ const COLLEGE_COURSES: Record<string, string[]> = {
   ],
   "Diploma": [
     "Computer Engineering",
+    "Computer Hardware Engineering",
     "Information Technology",
     "Electronics",
     "Mechanical",

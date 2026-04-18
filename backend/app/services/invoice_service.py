@@ -57,8 +57,8 @@ def generate_invoice_pdf(data: dict) -> BytesIO:
     # Left Content
     address_p = Paragraph(
         "<b>AJU ED Solutions LLP</b><br/>"
-        "ScrumSpace CoWorks, Arikkadamukku, South,<br/>"
-        "Thiruvananthapuram, Nemom, Kerala 695020<br/><br/>"
+        "ScrumSpace CoWorks,<br/>"
+        "Thiruvananthapuram South, Kerala 695020<br/><br/>"
         "<b>Invoice No.</b>  inv-" + data.get('registration_id', '00000').split('-')[-1].zfill(5) + "<br/>"
         "<b>Payment Date</b> " + datetime.now().strftime('%B %d, %Y'), 
         company_info_style
@@ -113,7 +113,7 @@ def generate_invoice_pdf(data: dict) -> BytesIO:
 
     customer_data = [
         ["Student Name", Paragraph(data.get('name', 'N/A'), styles['Normal'])],
-        ["Student Number", Paragraph(data.get('registration_id', 'N/A'), styles['Normal'])],
+        ["Registration ID", Paragraph(data.get('registration_id', 'N/A'), styles['Normal'])],
         ["Mobile Number", Paragraph(data.get('phone', 'N/A'), styles['Normal'])]
     ]
     t_cust = Table(customer_data, colWidths=[1.8*inch, 4.7*inch])
@@ -149,7 +149,7 @@ def generate_invoice_pdf(data: dict) -> BytesIO:
         ["Internship Track", data.get('internshipTrack', 'N/A')],
         ["Course/Program", data.get('course', 'N/A')],
         ["Internship Period", data.get('internshipPeriod', 'N/A')],
-        ["Institution", data.get('institutionName', 'N/A')],
+        ["Organisation", data.get('institutionName', 'N/A')],
     ]
     
     # Format details into a single Paragraph for the left cell
@@ -174,7 +174,7 @@ def generate_invoice_pdf(data: dict) -> BytesIO:
 
     # 5. Grand Total Row
     total_data = [
-        ["", "TOTAL AMOUNT", amount_val]
+        ["", "TOTAL", amount_val]
     ]
     t_total = Table(total_data, colWidths=[3.8*inch, 1.5*inch, 1.2*inch])
     t_total.setStyle(TableStyle([
@@ -192,7 +192,7 @@ def generate_invoice_pdf(data: dict) -> BytesIO:
     elements.append(t_total)
     
     elements.append(Spacer(1, 40))
-    footer_text = "Thank you for choosing AJU Educational Solutions. This is an electronically generated receipt."
+    footer_text = "Thank you for choosing AJU Ed Solutions. This is an electronically generated receipt."
     elements.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=styles['Normal'], alignment=1, fontSize=9, textColor=colors.grey)))
 
     # Build PDF
