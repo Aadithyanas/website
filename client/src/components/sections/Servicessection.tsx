@@ -194,20 +194,25 @@ const COMPANY_META: Record<CompanyId, { label: string; color: string; icon: Reac
   scrumspace:    { label: "ScrumSpace CoWorks", color: "#f472b6",  icon: <Building size={14} /> },
 };
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+const VP   = { once: true, amount: 0.18 };
+
+
 // ── GridItem ──────────────────────────────────────────────────────────────────
 const GridItem = ({ area, icon, title, description, image }: {
   area: string; icon: React.ReactNode; title: string; description: string; image: string;
 }) => (
   <li className={["min-h-[16rem] list-none", area].join(" ")}>
     <div
-      className="relative h-full rounded-[1.25rem] border p-2 md:rounded-[1.5rem] md:p-3"
+      className="relative h-full rounded-[1.25rem] border p-2 md:rounded-[1.5rem] md:p-3 transition-all duration-500"
       style={{
         borderColor: "rgba(99,102,241,0.15)",
-        /* Neumorphic outer shadow on card wrapper */
-        boxShadow: "5px 5px 18px rgba(0,0,0,0.52), -2px -2px 10px rgba(255,255,255,0.04)",
+        /* More refined premium shadow depth */
+        boxShadow: "0 12px 40px -12px rgba(0,0,0,0.7), 5px 5px 18px rgba(0,0,0,0.5), -2px -2px 10px rgba(255,255,255,0.04)",
       }}
     >
-      <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} />
+      <GlowingEffect spread={50} glow={true} disabled={false} proximity={80} inactiveZone={0.01} borderWidth={2} />
+
       <div
         className="group relative flex h-full flex-col overflow-hidden rounded-xl border shadow-none"
         style={{
@@ -360,10 +365,15 @@ export const ServicesSection = () => {
             {visibleServices.map((svc, i) => (
               <motion.div
                 key={svc.key}
-                initial={{ opacity: 0, y: 24, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -16, scale: 0.97 }}
-                transition={{ duration: 0.4, delay: i * 0.07, ease: [0.34, 1.1, 0.64, 1] }}
+                initial={{ opacity: 0, y: 32, scale: 0.96, filter: "blur(4px)" }}
+                whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                viewport={VP}
+                exit={{ opacity: 0, y: -20, scale: 0.96 }}
+                transition={{
+                  duration: 0.7,
+                  delay: i * 0.08,
+                  ease: EASE
+                }}
                 className={["list-none", areaMap[i] ?? ""].join(" ")}
                 style={{ listStyle: "none" }}
               >

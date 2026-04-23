@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Star, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const VP   = { once: true, amount: 0.15 };
+const VP   = { once: true, amount: 0.2 };
 
-const fadeUp = (delay = 0, distance = 24) => ({
-  hidden:  { opacity: 0, y: distance, filter: "blur(5px)" },
+const fadeUp = (delay = 0, distance = 32) => ({
+  hidden:  { opacity: 0, y: distance, filter: "blur(6px)" },
   visible: {
     opacity: 1, y: 0, filter: "blur(0px)",
-    transition: { duration: 0.75, delay, ease: EASE },
+    transition: { duration: 0.8, delay, ease: EASE },
   },
 });
 

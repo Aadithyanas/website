@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const VP   = { once: true, amount: 0.12 };
+const VP   = { once: true, amount: 0.2 };
 
 const fadeUp = (delay = 0, distance = 28) => ({
   hidden:  { opacity: 0, y: distance, filter: "blur(6px)" },

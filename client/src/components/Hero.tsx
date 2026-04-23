@@ -192,7 +192,9 @@ const Hero = () => {
           display: block; font-size: clamp(2.6rem, 6vw, 6rem);
           background: linear-gradient(135deg, #eef2ff 0%, #a5b4fc 50%, #818cf8 100%);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+          text-shadow: 0 0 30px rgba(99,102,241,0.3);
         }
+
         .line-2 { display: flex; align-items: baseline; gap: 0.2em; margin-top: -0.05em; }
         .solutions-text {
           font-family: 'Rajdhani', sans-serif; font-weight: 700;
@@ -243,15 +245,17 @@ const Hero = () => {
           position: relative; font-family: 'Syne', sans-serif; font-size: 0.82rem;
           font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
           color: #fff; background: linear-gradient(135deg, #6366f1 0%, #818cf8 60%, #06d6a0 100%);
-          border: none; border-radius: 100px; padding: 13px 28px; cursor: pointer;
+          border: none; border-radius: 100px; padding: 13px 32px; cursor: pointer;
           overflow: hidden;
-          box-shadow: 0 4px 20px rgba(99,102,241,0.45), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04);
-          transition: box-shadow 0.3s, transform 0.2s;
+          box-shadow: 0 10px 25px -5px rgba(99,102,241,0.5), 0 4px 10px -5px rgba(0,0,0,0.5);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 36px rgba(99,102,241,0.65), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04);
+          transform: translateY(-3px) scale(1.02);
+          box-shadow: 0 20px 35px -10px rgba(99,102,241,0.6), 0 10px 20px -10px rgba(0,0,0,0.4);
         }
+
         .btn-outline {
           position: relative; font-family: 'Syne', sans-serif; font-size: 0.82rem;
           font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;

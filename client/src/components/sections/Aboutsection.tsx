@@ -4,13 +4,13 @@ import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const VP   = { once: true, amount: 0.15 };
+const VP   = { once: true, amount: 0.2 };
 
-const fadeUp = (delay = 0, distance = 24) => ({
-  hidden:  { opacity: 0, y: distance, filter: "blur(4px)" },
+const fadeUp = (delay = 0, distance = 28) => ({
+  hidden:  { opacity: 0, y: distance, filter: "blur(6px)" },
   visible: {
     opacity: 1, y: 0, filter: "blur(0px)",
-    transition: { duration: 0.75, delay, ease: EASE },
+    transition: { duration: 0.85, delay, ease: EASE },
   },
 });
 
