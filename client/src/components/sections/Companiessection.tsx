@@ -31,7 +31,7 @@ const COMPANIES: {
     {
       id: "techzora",
       icon: <Cpu size={30} />,
-      title: "AJU TECHZORA",
+      title: "AJU Techzora",
       tagline: "Tech & Innovation",
       desc: "Web and mobile development, IoT, Robotics, AI/ML & Tech Solutions at low cost for customers and enterprises.",
       color: "#818cf8",
@@ -55,7 +55,7 @@ const COMPANIES: {
     {
       id: "scrumspace",
       icon: <Building size={30} />,
-      title: "ScrumSpace CoWorks",
+      title: "Scrumspace Coworks",
       tagline: "Community & Workspace",
       desc: "Modern coworking spaces with community-driven initiatives for startups and creators.",
       color: "#f472b6",
@@ -109,7 +109,7 @@ export const CompaniesSection = () => {
             className="font-mono tracking-widest uppercase text-sm mb-4"
             style={{ color: "rgba(99,102,241,0.85)" }}
           >
-            Our Ventures
+            Our Branches
           </motion.p>
           <motion.h3
             variants={fadeUp(0.1, 24)} initial="hidden" whileInView="visible" viewport={VP}
@@ -126,7 +126,7 @@ export const CompaniesSection = () => {
             className="text-lg mb-2"
             style={{ color: "rgba(176,190,220,0.75)" }}
           >
-            Innovating across multiple domains under the AJU umbrella
+            Explore AJU ED Solutions branches including AJU Techzora, AJU Brandify and Scrumspace Coworks offering tech, branding and coworking services in Kerala.
           </motion.p>
           <motion.p
             variants={fadeUp(0.24, 12)} initial="hidden" whileInView="visible" viewport={VP}

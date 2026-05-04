@@ -142,12 +142,11 @@ export const AboutSection = () => {
           className="text-base md:text-lg max-w-2xl leading-relaxed mb-16 sm:mb-20"
           style={{ color: "rgba(176,190,220,0.85)" }}
         >
-          <strong className="font-semibold" style={{ color: "#eef2ff" }}>AJU ED SOLUTIONS</strong> is redefining
-          education &amp; technology with{" "}
+          <strong className="font-semibold" style={{ color: "#eef2ff" }}>AJU ED SOLUTIONS</strong> is a leading{" "}
           <span style={{ color: "#a5b4fc", fontWeight: 500 }}>
-            AI, ML, IoT, Robotics, ERP &amp; Web
+            AI, robotics &amp; EdTech company in Kerala
           </span>{" "}
-          solutions — empowering students, institutions, and enterprises.
+          delivering innovative tech training, advanced web solutions, and empowering students, institutions, and enterprises.
         </motion.p>
 
         {/* Mission / Vision / Values */}

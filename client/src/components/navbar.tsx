@@ -15,7 +15,7 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 const NAV_LINKS = [
   { name: "Home", id: "#home" },
   { name: "About", id: "#about" },
-  { name: "Companies", id: "#companies" },
+  { name: "Branches", id: "#companies" },
   { name: "Services", id: "#services" },
   { name: "Register", id: "/register" },
   { name: "Testimonials", id: "#testimonials" },

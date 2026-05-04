@@ -15,12 +15,19 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Aju Ed Solutions — AI, ML, IoT & Web Innovation",
+  title: "AJU ED Solutions | AI, Robotics & BTech Coaching Kerala",
   description:
-    "AJU ED SOLUTIONS LLP — Redefining education & technology with AI, ML, IoT, Robotics, ERP & Web solutions. Empowering students, institutions, and enterprises.",
+    "Build your future with AI, robotics, BTech coaching, internships & web solutions at AJU ED Solutions, Kerala’s trusted tech education partner.",
+  keywords: [
+    "AI solutions Kerala", "Robotics training Kerala", "BTech coaching Kerala", "Machine learning Kerala", "EdTech Kerala", "IoT solutions Kerala",
+    "AI company Kerala", "Robotics experts Kerala", "EdTech company Kerala", "Technology training Kerala",
+    "AJU branches", "AJU Techzora", "AJU Brandify", "Scrumspace Coworks", "Tech services Kerala", "Branding agency Kerala", "Coworking space Kerala",
+    "Internships Kerala", "Project training Kerala", "Robotics projects Kerala", "AI training Kerala",
+    "AJU ED Solutions reviews", "Student testimonials Kerala", "BTech coaching reviews", "Internship reviews Kerala", "AI training feedback"
+  ],
   openGraph: {
-    title: "Aju Ed Solutions",
-    description: "Innovate. Educate. Empower.",
+    title: "AJU ED Solutions | AI, Robotics & BTech Coaching Kerala",
+    description: "Build your future with AI, robotics, BTech coaching, internships & web solutions at AJU ED Solutions, Kerala’s trusted tech education partner.",
   },
 };
 

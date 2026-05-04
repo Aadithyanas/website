@@ -345,7 +345,7 @@ export const ServicesSection = () => {
               style={{ color: "rgba(176,190,220,0.72)" }}
             >
               {activeCompany === "default"
-                ? "Empowering education, enterprises, and innovators with futuristic solutions."
+                ? "Get expert BTech coaching, internships and project support in AI, robotics & web development at AJU ED Solutions, Kerala."
                 : `Showing services offered by ${meta.label}. Click a company above to switch.`}
             </p>
           </motion.div>

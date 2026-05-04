@@ -402,10 +402,10 @@ const Hero = () => {
           <p className="tagline" ref={taglineRef}>
             Innovate. Educate. Empower.<br />
             <strong>Shaping the future</strong> through AI, Machine Learning,
-            IoT, Robotics &amp; cutting-edge Web Solutions.
+            IoT, Robotics, BTech coaching &amp; cutting-edge Web Solutions in Kerala.
           </p>
           <div className="badges-row" ref={badgesRef}>
-            {["AI", "ML", "IoT", "Robotics", "Web Dev", "Research"].map((t, i) => (
+            {["AI", "Robotics", "BTech Coaching", "Machine Learning", "IoT", "Web Dev"].map((t, i) => (
               <TechBadge key={t} label={t} delay={i * 0.15} />
             ))}
           </div>
