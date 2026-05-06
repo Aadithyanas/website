@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node --max-old-space-size=8192 node_modules/next/dist/bin/next dev --webpack",
+    "build": "node --max-old-space-size=8192 node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -12,8 +12,6 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
-    "@splinetool/react-spline": "^4.1.0",
-    "@splinetool/runtime": "^1.12.69",
     "@types/three": "^0.183.1",
     "animejs": "^4.3.6",
     "axios": "^1.13.6",

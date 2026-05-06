@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
 gsap.registerPlugin(ScrollToPlugin);
@@ -15,8 +15,16 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 const NAV_LINKS = [
   { name: "Home", id: "#home" },
   { name: "About", id: "#about" },
-  { name: "Branches", id: "#companies" },
+  { 
+    name: "Branches", 
+    dropdown: [
+      { name: "AJU Techzora", id: "/branches/techzora" },
+      { name: "AJU Brandify", id: "/branches/brandify" },
+      { name: "Scrumspace", id: "/branches/scrumspace" },
+    ]
+  },
   { name: "Services", id: "#services" },
+  { name: "Careers", id: "#careers" },
   { name: "Register", id: "/register" },
   { name: "Testimonials", id: "#testimonials" },
 ];
@@ -26,7 +34,7 @@ function useActiveSection(ids: string[]) {
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
     ids.forEach((id) => {
-      if (!id.startsWith("#")) return;
+      if (!id || !id.startsWith("#")) return;
       const el = document.querySelector(id);
       if (!el) return;
       const obs = new IntersectionObserver(
@@ -44,12 +52,13 @@ function useActiveSection(ids: string[]) {
 const Nav = () => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
   const [scrollPct, setScrollPct] = useState(0);
   const navRef = useRef<HTMLElement>(null);
   const router = useRouter();
   const pathname = usePathname();
 
-  const sectionIds = NAV_LINKS.map((l) => l.id);
+  const sectionIds = NAV_LINKS.map((l) => l.id).filter((id): id is string => !!id);
   const active = useActiveSection(sectionIds);
 
   useEffect(() => {
@@ -77,6 +86,7 @@ const Nav = () => {
 
   const scrollTo = useCallback((id: string) => {
     setMenuOpen(false);
+    setBranchDropdownOpen(false);
 
     // If it's a direct page link (starts with /)
     if (id.startsWith("/")) {
@@ -168,56 +178,131 @@ const Nav = () => {
           {/* ── Desktop links ── */}
           <ul className="hidden lg:flex items-center gap-1">
             {NAV_LINKS.map((link) => {
-              const isActive = active === link.id.replace("#", "");
+              const isActive = link.id ? active === link.id.replace("#", "") : false;
+              const isBranches = link.name === "Branches";
+              
               return (
-                <li key={link.name}>
-                  <button
-                    onClick={() => scrollTo(link.id)}
-                    className="relative px-4 py-2 rounded-xl text-xs font-medium tracking-[0.14em] uppercase"
-                    style={{
-                      color: isActive ? "#a5b4fc" : "rgba(160,180,220,0.6)",
-                      background: isActive ? "rgba(99,102,241,0.1)" : "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      fontFamily: "'DM Sans', 'Inter', sans-serif",
-                      transition: "color 0.2s ease, background 0.2s ease",
-                      /* Subtle neumorphic press on active */
-                      boxShadow: isActive
-                        ? "inset 2px 2px 6px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)"
-                        : "none",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) {
-                        (e.currentTarget as HTMLButtonElement).style.color = "#a5b4fc";
-                        (e.currentTarget as HTMLButtonElement).style.background = "rgba(99,102,241,0.06)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        (e.currentTarget as HTMLButtonElement).style.color = "rgba(160,180,220,0.6)";
-                        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                      }
-                    }}
-                  >
-                    {link.name}
-                    <AnimatePresence>
-                      {isActive && (
-                        <motion.span
-                          layoutId="nav-pill"
-                          className="absolute bottom-1 left-1/2 -translate-x-1/2 h-[2px] rounded-full"
-                          style={{
-                            width: "60%",
-                            background: "linear-gradient(90deg, #6366f1, #06d6a0)",
-                            boxShadow: "0 0 8px rgba(99,102,241,0.7)",
-                          }}
-                          initial={{ opacity: 0, scaleX: 0 }}
-                          animate={{ opacity: 1, scaleX: 1 }}
-                          exit={{ opacity: 0, scaleX: 0 }}
-                          transition={{ duration: 0.3, ease: EASE }}
-                        />
-                      )}
-                    </AnimatePresence>
-                  </button>
+                <li key={link.name} className="relative group">
+                  {isBranches ? (
+                    <div 
+                      className="relative"
+                      onMouseEnter={() => setBranchDropdownOpen(true)}
+                      onMouseLeave={() => setBranchDropdownOpen(false)}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setBranchDropdownOpen(!branchDropdownOpen);
+                        }}
+                        className="relative px-4 py-2 rounded-xl text-xs font-medium tracking-[0.14em] uppercase flex items-center gap-1"
+                        style={{
+                          color: isActive ? "#a5b4fc" : "rgba(160,180,220,0.6)",
+                          background: isActive ? "rgba(99,102,241,0.1)" : "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          fontFamily: "'DM Sans', 'Inter', sans-serif",
+                          transition: "color 0.2s ease, background 0.2s ease",
+                          boxShadow: isActive
+                            ? "inset 2px 2px 6px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)"
+                            : "none",
+                        }}
+                      >
+                        {link.name}
+                        <ChevronDown size={12} className={`transition-transform duration-300 ${branchDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      <AnimatePresence>
+                        {branchDropdownOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            transition={{ duration: 0.2, ease: EASE }}
+                            className="absolute top-full left-0 mt-2 w-56 rounded-2xl overflow-hidden"
+                            style={{
+                              background: "rgba(10,10,12,0.98)",
+                              backdropFilter: "blur(20px)",
+                              border: "1px solid rgba(99,102,241,0.2)",
+                              boxShadow: "0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.1)",
+                              zIndex: 100,
+                            }}
+                          >
+                            <div className="py-2">
+                              {link.dropdown?.map((item) => (
+                                <button
+                                  key={item.name}
+                                  onClick={() => scrollTo(item.id)}
+                                  className="w-full text-left px-5 py-3 text-[10px] font-bold tracking-widest uppercase hover:text-white transition-colors"
+                                  style={{
+                                    color: "rgba(176,190,220,0.7)",
+                                    borderBottom: "1px solid rgba(255,255,255,0.03)",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(99,102,241,0.1)";
+                                    (e.currentTarget as HTMLButtonElement).style.color = "#a5b4fc";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                                    (e.currentTarget as HTMLButtonElement).style.color = "rgba(176,190,220,0.7)";
+                                  }}
+                                >
+                                  {item.name}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => link.id && scrollTo(link.id)}
+                      className="relative px-4 py-2 rounded-xl text-xs font-medium tracking-[0.14em] uppercase"
+                      style={{
+                        color: isActive ? "#a5b4fc" : "rgba(160,180,220,0.6)",
+                        background: isActive ? "rgba(99,102,241,0.1)" : "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        fontFamily: "'DM Sans', 'Inter', sans-serif",
+                        transition: "color 0.2s ease, background 0.2s ease",
+                        boxShadow: isActive
+                          ? "inset 2px 2px 6px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)"
+                          : "none",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) {
+                          (e.currentTarget as HTMLButtonElement).style.color = "#a5b4fc";
+                          (e.currentTarget as HTMLButtonElement).style.background = "rgba(99,102,241,0.06)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) {
+                          (e.currentTarget as HTMLButtonElement).style.color = "rgba(160,180,220,0.6)";
+                          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                        }
+                      }}
+                    >
+                      {link.name}
+                      <AnimatePresence>
+                        {isActive && (
+                          <motion.span
+                            layoutId="nav-pill"
+                            className="absolute bottom-1 left-1/2 -translate-x-1/2 h-[2px] rounded-full"
+                            style={{
+                              width: "60%",
+                              background: "linear-gradient(90deg, #6366f1, #06d6a0)",
+                              boxShadow: "0 0 8px rgba(99,102,241,0.7)",
+                            }}
+                            initial={{ opacity: 0, scaleX: 0 }}
+                            animate={{ opacity: 1, scaleX: 1 }}
+                            exit={{ opacity: 0, scaleX: 0 }}
+                            transition={{ duration: 0.3, ease: EASE }}
+                          />
+                        )}
+                      </AnimatePresence>
+                    </button>
+                  )}
                 </li>
               );
             })}
@@ -236,7 +321,6 @@ const Nav = () => {
                   backdropFilter: "blur(8px)",
                   fontFamily: "'DM Sans', 'Inter', sans-serif",
                   transition: "all 0.3s ease",
-                  /* Neumorphic shadow on button */
                   boxShadow: "3px 3px 10px rgba(0,0,0,0.4), -1px -1px 6px rgba(255,255,255,0.04)",
                 }}
                 onMouseEnter={(e) => {
@@ -264,10 +348,7 @@ const Nav = () => {
                 <span className="relative z-10">Contact Us</span>
               </motion.button>
             </li>
-
-
           </ul>
-
 
           <motion.button
             className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl"
@@ -324,7 +405,9 @@ const Nav = () => {
             >
               <ul className="flex flex-col px-4 py-5 gap-1">
                 {NAV_LINKS.map((link, i) => {
-                  const isActive = active === link.id.replace("#", "");
+                  const isActive = link.id ? active === link.id.replace("#", "") : false;
+                  const isBranches = link.name === "Branches";
+
                   return (
                     <motion.li
                       key={link.name}
@@ -332,32 +415,85 @@ const Nav = () => {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.3, delay: i * 0.05, ease: EASE }}
                     >
-                      <button
-                        onClick={() => scrollTo(link.id)}
-                        className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium tracking-[0.12em] uppercase"
-                        style={{
-                          color: isActive ? "#a5b4fc" : "rgba(160,180,220,0.6)",
-                          background: isActive ? "rgba(99,102,241,0.1)" : "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          fontFamily: "'Inter', sans-serif",
-                          boxShadow: isActive
-                            ? "inset 2px 2px 6px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)"
-                            : "none",
-                          transition: "all 0.2s ease",
-                        }}
-                      >
-                        <span
-                          className="w-[2px] h-4 rounded-full shrink-0"
+                      {isBranches ? (
+                        <div className="flex flex-col">
+                          <button
+                            onClick={() => setBranchDropdownOpen(!branchDropdownOpen)}
+                            className="w-full text-left flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium tracking-[0.12em] uppercase"
+                            style={{
+                              color: isActive ? "#a5b4fc" : "rgba(160,180,220,0.6)",
+                              background: isActive ? "rgba(99,102,241,0.1)" : "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              fontFamily: "'Inter', sans-serif",
+                              transition: "all 0.2s ease",
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span
+                                className="w-[2px] h-4 rounded-full shrink-0"
+                                style={{
+                                  background: isActive
+                                    ? "linear-gradient(180deg, #6366f1, #06d6a0)"
+                                    : "rgba(255,255,255,0.1)",
+                                  transition: "background 0.3s ease",
+                                }}
+                              />
+                              {link.name}
+                            </div>
+                            <ChevronDown size={14} className={`transition-transform duration-300 ${branchDropdownOpen ? "rotate-180" : ""}`} />
+                          </button>
+                          
+                          <AnimatePresence>
+                            {branchDropdownOpen && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="pl-8 flex flex-col gap-1 mt-1"
+                              >
+                                {link.dropdown?.map((item) => (
+                                  <button
+                                    key={item.name}
+                                    onClick={() => scrollTo(item.id)}
+                                    className="w-full text-left py-3 text-[11px] font-bold tracking-widest uppercase"
+                                    style={{ color: "rgba(176,190,220,0.5)" }}
+                                  >
+                                    — {item.name}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => link.id && scrollTo(link.id)}
+                          className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium tracking-[0.12em] uppercase"
                           style={{
-                            background: isActive
-                              ? "linear-gradient(180deg, #6366f1, #06d6a0)"
-                              : "rgba(255,255,255,0.1)",
-                            transition: "background 0.3s ease",
+                            color: isActive ? "#a5b4fc" : "rgba(160,180,220,0.6)",
+                            background: isActive ? "rgba(99,102,241,0.1)" : "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            fontFamily: "'Inter', sans-serif",
+                            boxShadow: isActive
+                              ? "inset 2px 2px 6px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)"
+                              : "none",
+                            transition: "all 0.2s ease",
                           }}
-                        />
-                        {link.name}
-                      </button>
+                        >
+                          <span
+                            className="w-[2px] h-4 rounded-full shrink-0"
+                            style={{
+                              background: isActive
+                                ? "linear-gradient(180deg, #6366f1, #06d6a0)"
+                                : "rgba(255,255,255,0.1)",
+                              transition: "background 0.3s ease",
+                            }}
+                          />
+                          {link.name}
+                        </button>
+                      )}
                     </motion.li>
                   );
                 })}
@@ -383,7 +519,6 @@ const Nav = () => {
                     Contact Us
                   </button>
                 </motion.li>
-
               </ul>
             </motion.div>
           )}

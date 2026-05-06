@@ -9,12 +9,13 @@ import {
   AchievementsSection,
   TestimonialsSection,
   ContactSection,
+  CareersSection,
   CompanyProvider 
 } from "../src/components/sections/Index";
 
 export default function Home() {
   return (
-    <CompanyProvider>
+    <CompanyProvider initialCompany="default">
     <main className="min-h-screen" style={{ background: "#000", color: "#eef2ff" }}>
       <Nav />
       <Hero />
@@ -22,6 +23,7 @@ export default function Home() {
       <CompaniesSection />
       {/* <InitiativesSection /> */}
       <ServicesSection />
+      <CareersSection />
       {/* <AchievementsSection /> */}
       <TestimonialsSection />
       <ContactSection />

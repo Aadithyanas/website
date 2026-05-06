@@ -14,8 +14,8 @@ const CompanyContext = createContext<CompanyContextType>({
   setActiveCompany: () => {},
 });
 
-export const CompanyProvider = ({ children }: { children: React.ReactNode }) => {
-  const [activeCompany, setActiveCompany] = useState<CompanyId>("ajuedsolution");
+export const CompanyProvider = ({ children, initialCompany = "ajuedsolution" }: { children: React.ReactNode, initialCompany?: CompanyId }) => {
+  const [activeCompany, setActiveCompany] = useState<CompanyId>(initialCompany);
   return (
     <CompanyContext.Provider value={{ activeCompany, setActiveCompany }}>
       {children}

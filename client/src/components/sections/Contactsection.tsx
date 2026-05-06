@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCompany } from "./CompanyContext";
 import {
   Mail, Phone, Send, CheckCircle2, AlertCircle,
   Loader2, MapPin, Clock, ArrowRight,
@@ -64,7 +65,6 @@ const Field = ({
           color: "#eef2ff",
           background: focused ? "rgba(99,102,241,0.07)" : "rgba(26,32,53,0.8)",
           border: `1px solid ${focused ? "rgba(99,102,241,0.5)" : "rgba(99,102,241,0.12)"}`,
-          /* Neumorphic inset when focused */
           boxShadow: focused
             ? "inset 3px 3px 10px rgba(0,0,0,0.4), inset -1px -1px 5px rgba(255,255,255,0.04), 0 0 0 3px rgba(99,102,241,0.08)"
             : "inset 2px 2px 8px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)",
@@ -137,18 +137,6 @@ const InfoCard = ({
       boxShadow: "5px 5px 16px rgba(0,0,0,0.48), -2px -2px 10px rgba(255,255,255,0.04)",
       transition: "background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
     }}
-    onMouseEnter={(e) => {
-      const el = e.currentTarget as HTMLAnchorElement;
-      el.style.background = "rgba(99,102,241,0.08)";
-      el.style.borderColor = "rgba(99,102,241,0.3)";
-      el.style.boxShadow = "0 4px 20px rgba(99,102,241,0.12), 5px 5px 16px rgba(0,0,0,0.50), -2px -2px 10px rgba(255,255,255,0.04)";
-    }}
-    onMouseLeave={(e) => {
-      const el = e.currentTarget as HTMLAnchorElement;
-      el.style.background = "linear-gradient(145deg, rgba(26,32,53,0.9), rgba(20,25,41,0.92))";
-      el.style.borderColor = "rgba(99,102,241,0.12)";
-      el.style.boxShadow = "5px 5px 16px rgba(0,0,0,0.48), -2px -2px 10px rgba(255,255,255,0.04)";
-    }}
   >
     <div
       className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
@@ -156,7 +144,6 @@ const InfoCard = ({
         background: "rgba(99,102,241,0.1)",
         border: "1px solid rgba(99,102,241,0.22)",
         color: "#818cf8",
-        /* Neumorphic inset on icon */
         boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.04)",
         transition: "background 0.3s ease, box-shadow 0.3s ease",
       }}
@@ -220,6 +207,7 @@ export const ContactSection = () => {
   const [form, setForm]     = useState({ name: "", email: "", message: "" });
   const [status, setStatus] = useState<Status>("idle");
   const [errMsg, setErrMsg] = useState("");
+  const { activeCompany } = useCompany();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -232,7 +220,11 @@ export const ContactSection = () => {
       const res = await fetch("https://fastapi-backend-pj3e.onrender.com/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, email: form.email, message: form.message }),
+        body: JSON.stringify({ 
+          name: form.name, 
+          email: form.email, 
+          message: `[Branch: ${activeCompany}] ${form.message}` 
+        }),
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
@@ -245,6 +237,15 @@ export const ContactSection = () => {
     } catch (err: unknown) {
       setStatus("error");
       setErrMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    }
+  };
+
+  const getContactText = () => {
+    switch (activeCompany) {
+      case "techzora": return "Have a technical project in mind? Let's discuss how Techzora can engineer your future.";
+      case "brandify": return "Ready to transform your brand? Get in touch with Brandify today.";
+      case "scrumspace": return "Need a space to grow your startup? Book a tour or ask about our plans.";
+      default: return "Whether you're an institution, enterprise, or student — reach out and let's explore what we can build together.";
     }
   };
 
@@ -287,7 +288,7 @@ export const ContactSection = () => {
             style={{ color: "rgba(99,102,241,0.8)" }}
           >
             <span className="w-8 h-px" style={{ background: "linear-gradient(90deg, transparent, #6366f1)" }} />
-            Get In Touch
+            Contact {activeCompany === "default" ? "Us" : activeCompany}
             <span className="w-8 h-px" style={{ background: "linear-gradient(90deg, #6366f1, transparent)" }} />
           </motion.p>
 
@@ -311,7 +312,7 @@ export const ContactSection = () => {
             className="text-lg max-w-xl mx-auto leading-relaxed"
             style={{ color: "rgba(176,190,220,0.72)" }}
           >
-            Whether you&apos;re an institution, enterprise, or student — reach out and let&apos;s explore what we can build together.
+            {getContactText()}
           </motion.p>
         </div>
 
@@ -455,7 +456,7 @@ export const ContactSection = () => {
                   >
                     <div className="mb-1">
                       <h4 className="text-lg font-semibold mb-1" style={{ color: "#eef2ff" }}>
-                        Send us a message
+                        Send {activeCompany === "default" ? "us" : activeCompany} a message
                       </h4>
                       <p className="text-xs font-mono tracking-wide" style={{ color: "rgba(110,130,168,0.65)" }}>
                         All fields are required
@@ -510,15 +511,6 @@ export const ContactSection = () => {
                         background: "linear-gradient(135deg, #6366f1 0%, #818cf8 55%, #06d6a0 100%)",
                         boxShadow: "0 4px 24px rgba(99,102,241,0.38), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04)",
                         transition: "box-shadow 0.3s ease, opacity 0.2s ease, transform 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (status !== "loading")
-                          (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                            "0 8px 40px rgba(99,102,241,0.58), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04)";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                          "0 4px 24px rgba(99,102,241,0.38), 4px 4px 16px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04)";
                       }}
                     >
                       {status === "loading" ? (
