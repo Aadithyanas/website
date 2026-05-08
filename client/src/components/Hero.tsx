@@ -366,20 +366,17 @@ export default function Hero() {
                 Welcome To
               </motion.div>
 
-              <motion.h1
+              <motion.img
+                src="/images/brands/ajuedsolution.png"
+                alt="AJU ED Solutions"
                 initial={{ opacity: 0, y: 24 }}
                 animate={loaded ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.7, delay: 0.3 }}
-                className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter leading-[0.9]"
+                className="w-96 sm:w-[32rem] md:w-[48rem] lg:w-[64rem] object-contain"
                 style={{
-                  background: "linear-gradient(135deg, #fff 0%, #c7d2fe 40%, #818cf8 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  textShadow: "0 0 40px rgba(99,102,241,0.3)",
+                  filter: "drop-shadow(0 0 50px rgba(99,102,241,0.5))",
                 }}
-              >
-                AJU ED SOLUTIONS
-              </motion.h1>
+              />
 
               <motion.p
                 className="text-lg sm:text-xl max-w-xl mt-4"

@@ -339,19 +339,17 @@ export default function CoworkScrollHero() {
                 Co-Working Community
               </motion.div>
 
-              <motion.h1
+              <motion.img
+                src="/images/brands/scrumspace.png"
+                alt="Scrumspace"
                 initial={{ opacity: 0, y: 24 }}
                 animate={loaded ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.7, delay: 0.3 }}
-                className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter leading-[0.9]"
+                className="w-80 sm:w-[28rem] md:w-[36rem] lg:w-[48rem] object-contain"
                 style={{
-                  background: "linear-gradient(135deg, #fff 0%, #fda4af 40%, #f472b6 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  filter: "drop-shadow(0 0 40px rgba(244,114,182,0.4))",
                 }}
-              >
-                Scrumspace
-              </motion.h1>
+              />
 
               <motion.p
                 className="text-lg sm:text-xl max-w-xl mt-4"

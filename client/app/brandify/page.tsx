@@ -38,19 +38,17 @@ export default function BrandifyPage() {
                   Creative Studio
                 </motion.div>
                 
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
+                <motion.img
+                  src="/images/brands/brandify.png"
+                  alt="AJU Brandify"
+                  initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 }}
-                  className="text-5xl md:text-7xl font-bold mb-6 leading-tight"
+                  transition={{ duration: 0.7, delay: 0.1 }}
+                  className="w-80 sm:w-[28rem] md:w-[36rem] lg:w-[48rem] object-contain mb-8 mx-auto lg:mx-0"
                   style={{
-                    background: "linear-gradient(135deg, #fff 0%, #06d6a0 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    filter: "drop-shadow(0 0 40px rgba(6,214,160,0.4))",
                   }}
-                >
-                  AJU Brandify
-                </motion.h1>
+                />
                 
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}

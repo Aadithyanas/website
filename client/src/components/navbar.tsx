@@ -15,8 +15,8 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 const NAV_LINKS = [
   { name: "Home", id: "#home" },
   { name: "About", id: "#about" },
-  { 
-    name: "Brands", 
+  {
+    name: "Brands",
     dropdown: [
       { name: "AJU Techzora", id: "/techzora" },
       { name: "AJU Brandify", id: "/brandify" },
@@ -180,11 +180,11 @@ const Nav = () => {
             {NAV_LINKS.map((link) => {
               const isActive = link.id ? active === link.id.replace("#", "") : false;
               const isBranches = link.name === "Brands";
-              
+
               return (
                 <li key={link.name} className="relative group">
                   {isBranches ? (
-                    <div 
+                    <div
                       className="relative"
                       onMouseEnter={() => setBranchDropdownOpen(true)}
                       onMouseLeave={() => setBranchDropdownOpen(false)}
@@ -443,7 +443,7 @@ const Nav = () => {
                             </div>
                             <ChevronDown size={14} className={`transition-transform duration-300 ${branchDropdownOpen ? "rotate-180" : ""}`} />
                           </button>
-                          
+
                           <AnimatePresence>
                             {branchDropdownOpen && (
                               <motion.div

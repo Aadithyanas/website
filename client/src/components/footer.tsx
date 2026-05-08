@@ -14,11 +14,11 @@ interface FooterLink { title: string; href: string; }
 interface FooterLinkGroup { label: string; links: FooterLink[]; }
 
 const socialLinks = [
-  { title: "Facebook",  href: "#", icon: FacebookIcon,  color: "#818cf8" },
+  { title: "Facebook", href: "#", icon: FacebookIcon, color: "#818cf8" },
   { title: "Instagram", href: "#", icon: InstagramIcon, color: "#f472b6" },
-  { title: "YouTube",   href: "#", icon: YoutubeIcon,   color: "#fb923c" },
-  { title: "LinkedIn",  href: "#", icon: LinkedinIcon,  color: "#38bdf8" },
-  { title: "Twitter",   href: "#", icon: Twitter,       color: "#a5b4fc" },
+  { title: "YouTube", href: "#", icon: YoutubeIcon, color: "#fb923c" },
+  { title: "LinkedIn", href: "#", icon: LinkedinIcon, color: "#38bdf8" },
+  { title: "Twitter", href: "#", icon: Twitter, color: "#a5b4fc" },
 ];
 
 const BRAND_DATA: Record<CompanyId, {
@@ -83,8 +83,8 @@ export const Footer = () => {
   const { activeCompany } = useCompany();
   const brand = BRAND_DATA[activeCompany] || BRAND_DATA.default;
 
-  const visibleServices = ALL_SERVICES.filter(svc => 
-    activeCompany === "default" 
+  const visibleServices = ALL_SERVICES.filter(svc =>
+    activeCompany === "default"
       ? ["coaching", "internship"].includes(svc.key)
       : svc.companies.includes(activeCompany)
   );
@@ -97,19 +97,19 @@ export const Footer = () => {
     {
       label: "Brands",
       links: [
-        { title: "AJU TECHZORA",       href: "/techzora" },
-        { title: "AJU Brandify",       href: "/brandify" },
+        { title: "AJU TECHZORA", href: "/techzora" },
+        { title: "AJU Brandify", href: "/brandify" },
         { title: "ScrumSpace CoWorks", href: "/scrumspace" },
       ],
     },
     {
       label: "Explore",
       links: [
-        { title: "About Us",         href: "#about"        },
-        { title: "Testimonials",     href: "#testimonials" },
-        { title: "Contact Us",       href: "#contact"      },
-        { title: "Privacy Policy",   href: "#"             },
-        { title: "Terms of Service", href: "#"             },
+        { title: "About Us", href: "#about" },
+        { title: "Testimonials", href: "#testimonials" },
+        { title: "Contact Us", href: "#contact" },
+        { title: "Privacy Policy", href: "#" },
+        { title: "Terms of Service", href: "#" },
       ],
     },
   ];
@@ -214,9 +214,9 @@ export const Footer = () => {
                   {(activeCompany === "default" || activeCompany === "ajuedsolution") && (
                     <div className="flex flex-wrap gap-2">
                       {[
-                        { icon: <Cpu size={10} />,       label: "TECHZORA",   color: "#818cf8",  border: "rgba(99,102,241,0.28)",  bg: "rgba(99,102,241,0.07)"  },
-                        { icon: <Bot size={10} />,        label: "Brandify",   color: "#06d6a0",  border: "rgba(6,214,160,0.28)",   bg: "rgba(6,214,160,0.07)"   },
-                        { icon: <Building2 size={10} />,  label: "ScrumSpace", color: "#f472b6",  border: "rgba(244,114,182,0.25)", bg: "rgba(244,114,182,0.07)" },
+                        { icon: <Cpu size={10} />, label: "TECHZORA", color: "#818cf8", border: "rgba(99,102,241,0.28)", bg: "rgba(99,102,241,0.07)" },
+                        { icon: <Bot size={10} />, label: "Brandify", color: "#06d6a0", border: "rgba(6,214,160,0.28)", bg: "rgba(6,214,160,0.07)" },
+                        { icon: <Building2 size={10} />, label: "ScrumSpace", color: "#f472b6", border: "rgba(244,114,182,0.25)", bg: "rgba(244,114,182,0.07)" },
                       ].map((b) => (
                         <span
                           key={b.label}
