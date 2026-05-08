@@ -210,10 +210,11 @@ const Nav = () => {
             <img
               src={brand.logo}
               alt={brand.name}
-              className="h-7 w-auto object-contain hidden sm:block"
+              className={`w-auto object-contain hidden sm:block transition-all duration-300 ${
+                activeCompany === "brandify" ? "h-6" : "h-8"
+              }`}
               style={{
                 filter: "drop-shadow(0 0 4px rgba(255,255,255,0.2))",
-                transition: "all 0.3s ease",
               }}
             />
           </motion.button>
