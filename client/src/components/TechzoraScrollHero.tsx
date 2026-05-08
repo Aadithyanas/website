@@ -385,9 +385,9 @@ export default function TechzoraScrollHero() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={loaded ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.7, delay: 0.3 }}
-                className="w-80 sm:w-[28rem] md:w-[36rem] lg:w-[48rem] object-contain"
+                className="w-80 sm:w-[28rem] md:w-[36rem] lg:w-[48rem] object-contain relative z-10"
                 style={{
-                  filter: "drop-shadow(0 0 40px rgba(99,102,241,0.4))",
+                  filter: "drop-shadow(0 0 12px rgba(147,197,253,0.9)) drop-shadow(0 0 30px rgba(147,197,253,0.7))",
                 }}
               />
 

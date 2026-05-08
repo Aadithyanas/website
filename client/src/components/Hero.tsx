@@ -372,9 +372,9 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={loaded ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.7, delay: 0.3 }}
-                className="w-96 sm:w-[32rem] md:w-[48rem] lg:w-[64rem] object-contain"
+                className="w-96 sm:w-[32rem] md:w-[48rem] lg:w-[64rem] object-contain relative z-10"
                 style={{
-                  filter: "drop-shadow(0 0 50px rgba(99,102,241,0.5))",
+                  filter: "drop-shadow(0 0 12px rgba(147,197,253,0.9)) drop-shadow(0 0 30px rgba(147,197,253,0.7))",
                 }}
               />
 
