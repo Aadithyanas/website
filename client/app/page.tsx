@@ -20,7 +20,7 @@ export default function Home() {
       <Nav />
       <Hero />
       <AboutSection />
-      <CompaniesSection />
+     
       {/* <InitiativesSection /> */}
       <ServicesSection />
       <CareersSection />

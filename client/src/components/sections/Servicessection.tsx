@@ -102,7 +102,7 @@ const GlowingEffect = memo(({
 GlowingEffect.displayName = "GlowingEffect";
 
 // ── Service definitions ───────────────────────────────────────────────────────
-const ALL_SERVICES = [
+export const ALL_SERVICES = [
   {
     key: "web",
     icon: <Laptop className="h-5 w-5" />,
@@ -112,15 +112,7 @@ const ALL_SERVICES = [
     companies: ["techzora"] as CompanyId[],
     area: "md:[grid-area:1/1/2/5] xl:[grid-area:1/1/2/5]",
   },
-  {
-    key: "aiml",
-    icon: <Database className="h-5 w-5" />,
-    title: "AI / ML & Data Analytics",
-    description: "Predictive analytics, custom AI models, data dashboards, and research support turning raw data into intelligence.",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
-    companies: ["techzora"] as CompanyId[],
-    area: "md:[grid-area:1/5/2/9] xl:[grid-area:1/5/2/9]",
-  },
+
   {
     key: "iot",
     icon: <Network className="h-5 w-5" />,
@@ -268,7 +260,7 @@ export const ServicesSection = () => {
 
   const visibleServices =
     activeCompany === "default"
-      ? ALL_SERVICES
+      ? ALL_SERVICES.filter((s) => ["coaching", "internship"].includes(s.key))
       : ALL_SERVICES.filter((s) => s.companies.includes(activeCompany));
 
   const areaMap = [
@@ -345,7 +337,7 @@ export const ServicesSection = () => {
               style={{ color: "rgba(176,190,220,0.72)" }}
             >
               {activeCompany === "default"
-                ? "Get expert BTech coaching, internships and project support in AI, robotics & web development at AJU ED Solutions, Kerala."
+                ? "Get expert BTech coaching, internships and project support in robotics & web development at AJU ED Solutions, Kerala."
                 : `Showing services offered by ${meta.label}. Click a company above to switch.`}
             </p>
           </motion.div>

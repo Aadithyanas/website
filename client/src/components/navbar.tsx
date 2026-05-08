@@ -16,11 +16,11 @@ const NAV_LINKS = [
   { name: "Home", id: "#home" },
   { name: "About", id: "#about" },
   { 
-    name: "Branches", 
+    name: "Brands", 
     dropdown: [
-      { name: "AJU Techzora", id: "/branches/techzora" },
-      { name: "AJU Brandify", id: "/branches/brandify" },
-      { name: "Scrumspace", id: "/branches/scrumspace" },
+      { name: "AJU Techzora", id: "/techzora" },
+      { name: "AJU Brandify", id: "/brandify" },
+      { name: "Scrumspace", id: "/scrumspace" },
     ]
   },
   { name: "Services", id: "#services" },
@@ -179,7 +179,7 @@ const Nav = () => {
           <ul className="hidden lg:flex items-center gap-1">
             {NAV_LINKS.map((link) => {
               const isActive = link.id ? active === link.id.replace("#", "") : false;
-              const isBranches = link.name === "Branches";
+              const isBranches = link.name === "Brands";
               
               return (
                 <li key={link.name} className="relative group">
@@ -406,7 +406,7 @@ const Nav = () => {
               <ul className="flex flex-col px-4 py-5 gap-1">
                 {NAV_LINKS.map((link, i) => {
                   const isActive = link.id ? active === link.id.replace("#", "") : false;
-                  const isBranches = link.name === "Branches";
+                  const isBranches = link.name === "Brands";
 
                   return (
                     <motion.li
