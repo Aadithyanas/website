@@ -347,7 +347,7 @@ export default function CoworkScrollHero() {
                 transition={{ duration: 0.7, delay: 0.3 }}
                 className="w-80 sm:w-[28rem] md:w-[36rem] lg:w-[48rem] object-contain relative z-10"
                 style={{
-                  filter: "drop-shadow(0 0 12px rgba(147,197,253,0.9)) drop-shadow(0 0 30px rgba(147,197,253,0.7))",
+                  filter: "drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 30px rgba(255,255,255,0.7))",
                 }}
               />
 
