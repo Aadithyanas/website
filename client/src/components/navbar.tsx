@@ -7,6 +7,40 @@ import { gsap } from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { useCompany, CompanyId } from "./sections/CompanyContext";
+
+const BRAND_DATA: Record<CompanyId, { name: string; logo: string; icon: string; color: string }> = {
+  default: {
+    name: "AJU ED SOLUTIONS",
+    logo: "/images/brands/ajuedsolution.png",
+    icon: "/images/logo 3.png",
+    color: "#a5b4fc",
+  },
+  ajuedsolution: {
+    name: "AJU ED SOLUTIONS",
+    logo: "/images/brands/ajuedsolution.png",
+    icon: "/images/logo 3.png",
+    color: "#a5b4fc",
+  },
+  techzora: {
+    name: "AJU TECHZORA",
+    logo: "/images/brands/techzora.png",
+    icon: "/images/logo 3.png",
+    color: "#818cf8",
+  },
+  brandify: {
+    name: "AJU Brandify",
+    logo: "/images/brands/brandify.png",
+    icon: "/images/logo 3.png",
+    color: "#06d6a0",
+  },
+  scrumspace: {
+    name: "ScrumSpace CoWorks",
+    logo: "/images/brands/scrumspaceW.png",
+    icon: "/images/logo 3.png",
+    color: "#f472b6",
+  },
+};
 
 gsap.registerPlugin(ScrollToPlugin);
 
@@ -57,6 +91,8 @@ const Nav = () => {
   const navRef = useRef<HTMLElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const { activeCompany } = useCompany();
+  const brand = BRAND_DATA[activeCompany] || BRAND_DATA.default;
 
   const sectionIds = NAV_LINKS.map((l) => l.id).filter((id): id is string => !!id);
   const active = useActiveSection(sectionIds);
@@ -146,33 +182,40 @@ const Nav = () => {
           {/* ── Logo ── */}
           <motion.button
             onClick={() => scrollTo("#home")}
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-2 cursor-pointer group"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             transition={{ duration: 0.2 }}
             style={{ background: "none", border: "none", padding: 0 }}
           >
-            <div style={{ transition: "filter 0.3s ease" }}>
+            {/* Brand Icon */}
+            <div className="relative">
               <img
-                src="/images/logo2.png"
-                alt="AJU ED SOLUTIONS Logo"
+                src={brand.icon}
+                alt="Icon"
                 className="h-9 w-auto object-contain"
                 style={{
-                  filter: "drop-shadow(0 0 6px rgba(99,102,241,0.5))",
-                  transition: "filter 0.3s ease, transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.filter =
-                    "drop-shadow(0 0 14px rgba(99,102,241,0.9))";
-                  (e.currentTarget as HTMLImageElement).style.transform = "scale(1.1) rotate(-4deg)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.filter =
-                    "drop-shadow(0 0 6px rgba(99,102,241,0.5))";
-                  (e.currentTarget as HTMLImageElement).style.transform = "scale(1) rotate(0deg)";
+                  filter: `drop-shadow(0 0 8px ${brand.color}66)`,
+                  transition: "all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
                 }}
               />
+              {/* Subtle glow behind icon */}
+              <div
+                className="absolute inset-0 -z-10 blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-500"
+                style={{ background: brand.color }}
+              />
             </div>
+
+            {/* Brand Name PNG */}
+            <img
+              src={brand.logo}
+              alt={brand.name}
+              className="h-7 w-auto object-contain hidden sm:block"
+              style={{
+                filter: "drop-shadow(0 0 4px rgba(255,255,255,0.2))",
+                transition: "all 0.3s ease",
+              }}
+            />
           </motion.button>
 
           {/* ── Desktop links ── */}

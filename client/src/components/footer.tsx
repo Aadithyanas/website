@@ -10,7 +10,7 @@ import {
 import { useCompany, CompanyId } from "./sections/CompanyContext";
 import { ALL_SERVICES } from "./sections/Servicessection";
 
-interface FooterLink { title: string; href: string; }
+interface FooterLink { title: string; href: string; logo?: string; }
 interface FooterLinkGroup { label: string; links: FooterLink[]; }
 
 const socialLinks = [
@@ -25,36 +25,42 @@ const BRAND_DATA: Record<CompanyId, {
   name: string;
   tagline: string;
   logo: string;
+  icon: string;
   color: string;
 }> = {
   default: {
     name: "AJU ED SOLUTIONS",
     tagline: "Redefining education & technology with IoT, Robotics, ERP & Web — empowering students, institutions, and enterprises across Kerala and beyond.",
-    logo: "/images/logo2.png",
+    logo: "/images/brands/ajuedsolution.png",
+    icon: "/images/logo 3.png",
     color: "#a5b4fc",
   },
   ajuedsolution: {
     name: "AJU ED SOLUTIONS",
     tagline: "Empowering the next generation of engineers through expert coaching, hands-on projects, and industry-aligned internships.",
-    logo: "/images/logo2.png",
+    logo: "/images/brands/ajuedsolution.png",
+    icon: "/images/logo 3.png",
     color: "#a5b4fc",
   },
   techzora: {
     name: "AJU TECHZORA",
     tagline: "Innovative software and hardware solutions. From custom ERP systems to cutting-edge Robotics integration.",
     logo: "/images/brands/techzora.png",
+    icon: "/images/logo 3.png",
     color: "#818cf8",
   },
   brandify: {
     name: "AJU Brandify",
     tagline: "Transforming your vision into a powerful brand identity. Expert digital marketing and creative strategy.",
-    logo: "/images/logo2.png",
+    logo: "/images/brands/brandify.png",
+    icon: "/images/logo 3.png",
     color: "#06d6a0",
   },
   scrumspace: {
     name: "ScrumSpace CoWorks",
     tagline: "Premium co-working spaces designed for productivity, collaboration, and growth in the heart of Kerala.",
-    logo: "/images/logo2.png",
+    logo: "/images/brands/scrumspaceW.png",
+    icon: "/images/logo 3.png",
     color: "#f472b6",
   },
 };
@@ -171,7 +177,7 @@ export const Footer = () => {
                       }}
                     >
                       <img
-                        src={brand.logo}
+                        src={brand.icon}
                         alt={brand.name}
                         className="w-7 h-7 object-contain"
                         onError={(e) => {
@@ -182,17 +188,11 @@ export const Footer = () => {
                       />
                     </div>
                     <div>
-                      <p
-                        className="text-base font-bold tracking-wider leading-none"
-                        style={{
-                          background: `linear-gradient(135deg, ${brand.color}, #fff, #06d6a0)`,
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          backgroundClip: "text",
-                        }}
-                      >
-                        {brand.name}
-                      </p>
+                      <img
+                        src={brand.logo}
+                        alt={brand.name}
+                        className="h-10 w-auto object-contain"
+                      />
                       <p
                         className="text-[10px] font-mono tracking-[0.2em] uppercase mt-0.5"
                         style={{ color: "rgba(110,130,168,0.65)" }}
@@ -212,24 +212,23 @@ export const Footer = () => {
 
                   {/* Company badges (only show if default or ajuedsolution) */}
                   {(activeCompany === "default" || activeCompany === "ajuedsolution") && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-4 items-center">
                       {[
-                        { icon: <Cpu size={10} />, label: "TECHZORA", color: "#818cf8", border: "rgba(99,102,241,0.28)", bg: "rgba(99,102,241,0.07)" },
-                        { icon: <Bot size={10} />, label: "Brandify", color: "#06d6a0", border: "rgba(6,214,160,0.28)", bg: "rgba(6,214,160,0.07)" },
-                        { icon: <Building2 size={10} />, label: "ScrumSpace", color: "#f472b6", border: "rgba(244,114,182,0.25)", bg: "rgba(244,114,182,0.07)" },
+                        { logo: "/images/brands/techzora.png", label: "TECHZORA", href: "/techzora" },
+                        { logo: "/images/brands/brandify.png", label: "Brandify", href: "/brandify" },
+                        { logo: "/images/brands/scrumspace.png", label: "ScrumSpace", href: "/scrumspace" },
                       ].map((b) => (
-                        <span
+                        <a
                           key={b.label}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide"
-                          style={{
-                            color: b.color,
-                            border: `1px solid ${b.border}`,
-                            background: b.bg,
-                            boxShadow: "3px 3px 10px rgba(0,0,0,0.48), -1px -1px 5px rgba(255,255,255,0.04)",
-                          }}
+                          href={b.href}
+                          className="group transition-transform hover:scale-110 duration-200"
                         >
-                          {b.icon}{b.label}
-                        </span>
+                          <img
+                            src={b.logo}
+                            alt={b.label}
+                            className="h-6 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
+                          />
+                        </a>
                       ))}
                     </div>
                   )}
