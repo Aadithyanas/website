@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { Building, Users, Coffee, Wifi, Clock, ChevronDown } from "lucide-react";
+import { Building, Users, Wifi, Clock, ChevronDown } from "lucide-react";
 
 /* ─────────────────────────────────────────────────
    CONFIG
@@ -130,7 +130,7 @@ function FrameCanvas({
     const imgAspect = img.naturalWidth / img.naturalHeight;
     const canvasAspect = vw / vh;
 
-    let drawW: number, drawH: number, drawX: number, drawY: number;
+    let drawW: number, drawH: number;
     if (imgAspect > canvasAspect) {
       drawH = vh * scale;
       drawW = drawH * imgAspect;
@@ -138,8 +138,8 @@ function FrameCanvas({
       drawW = vw * scale;
       drawH = drawW / imgAspect;
     }
-    drawX = (vw - drawW) / 2;
-    drawY = (vh - drawH) / 2;
+    const drawX = (vw - drawW) / 2;
+    const drawY = (vh - drawH) / 2;
 
     ctx.clearRect(0, 0, vw, vh);
     ctx.drawImage(img, drawX, drawY, drawW, drawH);

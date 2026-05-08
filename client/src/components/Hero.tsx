@@ -130,7 +130,7 @@ function FrameCanvas({
     const imgAspect = img.naturalWidth / img.naturalHeight;
     const canvasAspect = vw / vh;
 
-    let drawW: number, drawH: number, drawX: number, drawY: number;
+    let drawW: number, drawH: number;
     if (imgAspect > canvasAspect) {
       drawH = vh * scale;
       drawW = drawH * imgAspect;
@@ -138,8 +138,8 @@ function FrameCanvas({
       drawW = vw * scale;
       drawH = drawW / imgAspect;
     }
-    drawX = (vw - drawW) / 2;
-    drawY = (vh - drawH) / 2;
+    const drawX = (vw - drawW) / 2;
+    const drawY = (vh - drawH) / 2;
 
     ctx.clearRect(0, 0, vw, vh);
     ctx.drawImage(img, drawX, drawY, drawW, drawH);
@@ -380,7 +380,7 @@ export default function Hero() {
 
               <motion.p
                 className="text-lg sm:text-xl max-w-xl mt-4"
-                style={{ color: "rgba(200,210,230,0.8)", opacity: subtitleOpacity as any }}
+                style={{ color: "rgba(200,210,230,0.8)", opacity: subtitleOpacity }}
                 initial={{ opacity: 0, y: 16 }}
                 animate={loaded ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.45 }}

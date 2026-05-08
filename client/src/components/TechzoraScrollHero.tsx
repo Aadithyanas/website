@@ -133,7 +133,7 @@ function FrameCanvas({
     const imgAspect = img.naturalWidth / img.naturalHeight;
     const canvasAspect = vw / vh;
 
-    let drawW: number, drawH: number, drawX: number, drawY: number;
+    let drawW: number, drawH: number;
     if (imgAspect > canvasAspect) {
       // Image is wider — fit to height
       drawH = vh * scale;
@@ -143,8 +143,8 @@ function FrameCanvas({
       drawW = vw * scale;
       drawH = drawW / imgAspect;
     }
-    drawX = (vw - drawW) / 2;
-    drawY = (vh - drawH) / 2;
+    const drawX = (vw - drawW) / 2;
+    const drawY = (vh - drawH) / 2;
 
     ctx.clearRect(0, 0, vw, vh);
     ctx.drawImage(img, drawX, drawY, drawW, drawH);
@@ -267,7 +267,6 @@ export default function TechzoraScrollHero() {
   // Text transforms
   const heroTitleY = useTransform(scrollYProgress, [0, 0.15], [0, -80]);
   const heroTitleOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
-  const subtitleOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
 
   // Feature label transforms
   const featureLabelOpacity = useTransform(scrollYProgress, [0.08, 0.15], [0, 1]);

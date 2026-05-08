@@ -113,7 +113,7 @@ export default function BrandifyPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-4">Brand Identity</h3>
                 <p className="text-slate-400 leading-relaxed">
-                  Logos, typography, and visual languages that define your company's core values and presence.
+                  Logos, typography, and visual languages that define your company&apos;s core values and presence.
                 </p>
               </div>
               <div className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-emerald-500/50 transition-colors group">
