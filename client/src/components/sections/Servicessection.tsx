@@ -153,17 +153,17 @@ export const ALL_SERVICES = [
     key: "cowork",
     icon: <Building className="h-5 w-5" />,
     title: "Co-working Spaces",
-    description: "Flexible workspace rentals, community networking, and startup-friendly facilities at ScrumSpace CoWorks.",
+    description: "Flexible workspace rentals, community networking, and startup-friendly facilities at Scrumspace Coworks.",
     image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-    companies: ["scrumspace"] as CompanyId[],
+    companies: ["scrumspacecoworks"] as CompanyId[],
     area: "md:[grid-area:3/1/4/5] xl:[grid-area:3/1/4/5]",
   },
   {
-    key: "coaching",
-    icon: <GraduationCap className="h-5 w-5" />,
-    title: "BTech Coaching",
-    description: "Engineering coaching, subject tutorials, coding labs, and practical workshops for engineering students.",
-    image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80",
+    key: "training",
+    icon: <Bot className="h-5 w-5" />,
+    title: "Robotics Training",
+    description: "Hands-on robotics workshops, microcontroller programming, sensor integration, and practical automation projects.",
+    image: "https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=800&q=80",
     companies: ["ajuedsolution"] as CompanyId[],
     area: "md:[grid-area:3/5/4/9] xl:[grid-area:3/5/4/9]",
   },
@@ -183,7 +183,7 @@ const COMPANY_META: Record<CompanyId, { label: string; color: string; icon: Reac
   ajuedsolution: { label: "AJU ED Solutions",   color: "#818cf8",  icon: <Cpu size={14} /> },
   techzora:      { label: "AJU TECHZORA",       color: "#818cf8",  icon: <Cpu size={14} /> },
   brandify:      { label: "AJU Brandify",       color: "#06d6a0",  icon: <Palette size={14} /> },
-  scrumspace:    { label: "ScrumSpace CoWorks", color: "#f472b6",  icon: <Building size={14} /> },
+  scrumspacecoworks:    { label: "Scrumspace Coworks", color: "#f472b6",  icon: <Building size={14} /> },
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -260,7 +260,7 @@ export const ServicesSection = () => {
 
   const visibleServices =
     activeCompany === "default"
-      ? ALL_SERVICES.filter((s) => ["coaching", "internship"].includes(s.key))
+      ? ALL_SERVICES.filter((s) => ["training", "internship"].includes(s.key))
       : ALL_SERVICES.filter((s) => s.companies.includes(activeCompany));
 
   const areaMap = [
@@ -337,7 +337,7 @@ export const ServicesSection = () => {
               style={{ color: "rgba(176,190,220,0.72)" }}
             >
               {activeCompany === "default"
-                ? "Get expert BTech coaching, internships and project support in robotics & web development at AJU ED Solutions, Kerala."
+                ? "Get expert robotics training, internships and project support in AI & web development at AJU ED Solutions, Kerala."
                 : `Showing services offered by ${meta.label}. Click a company above to switch.`}
             </p>
           </motion.div>

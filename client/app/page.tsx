@@ -9,7 +9,6 @@ import {
   AchievementsSection,
   TestimonialsSection,
   ContactSection,
-  CareersSection,
   CompanyProvider 
 } from "../src/components/sections/Index";
 
@@ -23,7 +22,6 @@ export default function Home() {
      
       {/* <InitiativesSection /> */}
       <ServicesSection />
-      <CareersSection />
       {/* <AchievementsSection /> */}
       <TestimonialsSection />
       <ContactSection />

@@ -57,7 +57,7 @@ def generate_invoice_pdf(data: dict) -> BytesIO:
     # Left Content
     address_p = Paragraph(
         "<b>AJU ED Solutions LLP</b><br/>"
-        "ScrumSpace CoWorks,<br/>"
+        "Scrumspace Coworks,<br/>"
         "Thiruvananthapuram South, Kerala 695020<br/><br/>"
         "<b>Invoice No.</b>  inv-" + data.get('registration_id', '00000').split('-')[-1].zfill(5) + "<br/>"
         "<b>Payment Date</b> " + datetime.now().strftime('%B %d, %Y'), 

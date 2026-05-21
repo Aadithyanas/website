@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import { useCompany, CompanyId } from "./CompanyContext";
 import { Briefcase, Video, Palette, Mail, ArrowRight, CheckCircle2 } from "lucide-react";
 
@@ -89,7 +89,7 @@ const JOBS: Record<CompanyId, JobPost[]> = {
         icon: <Palette size={20} />
       }
   ],
-  scrumspace: [],
+  scrumspacecoworks: [],
   ajuedsolution: []
 };
 
@@ -97,8 +97,10 @@ export const CareersSection = () => {
   const reduced = useReducedMotion();
   const { activeCompany } = useCompany();
   const jobList = JOBS[activeCompany] || JOBS.default;
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleApply = (job: JobPost) => {
+  const handleApply = async (job: JobPost) => {
+    const email = "careers@ajuedsolutions.com";
     const companyName = activeCompany === "default" ? "AJU ED SOLUTIONS" : `AJU ${activeCompany.charAt(0).toUpperCase() + activeCompany.slice(1)}`;
     const subject = encodeURIComponent(`Application for ${job.title} at ${companyName} - [Your Name]`);
     const body = encodeURIComponent(
@@ -109,7 +111,19 @@ export const CareersSection = () => {
       `Current Location: [Your Location]\n\n` +
       `I have attached my resume for your review. Looking forward to hearing from you!\n\nBest regards,\n[Your Name]\n[Phone Number]`
     );
-    window.location.href = `mailto:careers@ajuedsolutions.com?subject=${subject}&body=${body}`;
+
+    try {
+      await navigator.clipboard.writeText(email);
+      setToastMessage("Email copied to clipboard! Opening mail client...");
+    } catch (err) {
+      setToastMessage("Opening mail client...");
+    }
+
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -276,6 +290,28 @@ export const CareersSection = () => {
           )}
         </div>
       </div>
+
+      {/* Premium Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.35, ease: EASE }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-4 rounded-2xl flex items-center gap-3 border text-center whitespace-nowrap"
+            style={{
+              background: "rgba(10,10,12,0.92)",
+              borderColor: "rgba(99,102,241,0.3)",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.8), 0 0 15px rgba(99,102,241,0.2)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            <div className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse" />
+            <p className="text-sm font-semibold text-white tracking-wide">{toastMessage}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };

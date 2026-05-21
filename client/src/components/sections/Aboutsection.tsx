@@ -39,7 +39,7 @@ const COMPANY_ABOUT: Record<CompanyId, {
   },
   ajuedsolution: {
     title: "Empowering Next-Gen Learners",
-    subtitle: "Focusing on BTech coaching and project-based learning, AJU ED Solutions bridges the gap between academic theory and industry practice.",
+    subtitle: "Focusing on robotics training and project-based learning, AJU ED Solutions bridges the gap between academic theory and industry practice.",
     pillars: [
       { label: "Innovation", text: "Constant exploration of new pedagogical methods to make engineering education intuitive and effective.", color: "#818cf8", delay: 0.38 },
       { label: "Mentorship", text: "Dedicated support for students through internships and hands-on industry projects.", color: "#06d6a0", delay: 0.52 },
@@ -64,9 +64,9 @@ const COMPANY_ABOUT: Record<CompanyId, {
       { label: "Growth", text: "Performance-oriented digital marketing that turns clicks into conversions and customers.", color: "#f472b6", delay: 0.66 },
     ]
   },
-  scrumspace: {
+  scrumspacecoworks: {
     title: "The Ultimate Workspace",
-    subtitle: "ScrumSpace CoWorks provides more than just a desk; we provide an ecosystem where ideas collide and grow into reality.",
+    subtitle: "Scrumspace Coworks provides more than just a desk; we provide an ecosystem where ideas collide and grow into reality.",
     pillars: [
       { label: "Community", text: "A vibrant network of entrepreneurs and creators supporting each other's growth.", color: "#818cf8", delay: 0.38 },
       { label: "Design", text: "Ergonomic and aesthetic environments tailored for maximum focus and creativity.", color: "#06d6a0", delay: 0.52 },
@@ -128,7 +128,7 @@ export const AboutSection = () => {
           className="font-mono tracking-widest uppercase text-sm mb-5"
           style={{ color: "rgba(99,102,241,0.85)" }}
         >
-          {activeCompany === "default" ? "About Us" : `About ${activeCompany}`}
+          {activeCompany === "default" ? "About Us" : activeCompany === "scrumspacecoworks" ? "About Scrumspace Coworks" : `About ${activeCompany}`}
         </motion.p>
 
         {/* Headline */}

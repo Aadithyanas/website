@@ -236,7 +236,7 @@ export const TestimonialsSection = () => {
             className="text-lg max-w-xl mx-auto"
             style={{ color: "rgba(176,190,220,0.72)" }}
           >
-            Read real student reviews and success stories from AJU ED Solutions in Kerala for BTech coaching, AI, robotics, internships and project support.
+            Read real student reviews and success stories from AJU ED Solutions in Kerala for robotics training, AI, internships and project support.
           </motion.p>
         </div>
 

@@ -14,9 +14,9 @@ import { Layout, Users, Wifi } from "lucide-react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-export default function ScrumspacePage() {
+export default function ScrumspacecoworksPage() {
   return (
-    <CompanyProvider initialCompany="scrumspace">
+    <CompanyProvider initialCompany="scrumspacecoworks">
       <main className="min-h-screen" style={{ background: "#000", color: "#eef2ff" }}>
         <Nav />
         

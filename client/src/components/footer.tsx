@@ -37,7 +37,7 @@ const BRAND_DATA: Record<CompanyId, {
   },
   ajuedsolution: {
     name: "AJU ED SOLUTIONS",
-    tagline: "Empowering the next generation of engineers through expert coaching, hands-on projects, and industry-aligned internships.",
+    tagline: "Empowering the next generation of engineers through robotics training, hands-on projects, and industry-aligned internships.",
     logo: "/images/brands/ajuedsolution.png",
     icon: "/images/logo 3.png",
     color: "#a5b4fc",
@@ -56,8 +56,8 @@ const BRAND_DATA: Record<CompanyId, {
     icon: "/images/logo 3.png",
     color: "#06d6a0",
   },
-  scrumspace: {
-    name: "ScrumSpace CoWorks",
+  scrumspacecoworks: {
+    name: "Scrumspace Coworks",
     tagline: "Premium co-working spaces designed for productivity, collaboration, and growth in the heart of Kerala.",
     logo: "/images/brands/scrumspaceW.png",
     icon: "/images/logo 3.png",
@@ -91,7 +91,7 @@ export const Footer = () => {
 
   const visibleServices = ALL_SERVICES.filter(svc =>
     activeCompany === "default"
-      ? ["coaching", "internship"].includes(svc.key)
+      ? ["training", "internship"].includes(svc.key)
       : svc.companies.includes(activeCompany)
   );
 
@@ -105,7 +105,7 @@ export const Footer = () => {
       links: [
         { title: "AJU TECHZORA", href: "/techzora" },
         { title: "AJU Brandify", href: "/brandify" },
-        { title: "ScrumSpace CoWorks", href: "/scrumspace" },
+        { title: "Scrumspace Coworks", href: "/scrumspacecoworks" },
       ],
     },
     {
@@ -211,12 +211,12 @@ export const Footer = () => {
                   </p>
 
                   {/* Company badges (only show if default or ajuedsolution) */}
-                  {(activeCompany === "default" || activeCompany === "ajuedsolution") && (
+                  {/* {(activeCompany === "default" || activeCompany === "ajuedsolution") && (
                     <div className="flex flex-wrap gap-4 items-center">
                       {[
                         { logo: "/images/brands/techzora.png", label: "TECHZORA", href: "/techzora" },
                         { logo: "/images/brands/brandify.png", label: "Brandify", href: "/brandify" },
-                        { logo: "/images/brands/scrumspace.png", label: "ScrumSpace", href: "/scrumspace" },
+                        { logo: "/images/brands/scrumspace.png", label: "Scrumspace Coworks", href: "/scrumspacecoworks" },
                       ].map((b) => (
                         <a
                           key={b.label}
@@ -231,7 +231,7 @@ export const Footer = () => {
                         </a>
                       ))}
                     </div>
-                  )}
+                  )} */}
 
                   {/* Social icons */}
                   <div className="flex gap-2 flex-wrap">

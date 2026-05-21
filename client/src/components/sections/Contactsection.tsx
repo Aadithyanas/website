@@ -244,7 +244,7 @@ export const ContactSection = () => {
     switch (activeCompany) {
       case "techzora": return "Have a technical project in mind? Let's discuss how Techzora can engineer your future.";
       case "brandify": return "Ready to transform your brand? Get in touch with Brandify today.";
-      case "scrumspace": return "Need a space to grow your startup? Book a tour or ask about our plans.";
+      case "scrumspacecoworks": return "Need a space to grow your startup? Book a tour or ask about our plans.";
       default: return "Whether you're an institution, enterprise, or student — reach out and let's explore what we can build together.";
     }
   };
@@ -288,7 +288,7 @@ export const ContactSection = () => {
             style={{ color: "rgba(99,102,241,0.8)" }}
           >
             <span className="w-8 h-px" style={{ background: "linear-gradient(90deg, transparent, #6366f1)" }} />
-            Contact {activeCompany === "default" ? "Us" : activeCompany}
+            Contact {activeCompany === "default" ? "Us" : activeCompany === "scrumspacecoworks" ? "Scrumspace Coworks" : activeCompany}
             <span className="w-8 h-px" style={{ background: "linear-gradient(90deg, #6366f1, transparent)" }} />
           </motion.p>
 

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState } from "react";
 
-export type CompanyId = "default" | "techzora" | "brandify" | "scrumspace" | "ajuedsolution";
+export type CompanyId = "default" | "techzora" | "brandify" | "scrumspacecoworks" | "ajuedsolution";
 
 interface CompanyContextType {
   activeCompany: CompanyId;

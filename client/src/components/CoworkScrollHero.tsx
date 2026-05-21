@@ -341,7 +341,7 @@ export default function CoworkScrollHero() {
 
               <motion.img
                 src="/images/brands/scrumspace.png"
-                alt="Scrumspace"
+                alt="Scrumspace Coworks"
                 initial={{ opacity: 0, y: 24 }}
                 animate={loaded ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.7, delay: 0.3 }}

@@ -29,7 +29,7 @@ const FEATURES = [
   },
   {
     title: "Empowering Education",
-    description: "Expert BTech coaching and skill-building programs for future innovators.",
+    description: "Expert robotics training and skill-building programs for future innovators.",
     icon: <BookOpen size={22} />,
     color: "#06d6a0",
     phase: 2,
@@ -366,7 +366,7 @@ export default function Hero() {
                 Welcome To
               </motion.div>
 
-              <motion.img
+              {/* <motion.img
                 src="/images/brands/ajuedsolution.png"
                 alt="AJU ED Solutions"
                 initial={{ opacity: 0, y: 24 }}
@@ -376,9 +376,9 @@ export default function Hero() {
                 style={{
                   filter: "drop-shadow(0 0 12px rgba(147,197,253,0.9)) drop-shadow(0 0 30px rgba(147,197,253,0.7))",
                 }}
-              />
+              /> */}
 
-              <motion.p
+              {/* <motion.p
                 className="text-lg sm:text-xl max-w-xl mt-4"
                 style={{ color: "rgba(200,210,230,0.8)", opacity: subtitleOpacity }}
                 initial={{ opacity: 0, y: 16 }}
@@ -386,7 +386,7 @@ export default function Hero() {
                 transition={{ duration: 0.6, delay: 0.45 }}
               >
                 Innovate. Educate. Empower.
-              </motion.p>
+              </motion.p> */}
             </motion.div>
 
             {/* Feature cards area */}

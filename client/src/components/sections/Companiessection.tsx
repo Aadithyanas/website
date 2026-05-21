@@ -53,7 +53,7 @@ const COMPANIES: {
       services: ["Branding", "Marketing"],
     },
     {
-      id: "scrumspace",
+      id: "scrumspacecoworks",
       icon: <Building size={30} />,
       title: "Scrumspace Coworks",
       tagline: "Community & Workspace",

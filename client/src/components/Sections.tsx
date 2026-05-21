@@ -90,7 +90,7 @@
 //                     {[
 //                         { icon: <Cpu size={32} />, title: "AJU TECHZORA", desc: "Web and mobile development, IoT, Robotics, AI/ML & Tech Solutions at low cost for customers and enterprises.", color: "text-cyan-400" },
 //                         { icon: <Palette size={32} />, title: "AJU Brandify", desc: "Branding, Digital Marketing & Web Solutions to help businesses grow and shine online.", color: "text-purple-400" },
-//                         { icon: <Building size={32} />, title: "ScrumSpace CoWorks", desc: "Modern coworking spaces with community-driven initiatives for startups and creators.", color: "text-blue-400" },
+//                         { icon: <Building size={32} />, title: "scrumspacecoworks", desc: "Modern coworking spaces with community-driven initiatives for startups and creators.", color: "text-blue-400" },
 //                     ].map((comp, i) => (
 //                         <div key={i} className="company-card bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 p-8 rounded-2xl hover:border-white/30 transition-all duration-300">
 //                             <div className={`${comp.color} mb-6 drop-shadow-[0_0_10px_currentColor]`}>{comp.icon}</div>
@@ -145,7 +145,7 @@
 //         { title: "IoT Solutions", desc: "Smart classrooms, connected devices, sensors, and monitoring systems.", icon: <Network /> },
 //         { title: "Robotics & Automation", desc: "Low-cost robotics kits, lab automation, and robotics education programs.", icon: <Bot /> },
 //         { title: "Branding & Marketing", desc: "Logo design, brand strategy, digital marketing, social media campaigns (Aju Brandify).", icon: <Palette /> },
-//         { title: "Co-working Spaces", desc: "Flexible workspace rentals, community networking, and startup-friendly facilities (ScrumSpace CoWorks).", icon: <Building /> },
+//         { title: "Co-working Spaces", desc: "Flexible workspace rentals, community networking, and startup-friendly facilities (scrumspacecoworks).", icon: <Building /> },
 //         { title: "BTech Coaching", desc: "Engineering coaching, subject tutorials, coding labs, and practical workshops.", icon: <GraduationCap /> },
 //         { title: "Internships & Projects", desc: "Hands-on industry projects, internship opportunities, and mentorship programs.", icon: <Briefcase /> },
 //     ];

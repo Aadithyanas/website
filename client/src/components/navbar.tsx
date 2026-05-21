@@ -34,8 +34,8 @@ const BRAND_DATA: Record<CompanyId, { name: string; logo: string; icon: string; 
     icon: "/images/logo 3.png",
     color: "#06d6a0",
   },
-  scrumspace: {
-    name: "ScrumSpace CoWorks",
+  scrumspacecoworks: {
+    name: "Scrumspace Coworks",
     logo: "/images/brands/scrumspaceW.png",
     icon: "/images/logo 3.png",
     color: "#f472b6",
@@ -54,13 +54,13 @@ const NAV_LINKS = [
     dropdown: [
       { name: "AJU Techzora", id: "/techzora" },
       { name: "AJU Brandify", id: "/brandify" },
-      { name: "Scrumspace", id: "/scrumspace" },
+      { name: "Scrumspace Coworks", id: "/scrumspacecoworks" },
     ]
   },
   { name: "Services", id: "#services" },
-  { name: "Careers", id: "#careers" },
+  { name: "Careers", id: "/careers" },
   { name: "Register", id: "/register" },
-  { name: "Testimonials", id: "#testimonials" },
+  // { name: "Testimonials", id: "#testimonials" },
 ];
 
 function useActiveSection(ids: string[]) {
@@ -94,7 +94,16 @@ const Nav = () => {
   const { activeCompany } = useCompany();
   const brand = BRAND_DATA[activeCompany] || BRAND_DATA.default;
 
-  const sectionIds = NAV_LINKS.map((l) => l.id).filter((id): id is string => !!id);
+  const dynamicNavLinks = React.useMemo(() => {
+    if (activeCompany === "techzora") {
+      const links = [...NAV_LINKS];
+      links.splice(4, 0, { name: "3D Products", id: "/3dproducts" });
+      return links;
+    }
+    return NAV_LINKS;
+  }, [activeCompany]);
+
+  const sectionIds = dynamicNavLinks.map((l) => l.id).filter((id): id is string => !!id);
   const active = useActiveSection(sectionIds);
 
   useEffect(() => {
@@ -221,7 +230,7 @@ const Nav = () => {
 
           {/* ── Desktop links ── */}
           <ul className="hidden lg:flex items-center gap-1">
-            {NAV_LINKS.map((link) => {
+            {dynamicNavLinks.map((link) => {
               const isActive = link.id ? active === link.id.replace("#", "") : false;
               const isBranches = link.name === "Brands";
 
@@ -448,7 +457,7 @@ const Nav = () => {
               }}
             >
               <ul className="flex flex-col px-4 py-5 gap-1">
-                {NAV_LINKS.map((link, i) => {
+                {dynamicNavLinks.map((link, i) => {
                   const isActive = link.id ? active === link.id.replace("#", "") : false;
                   const isBranches = link.name === "Brands";
 
@@ -545,7 +554,7 @@ const Nav = () => {
                 <motion.li
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: NAV_LINKS.length * 0.05, ease: EASE }}
+                  transition={{ duration: 0.3, delay: dynamicNavLinks.length * 0.05, ease: EASE }}
                   className="mt-3"
                 >
                   <button
