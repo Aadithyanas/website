@@ -1,0 +1,173 @@
+/* ERP Global Styles */
+.erp-body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+.erp-card {
+  background: #000;
+  border: 1px solid #222;
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.erp-card:hover {
+  border-color: #333;
+  background: #030303;
+  box-shadow: 0 4px 24px rgba(255, 255, 255, 0.02);
+}
+
+.erp-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  outline: none;
+}
+
+.erp-btn-primary {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.1);
+}
+.erp-btn-primary:hover {
+  background: #f0f0f0;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.erp-btn-ghost {
+  background: #111;
+  border: 1px solid #333;
+  color: #eee;
+}
+.erp-btn-ghost:hover {
+  background: #222;
+  border-color: #444;
+}
+
+.erp-btn-danger {
+  background: #1a0000;
+  border: 1px solid #4d0000;
+  color: #ff4d4d;
+}
+.erp-btn-danger:hover {
+  background: #330000;
+  border-color: #ff4d4d;
+}
+
+.erp-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  box-sizing: border-box;
+}
+.erp-input:focus {
+  border-color: #777;
+}
+.erp-input::placeholder { color: #555; }
+
+.erp-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.erp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.erp-badge-pending   { background: #1a1a00; color: #f59e0b; border: 1px solid #333300; }
+.erp-badge-ongoing   { background: #001a33; color: #60a5fa; border: 1px solid #003366; }
+.erp-badge-testing   { background: #1a0033; color: #a78bfa; border: 1px solid #330066; }
+.erp-badge-previewing { background: #33001a; color: #f472b6; border: 1px solid #660033; }
+.erp-badge-completed { background: #001a0d; color: #34d399; border: 1px solid #00331a; }
+.erp-badge-approved  { background: #001a0d; color: #34d399; border: 1px solid #00331a; }
+.erp-badge-rejected  { background: #1a0d0d; color: #f87171; border: 1px solid #331a1a; }
+.erp-badge-admin     { background: #333;    color: #fff;    border: 1px solid #555; }
+.erp-badge-member    { background: #111;    color: #888;    border: 1px solid #222; }
+
+.erp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.erp-modal {
+  background: #000;
+  border: 1px solid #222;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.erp-select {
+  appearance: none;
+  background: #111 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  padding: 8px 32px 8px 12px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.erp-select:focus { border-color: #888; }
+.erp-select option { background: #000; color: #fff; }
+
+.erp-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: #111;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
