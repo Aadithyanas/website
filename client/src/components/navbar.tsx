@@ -49,17 +49,17 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 const NAV_LINKS = [
   { name: "Home", id: "#home" },
   { name: "About", id: "#about" },
-  {
-    name: "Brands",
-    dropdown: [
-      { name: "AJU Techzora", id: "/techzora" },
-      { name: "AJU Brandify", id: "/brandify" },
-      { name: "Scrumspace Coworks", id: "/scrumspacecoworks" },
-    ]
-  },
+  // {
+  //   name: "Brands",
+  //   dropdown: [
+  //     { name: "AJU Techzora", id: "/techzora" },
+  //     { name: "AJU Brandify", id: "/brandify" },
+  //     { name: "Scrumspace Coworks", id: "/scrumspacecoworks" },
+  //   ]
+  // },
   { name: "Services", id: "#services" },
   { name: "Careers", id: "/careers" },
-  { name: "Register", id: "/register" },
+  // { name: "Register", id: "/register" },
   // { name: "Testimonials", id: "#testimonials" },
 ];
 
@@ -219,9 +219,8 @@ const Nav = () => {
             <img
               src={brand.logo}
               alt={brand.name}
-              className={`w-auto object-contain hidden sm:block transition-all duration-300 ${
-                activeCompany === "brandify" ? "h-6" : "h-8"
-              }`}
+              className={`w-auto object-contain hidden sm:block transition-all duration-300 ${activeCompany === "brandify" ? "h-6" : "h-8"
+                }`}
               style={{
                 filter: "drop-shadow(0 0 4px rgba(255,255,255,0.2))",
               }}
@@ -265,7 +264,7 @@ const Nav = () => {
                       </button>
 
                       {/* Dropdown Menu */}
-                      <AnimatePresence>
+                      {/* <AnimatePresence>
                         {branchDropdownOpen && (
                           <motion.div
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -306,7 +305,7 @@ const Nav = () => {
                             </div>
                           </motion.div>
                         )}
-                      </AnimatePresence>
+                      </AnimatePresence> */}
                     </div>
                   ) : (
                     <button
@@ -496,7 +495,7 @@ const Nav = () => {
                             </div>
                             <ChevronDown size={14} className={`transition-transform duration-300 ${branchDropdownOpen ? "rotate-180" : ""}`} />
                           </button>
-
+                          {/* 
                           <AnimatePresence>
                             {branchDropdownOpen && (
                               <motion.div
@@ -517,7 +516,7 @@ const Nav = () => {
                                 ))}
                               </motion.div>
                             )}
-                          </AnimatePresence>
+                          </AnimatePresence> */}
                         </div>
                       ) : (
                         <button
