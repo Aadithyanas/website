@@ -388,7 +388,7 @@ export const ServicesSection = () => {
                 transition={{
                   duration: 0.4,
                   delay: i * 0.04,
-                  ease: "easeOut"
+                  ease: EASE
                 }}
                 className={["list-none", areaMap[i] ?? ""].join(" ")}
                 style={{ listStyle: "none" }}

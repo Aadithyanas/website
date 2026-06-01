@@ -12,7 +12,7 @@ const fadeUp = (delay = 0, distance = 32) => ({
   hidden: { opacity: 0, y: distance, filter: "blur(6px)" },
   visible: {
     opacity: 1, y: 0, filter: "blur(0px)",
-    transition: { duration: 0.4, delay, ease: "easeOut" },
+    transition: { duration: 0.4, delay, ease: EASE },
   },
 });
 
