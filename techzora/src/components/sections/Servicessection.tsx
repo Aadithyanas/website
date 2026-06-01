@@ -82,9 +82,11 @@ const GlowingEffect = memo(({
       <div className={["pointer-events-none absolute -inset-px hidden rounded-[inherit] border opacity-0 transition-opacity",
         glow ? "opacity-100" : "", variant === "white" ? "border-white" : "", disabled ? "!block" : ""].join(" ")} />
       <div ref={containerRef}
-        style={{ "--blur": `${blur}px`, "--spread": spread, "--start": "0", "--active": "0",
+        style={{
+          "--blur": `${blur}px`, "--spread": spread, "--start": "0", "--active": "0",
           "--glowingeffect-border-width": `${borderWidth}px`, "--repeating-conic-gradient-times": "5",
-          "--gradient": gradient } as React.CSSProperties}
+          "--gradient": gradient
+        } as React.CSSProperties}
         className={["pointer-events-none absolute inset-0 rounded-[inherit] opacity-100 transition-opacity",
           glow ? "opacity-100" : "", blur > 0 ? "blur-[var(--blur)]" : "", className ?? "", disabled ? "!hidden" : ""].join(" ")}
       >
@@ -107,8 +109,8 @@ export const ALL_SERVICES = [
   {
     key: "web",
     icon: <Laptop className="h-5 w-5" />,
-    title: "Web & App Development",
-    description: "Custom websites, mobile apps, progressive web apps, and fully responsive solutions crafted for every device.",
+    title: "Custom Web Development",
+    description: "Custom websites, progressive web apps, and fully responsive solutions crafted for every device.",
     image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80",
     companies: ["techzora"] as CompanyId[],
     area: "md:[grid-area:1/1/2/5] xl:[grid-area:1/1/2/5]",
@@ -198,15 +200,15 @@ export const ALL_SERVICES = [
 ];
 
 const COMPANY_META: Record<CompanyId, { label: string; color: string; icon: React.ReactNode }> = {
-  default:       { label: "All Services",       color: "#818cf8",  icon: null },
-  ajuedsolution: { label: "AJU ED Solutions",   color: "#818cf8",  icon: <Cpu size={14} /> },
-  techzora:      { label: "AJU TECHZORA",       color: "#818cf8",  icon: <Cpu size={14} /> },
-  brandify:      { label: "AJU Brandify",       color: "#06d6a0",  icon: <Palette size={14} /> },
-  scrumspacecoworks:    { label: "Scrumspace Coworks", color: "#f472b6",  icon: <Building size={14} /> },
+  default: { label: "All Services", color: "#818cf8", icon: null },
+  ajuedsolution: { label: "AJU ED Solutions", color: "#818cf8", icon: <Cpu size={14} /> },
+  techzora: { label: "AJU TECHZORA", color: "#818cf8", icon: <Cpu size={14} /> },
+  brandify: { label: "AJU Brandify", color: "#06d6a0", icon: <Palette size={14} /> },
+  scrumspacecoworks: { label: "Scrumspace Coworks", color: "#f472b6", icon: <Building size={14} /> },
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const VP   = { once: true, amount: 0.18 };
+const VP = { once: true, amount: 0.18 };
 
 
 // ── GridItem ──────────────────────────────────────────────────────────────────
@@ -384,9 +386,9 @@ export const ServicesSection = () => {
                 viewport={VP}
                 exit={{ opacity: 0, y: -20, scale: 0.96 }}
                 transition={{
-                  duration: 0.7,
-                  delay: i * 0.08,
-                  ease: EASE
+                  duration: 0.4,
+                  delay: i * 0.04,
+                  ease: "easeOut"
                 }}
                 className={["list-none", areaMap[i] ?? ""].join(" ")}
                 style={{ listStyle: "none" }}

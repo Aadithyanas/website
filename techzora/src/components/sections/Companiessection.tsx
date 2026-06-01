@@ -12,7 +12,7 @@ const fadeUp = (delay = 0, distance = 32) => ({
   hidden: { opacity: 0, y: distance, filter: "blur(6px)" },
   visible: {
     opacity: 1, y: 0, filter: "blur(0px)",
-    transition: { duration: 0.8, delay, ease: EASE },
+    transition: { duration: 0.4, delay, ease: "easeOut" },
   },
 });
 
@@ -144,7 +144,7 @@ export const CompaniesSection = () => {
             return (
               <motion.div
                 key={comp.id}
-                variants={fadeUp(0.1 + i * 0.12, 36)}
+                variants={fadeUp(0.1 + i * 0.05, 36)}
                 initial="hidden"
                 whileInView="visible"
                 viewport={VP}

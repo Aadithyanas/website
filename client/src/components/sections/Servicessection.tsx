@@ -384,9 +384,9 @@ export const ServicesSection = () => {
                 viewport={VP}
                 exit={{ opacity: 0, y: -20, scale: 0.96 }}
                 transition={{
-                  duration: 0.7,
-                  delay: i * 0.08,
-                  ease: EASE
+                  duration: 0.4,
+                  delay: i * 0.04,
+                  ease: "easeOut"
                 }}
                 className={["list-none", areaMap[i] ?? ""].join(" ")}
                 style={{ listStyle: "none" }}
