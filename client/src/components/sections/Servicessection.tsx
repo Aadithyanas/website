@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Laptop, CloudCog, Database, Network, Bot,
   Palette, Building, GraduationCap, Briefcase, Cpu,
+  Smartphone, Users
 } from "lucide-react";
 import { useCompany, CompanyId } from "./CompanyContext";
 
@@ -176,6 +177,24 @@ export const ALL_SERVICES = [
     companies: ["ajuedsolution"] as CompanyId[],
     area: "md:[grid-area:3/9/4/13] xl:[grid-area:3/9/4/13]",
   },
+  {
+    key: "mobile",
+    icon: <Smartphone className="h-5 w-5" />,
+    title: "Mobile App Development",
+    description: "Native and cross-platform mobile applications for iOS and Android tailored to your business needs.",
+    image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&q=80",
+    companies: ["techzora"] as CompanyId[],
+    area: "md:[grid-area:4/1/5/5] xl:[grid-area:4/1/5/5]",
+  },
+  {
+    key: "crm",
+    icon: <Users className="h-5 w-5" />,
+    title: "CRM Development",
+    description: "Custom Customer Relationship Management software to streamline sales, marketing, and customer support.",
+    image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    companies: ["techzora"] as CompanyId[],
+    area: "md:[grid-area:4/5/5/9] xl:[grid-area:4/5/5/9]",
+  },
 ];
 
 const COMPANY_META: Record<CompanyId, { label: string; color: string; icon: React.ReactNode }> = {
@@ -273,6 +292,9 @@ export const ServicesSection = () => {
     "md:[grid-area:3/1/4/5] xl:[grid-area:3/1/4/5]",
     "md:[grid-area:3/5/4/9] xl:[grid-area:3/5/4/9]",
     "md:[grid-area:3/9/4/13] xl:[grid-area:3/9/4/13]",
+    "md:[grid-area:4/1/5/5] xl:[grid-area:4/1/5/5]",
+    "md:[grid-area:4/5/5/9] xl:[grid-area:4/5/5/9]",
+    "md:[grid-area:4/9/5/13] xl:[grid-area:4/9/5/13]",
   ];
 
   const rows = Math.ceil(visibleServices.length / 3);

@@ -38,7 +38,7 @@ const COMPANIES: {
       accent: "rgba(99,102,241,0.10)",
       border: "rgba(99,102,241,0.38)",
       glow: "rgba(99,102,241,0.18)",
-      services: ["Web & App", "AI / ML", "IoT", "Robotics", "ERP"],
+      services: ["Web & App", "Mobile App", "CRM", "AI / ML", "IoT", "Robotics", "ERP"],
     },
     {
       id: "brandify",
