@@ -154,7 +154,7 @@ export default function ERPSidebar({ notifCount = 0, mobileOpen = false, closeMo
     : "?";
 
   // Sidebar content component to reuse for both desktop and mobile
-  const SidebarContent = () => (
+  const renderSidebarContent = () => (
     <div className="flex flex-col h-full bg-black border-r border-[#1a1a1a] w-[250px] transition-all duration-300 shadow-2xl">
       {/* ── Logo & Org Picker ── */}
       <div className="p-4 border-b border-[#1a1a1a] relative">
@@ -282,7 +282,7 @@ export default function ERPSidebar({ notifCount = 0, mobileOpen = false, closeMo
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <SidebarContent />
+          {renderSidebarContent()}
           {/* Close button inside mobile menu */}
           <button 
             className="absolute top-4 -right-12 w-10 h-10 bg-black border border-[#1a1a1a] rounded-xl text-gray-400 flex items-center justify-center shadow-2xl"
@@ -295,7 +295,7 @@ export default function ERPSidebar({ notifCount = 0, mobileOpen = false, closeMo
 
       {/* ── Desktop Sidebar ── */}
       <div className="hidden md:flex h-full flex-shrink-0">
-        <SidebarContent />
+        {renderSidebarContent()}
       </div>
     </>
   );
