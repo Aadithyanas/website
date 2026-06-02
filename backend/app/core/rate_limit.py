@@ -24,12 +24,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+is_ssl = REDIS_URL.startswith("rediss://")
 
 # Global SlowAPI Limiter with Redis storage
+# Added storage_options to prevent SSL verification errors with Upstash
 limiter = Limiter(
     key_func=get_user_or_ip, 
     default_limits=["200/minute"],
-    storage_uri=REDIS_URL
+    storage_uri=REDIS_URL,
+    storage_options={"ssl_cert_reqs": "none"} if is_ssl else {}
 )
 
 def rate_limit_exceeded_handler(request: Request, exc: Exception):
