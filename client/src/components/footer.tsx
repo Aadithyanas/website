@@ -103,7 +103,7 @@ export const Footer = () => {
     {
       label: "Brands",
       links: [
-        { title: "AJU TECHZORA", href: "/techzora" },
+        { title: "AJU TECHZORA", href: "https://ajutechzora.ajuedsolutions.com/" },
         { title: "AJU Brandify", href: "/brandify" },
         { title: "Scrumspace Coworks", href: "/scrumspacecoworks" },
       ],
