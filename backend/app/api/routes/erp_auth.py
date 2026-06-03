@@ -165,7 +165,7 @@ async def google_callback(code: str, state: str = "none"):
         return RedirectResponse(f"{FRONTEND_URL}/erp/select-org?selection_token={selection_token}")
 
     user = users[0]
-    jwt_token = create_access_token({"sub": email, "org_id": str(user["org_id"])})
+    jwt_token = create_access_token({"sub": email, "org_id": str(user.get("org_id", ""))})
     print("--- [SUCCESS] LOGIN COMPLETE ---")
     return RedirectResponse(f"{FRONTEND_URL}/erp/auth/callback?token={jwt_token}")
 
@@ -223,7 +223,7 @@ async def login(body: LoginRequest):
 
     # If org_id is provided, log in to that specific one
     if body.org_id:
-        user = next((u for u in registered_users if str(u["org_id"]) == body.org_id), None)
+        user = next((u for u in registered_users if str(u.get("org_id", "")) == body.org_id), None)
         if not user:
             raise HTTPException(status_code=404, detail="Organization account not found")
         
@@ -234,7 +234,7 @@ async def login(body: LoginRequest):
         if not verify_password(body.password, pwd_hash):
             raise HTTPException(status_code=401, detail="Invalid email or password")
         
-        token = create_access_token({"sub": user["email"], "org_id": str(user["org_id"])})
+        token = create_access_token({"sub": user["email"], "org_id": str(user.get("org_id", ""))})
         return {"access_token": token, "token_type": "bearer", "user": user_to_dict(user)}
 
     # If multiple accounts and no org_id, return the list for selection
@@ -252,7 +252,7 @@ async def login(body: LoginRequest):
             return {
                 "multi_org": True,
                 "accounts": [
-                    {"org_id": str(u["org_id"]), "org_name": u.get("org_name", "Unknown")} 
+                    {"org_id": str(u.get("org_id", "")), "org_name": u.get("org_name", "Unknown")} 
                     for u in valid_users
                 ]
             }
@@ -262,7 +262,7 @@ async def login(body: LoginRequest):
         if not verify_password(body.password, user.get("password_hash", "")):
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    token = create_access_token({"sub": user["email"], "org_id": str(user["org_id"])})
+    token = create_access_token({"sub": user["email"], "org_id": str(user.get("org_id", ""))})
     return {"access_token": token, "token_type": "bearer", "user": user_to_dict(user)}
 
 @router.post("/register")

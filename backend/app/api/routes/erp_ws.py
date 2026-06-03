@@ -19,24 +19,30 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         email = payload.get("sub")
         org_id = str(payload.get("org_id")) if payload.get("org_id") else None
         
-        if not email or not org_id:
+        if not email:
             await websocket.close(code=1008)
             return
 
-        user = await users_collection.find_one({"email": email, "org_id": org_id})
+        user_query = {"email": email}
+        if org_id:
+            user_query["org_id"] = org_id
+
+        user = await users_collection.find_one(user_query)
         if not user:
             await websocket.close(code=1008)
             return
             
         user_id = str(user["_id"])
         
-        await manager.connect(user_id, org_id, websocket)
+        safe_org_id = org_id if org_id else "global"
+        
+        await manager.connect(user_id, safe_org_id, websocket)
         
         # Broadcast online status
         await manager.broadcast_to_org({
             "type": "user_online",
             "data": {"user_id": user_id}
-        }, org_id)
+        }, safe_org_id)
 
         try:
             while True:
@@ -53,12 +59,12 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 except json.JSONDecodeError:
                     pass # Ignore non-JSON messages
         except WebSocketDisconnect:
-            await manager.disconnect(user_id, org_id, websocket)
+            await manager.disconnect(user_id, safe_org_id, websocket)
             # Broadcast offline status
             await manager.broadcast_to_org({
                 "type": "user_offline",
                 "data": {"user_id": user_id}
-            }, org_id)
+            }, safe_org_id)
             
     except Exception as e:
         print(f"WebSocket error: {e}")

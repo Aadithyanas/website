@@ -67,7 +67,7 @@ export function ERPWebSocketProvider({ children }: { children: React.ReactNode }
         setIsConnected(true);
 
         // Sync pending delivery status
-        apiClient.patch("/api/erp/chat/messages/status/sync").catch(() => {});
+        apiClient.patch("/api/erp/chat/status/sync").catch(() => {});
         
         // Start Heartbeat (prevent Render idle timeout)
         if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
@@ -139,7 +139,7 @@ export function ERPWebSocketProvider({ children }: { children: React.ReactNode }
           ws.current = null;
         }
       };
-    }, [token, user]);
+    }, [token]);
 
   return (
     <ERPWebSocketContext.Provider value={{ isConnected, lastMessage, sendMessage }}>
